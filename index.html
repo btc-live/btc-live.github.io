@@ -60,96 +60,94 @@
     </p>
 </div>
 
-<div id="asset-price-list" style="background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; margin: 15px auto; max-width: 900px; border: 2px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 15px;">
-    <div style="width: 100%; color: #ffffff; font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; text-align: left; padding-left: 10px;">주요 암호화폐 실시간 시세</div>
+<div id="asset-price-list" style="background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; margin: 15px auto; max-width: 900px; border: 2px solid rgba(255, 255, 255, 0.08);">
+    <div style="width: 100%; color: #ffffff; font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; text-align: left; padding-left: 10px;">📊주요 암호화폐 실시간 시세</div>
     
-    <div style="text-align: center; flex: 1; min-width: 110px;">
-        <span style="color: #848e9c; font-size: 0.75rem; display: block;">BITCOIN</span>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-            <span id="list-arrow-btc"></span><span id="list-price-btc" style="color: #f3ba2f; font-weight: 700;">$ 0.00</span>
+    <div id="crypto-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;">
         </div>
-    </div>
-    <div style="text-align: center; flex: 1; min-width: 110px;">
-        <span style="color: #848e9c; font-size: 0.75rem; display: block;">ETHEREUM</span>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-            <span id="list-arrow-eth"></span><span id="list-price-eth" style="color: #c994ff; font-weight: 700;">$ 0.00</span>
-        </div>
-    </div>
-    <div style="text-align: center; flex: 1; min-width: 110px;">
-        <span style="color: #848e9c; font-size: 0.75rem; display: block;">XRP</span>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-            <span id="list-arrow-xrp"></span><span id="list-price-xrp" style="color: #ffffff; font-weight: 700;">$ 0.00</span>
-        </div>
-    </div>
-    <div style="text-align: center; flex: 1; min-width: 110px;">
-        <span style="color: #848e9c; font-size: 0.75rem; display: block;">DOGE</span>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-            <span id="list-arrow-doge"></span><span id="list-price-doge" style="color: #c2a633; font-weight: 700;">$ 0.00</span>
-        </div>
-    </div>
-    <div style="text-align: center; flex: 1; min-width: 110px;">
-        <span style="color: #848e9c; font-size: 0.75rem; display: block;">SHIBA INU</span>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-            <span id="list-arrow-shib"></span><span id="list-price-shib" style="color: #ff6000; font-weight: 700;">$ 0.00</span>
-        </div>
-    </div>
-    <div style="text-align: center; flex: 1; min-width: 110px;">
-        <span style="color: #848e9c; font-size: 0.75rem; display: block;">ONDO</span>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-            <span id="list-arrow-ondo"></span><span id="list-price-ondo" style="color: #5580ff; font-weight: 700;">$ 0.00</span>
-        </div>
-    </div>
 </div>
 
 <script>
+    // 2. 20개 코인 데이터 및 로직
     const cryptoAssets = {
-        'btc': { url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot', els: ['#main-btc-price', '#list-price-btc'], arrows: ['#main-btc-arrow', '#list-arrow-btc'], last: 0, defColor: '#f3ba2f', digits: 2 },
-        'eth': { url: 'https://api.coinbase.com/v2/prices/ETH-USD/spot', els: ['#list-price-eth'], arrows: ['#list-arrow-eth'], last: 0, defColor: '#c994ff', digits: 2 },
-        'xrp': { url: 'https://api.coinbase.com/v2/prices/XRP-USD/spot', els: ['#list-price-xrp'], arrows: ['#list-arrow-xrp'], last: 0, defColor: '#ffffff', digits: 4 },
-        'doge': { url: 'https://api.coinbase.com/v2/prices/DOGE-USD/spot', els: ['#list-price-doge'], arrows: ['#list-arrow-doge'], last: 0, defColor: '#c2a633', digits: 4 },
-        'shib': { url: 'https://api.coinbase.com/v2/prices/SHIB-USD/spot', els: ['#list-price-shib'], arrows: ['#list-arrow-shib'], last: 0, defColor: '#ff6000', digits: 6 },
-        'ondo': { url: 'https://api.coinbase.com/v2/prices/ONDO-USD/spot', els: ['#list-price-ondo'], arrows: ['#list-arrow-ondo'], last: 0, defColor: '#5580ff', digits: 4 }
+        'btc': { name: 'BITCOIN', color: '#f3ba2f', digits: 2 },
+        'eth': { name: 'ETHEREUM', color: '#c994ff', digits: 2 },
+        'sol': { name: 'SOLANA', color: '#14f195', digits: 2 },
+        'xrp': { name: 'XRP', color: '#ffffff', digits: 4 },
+        'bnb': { name: 'BNB', color: '#f3ba2f', digits: 2 },
+        'doge': { name: 'DOGE', color: '#c2a633', digits: 4 },
+        'ada': { name: 'CARDANO', color: '#0033ad', digits: 4 },
+        'trx': { name: 'TRON', color: '#ff0013', digits: 4 },
+        'dot': { name: 'POLKADOT', color: '#e6007a', digits: 2 },
+        'link': { name: 'CHAINLINK', color: '#2a5ada', digits: 2 },
+        'shib': { name: 'SHIBA INU', color: '#ff6000', digits: 6 },
+        'avax': { name: 'AVALANCHE', color: '#e84142', digits: 2 },
+        'ton': { name: 'TONCOIN', color: '#0098ea', digits: 2 },
+        'pepe': { name: 'PEPE', color: '#00ff00', digits: 8 },
+        'pol': { name: 'POLYGON', color: '#9d7f64', digits: 4 },
+        'bonk': { name: 'BONK', color: '#f5a13b', digits: 8 },
+        'ondo': { name: 'ONDO', color: '#5580ff', digits: 4 },
+        'near': { name: 'NEAR', color: '#ffffff', digits: 3 },
+        'apt': { name: 'APTOS', color: '#ffffff', digits: 2 },
+        'sui': { name: 'SUI', color: '#6fbcf0', digits: 2 }
     };
 
-    async function refreshCryptoPrices() {
+    let lastPrices = {};
+
+    // 그리드 안에 코인별 칸을 미리 만들어두는 함수
+    function initCryptoGrid() {
+        const grid = document.getElementById('crypto-grid');
+        let html = '';
+        for (let key in cryptoAssets) {
+            html += `
+                <div style="text-align: center; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span style="color: #ffffff; font-size: 0.7rem; display: block; margin-bottom: 2px;">${cryptoAssets[key].name}</span>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 3px; min-height:20px;">
+                        <span id="arrow-${key}" style="font-size: 10px;"></span>
+                        <span id="price-${key}" style="color: ${cryptoAssets[key].color}; font-weight: 700; font-size: 0.85rem;">$ 0.00</span>
+                    </div>
+                </div>`;
+        }
+        grid.innerHTML = html;
+    }
+
+    async function refreshPrices() {
         for (let key in cryptoAssets) {
             try {
-                const response = await fetch(cryptoAssets[key].url);
+                const response = await fetch(`https://api.coinbase.com/v2/prices/${key.toUpperCase()}-USD/spot`);
                 const result = await response.json();
                 const current = parseFloat(result.data.amount);
                 
-                // 코인별 특성에 맞는 소수점 자리수 적용
+                const display = document.getElementById(`price-${key}`);
+                const arrowEl = document.getElementById(`arrow-${key}`);
                 const formatted = current.toLocaleString('en-US', { 
                     minimumFractionDigits: cryptoAssets[key].digits, 
                     maximumFractionDigits: cryptoAssets[key].digits 
                 });
-                
-                cryptoAssets[key].els.forEach((selector, idx) => {
-                    const display = document.querySelector(selector);
-                    const arrowEl = document.querySelector(cryptoAssets[key].arrows[idx]);
-                    
-                    if (cryptoAssets[key].last !== 0 && display) {
-                        if (current > cryptoAssets[key].last) {
-                            display.style.color = "#00ff88";
-                            if(arrowEl) { arrowEl.innerText = "▲"; arrowEl.style.color = "#00ff88"; }
-                        } else if (current < cryptoAssets[key].last) {
-                            display.style.color = "#ff4444";
-                            if(arrowEl) { arrowEl.innerText = "▼"; arrowEl.style.color = "#ff4444"; }
-                        }
-                        setTimeout(() => { 
-                            display.style.color = cryptoAssets[key].defColor; 
-                            if(arrowEl) arrowEl.innerText = ""; 
-                        }, 1200);
+
+                if (lastPrices[key] && display) {
+                    if (current > lastPrices[key]) {
+                        display.style.color = "#00ff88";
+                        arrowEl.innerText = "▲"; arrowEl.style.color = "#00ff88";
+                    } else if (current < lastPrices[key]) {
+                        display.style.color = "#ff4444";
+                        arrowEl.innerText = "▼"; arrowEl.style.color = "#ff4444";
                     }
-                    if(display) display.innerText = `$ ${formatted}`;
-                });
-                cryptoAssets[key].last = current;
-            } catch (e) { console.error(e); }
+                    setTimeout(() => { 
+                        display.style.color = cryptoAssets[key].color; 
+                        arrowEl.innerText = ""; 
+                    }, 1000);
+                }
+
+                if(display) display.innerText = `$ ${formatted}`;
+                lastPrices[key] = current;
+            } catch (e) { console.warn(`${key} 시세 로딩 실패`); }
         }
     }
 
-    setInterval(refreshCryptoPrices, 3000);
-    refreshCryptoPrices();
+    initCryptoGrid(); // 칸 만들기
+    setInterval(refreshPrices, 3000); // 3초마다 갱신
+    refreshPrices(); // 즉시 실행
 </script>
 
 <div style="margin: 20px auto; max-width: 900px; display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
