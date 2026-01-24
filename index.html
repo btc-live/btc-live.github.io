@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>BTC 미래 예측 모델</title>
+
+<link rel="icon" href="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" type="image/x-icon">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { text-align: center; padding: 40px 20px; background: #0b0e11; color: #f3ba2f; font-family: 'Apple SD Gothic Neo', sans-serif; }
+        .card { display: inline-block; padding: 30px; border: 2px solid #f3ba2f; border-radius: 20px; background: #181a20; width: 95%; max-width: 900px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .input-area { margin: 20px 0; padding: 20px; border-top: 1px solid #333; }
+        input { padding: 12px; font-size: 20px; width: 120px; text-align: center; border-radius: 8px; border: 1px solid #444; background: #2b3139; color: white; outline: none; }
+        input:focus { border-color: #f3ba2f; }
+        button { padding: 12px 25px; font-size: 20px; cursor: pointer; background: #f3ba2f; color: #000; font-weight: bold; border-radius: 8px; border: none; margin-left: 10px; transition: 0.3s; }
+        button:hover { background: #ffcc33; transform: scale(1.05); }
+        #result { margin: 20px 0; font-size: 32px; color: white; font-weight: bold; }
+        .desc { color: #848e9c; font-size: 14px; margin-bottom: 10px; }
+        .chart-wrapper { height: 450px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="asset-price-list" style="background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; margin: 15px auto; max-width: 900px; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <div style="width: 100%; color: #ffffff; font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; text-align: left; padding-left: 10px;">주요 암호화폐 실시간 시세</div>
+    
+    <div style="text-align: center; flex: 1; min-width: 110px;">
+        <span style="color: #848e9c; font-size: 0.75rem; display: block;">BITCOIN</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <span id="list-arrow-btc"></span><span id="list-price-btc" style="color: #f3ba2f; font-weight: 700;">$ 0.00</span>
+        </div>
+    </div>
+    <div style="text-align: center; flex: 1; min-width: 110px;">
+        <span style="color: #848e9c; font-size: 0.75rem; display: block;">ETHEREUM</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <span id="list-arrow-eth"></span><span id="list-price-eth" style="color: #c994ff; font-weight: 700;">$ 0.00</span>
+        </div>
+    </div>
+    <div style="text-align: center; flex: 1; min-width: 110px;">
+        <span style="color: #848e9c; font-size: 0.75rem; display: block;">XRP</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <span id="list-arrow-xrp"></span><span id="list-price-xrp" style="color: #ffffff; font-weight: 700;">$ 0.00</span>
+        </div>
+    </div>
+    <div style="text-align: center; flex: 1; min-width: 110px;">
+        <span style="color: #848e9c; font-size: 0.75rem; display: block;">DOGE</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <span id="list-arrow-doge"></span><span id="list-price-doge" style="color: #c2a633; font-weight: 700;">$ 0.00</span>
+        </div>
+    </div>
+    <div style="text-align: center; flex: 1; min-width: 110px;">
+        <span style="color: #848e9c; font-size: 0.75rem; display: block;">SHIBA INU</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <span id="list-arrow-shib"></span><span id="list-price-shib" style="color: #ff6000; font-weight: 700;">$ 0.00</span>
+        </div>
+    </div>
+    <div style="text-align: center; flex: 1; min-width: 110px;">
+        <span style="color: #848e9c; font-size: 0.75rem; display: block;">ONDO</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <span id="list-arrow-ondo"></span><span id="list-price-ondo" style="color: #5580ff; font-weight: 700;">$ 0.00</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const cryptoAssets = {
+        'btc': { url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot', els: ['#main-btc-price', '#list-price-btc'], arrows: ['#main-btc-arrow', '#list-arrow-btc'], last: 0, defColor: '#f3ba2f', digits: 2 },
+        'eth': { url: 'https://api.coinbase.com/v2/prices/ETH-USD/spot', els: ['#list-price-eth'], arrows: ['#list-arrow-eth'], last: 0, defColor: '#c994ff', digits: 2 },
+        'xrp': { url: 'https://api.coinbase.com/v2/prices/XRP-USD/spot', els: ['#list-price-xrp'], arrows: ['#list-arrow-xrp'], last: 0, defColor: '#ffffff', digits: 4 },
+        'doge': { url: 'https://api.coinbase.com/v2/prices/DOGE-USD/spot', els: ['#list-price-doge'], arrows: ['#list-arrow-doge'], last: 0, defColor: '#c2a633', digits: 4 },
+        'shib': { url: 'https://api.coinbase.com/v2/prices/SHIB-USD/spot', els: ['#list-price-shib'], arrows: ['#list-arrow-shib'], last: 0, defColor: '#ff6000', digits: 6 },
+        'ondo': { url: 'https://api.coinbase.com/v2/prices/ONDO-USD/spot', els: ['#list-price-ondo'], arrows: ['#list-arrow-ondo'], last: 0, defColor: '#5580ff', digits: 4 }
+    };
+
+    async function refreshCryptoPrices() {
+        for (let key in cryptoAssets) {
+            try {
+                const response = await fetch(cryptoAssets[key].url);
+                const result = await response.json();
+                const current = parseFloat(result.data.amount);
+                
+                // 코인별 특성에 맞는 소수점 자리수 적용
+                const formatted = current.toLocaleString('en-US', { 
+                    minimumFractionDigits: cryptoAssets[key].digits, 
+                    maximumFractionDigits: cryptoAssets[key].digits 
+                });
+                
+                cryptoAssets[key].els.forEach((selector, idx) => {
+                    const display = document.querySelector(selector);
+                    const arrowEl = document.querySelector(cryptoAssets[key].arrows[idx]);
+                    
+                    if (cryptoAssets[key].last !== 0 && display) {
+                        if (current > cryptoAssets[key].last) {
+                            display.style.color = "#00ff88";
+                            if(arrowEl) { arrowEl.innerText = "▲"; arrowEl.style.color = "#00ff88"; }
+                        } else if (current < cryptoAssets[key].last) {
+                            display.style.color = "#ff4444";
+                            if(arrowEl) { arrowEl.innerText = "▼"; arrowEl.style.color = "#ff4444"; }
+                        }
+                        setTimeout(() => { 
+                            display.style.color = cryptoAssets[key].defColor; 
+                            if(arrowEl) arrowEl.innerText = ""; 
+                        }, 1200);
+                    }
+                    if(display) display.innerText = `$ ${formatted}`;
+                });
+                cryptoAssets[key].last = current;
+            } catch (e) { console.error(e); }
+        }
+    }
+
+    setInterval(refreshCryptoPrices, 3000);
+    refreshCryptoPrices();
+</script>
+
+
+
+<div id="tradingview_btc_chart" style="height: 600px;"></div>
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script type="text/javascript">
+    new TradingView.widget({
+        "autosize": true,
+        "symbol": "COINBASE:BTCUSD",
+        "interval": "240",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#f1f3f6",
+        "enable_publishing": false,
+        "hide_top_toolbar": false, // 상단 툴바를 표시하여 클릭 가능하게 함
+        "save_image": false,
+        "container_id": "tradingview_btc_chart",
+        
+        /* [핵심] 사용자가 직접 코인을 검색하고 바꿀 수 있게 하는 설정 */
+        "symbol_search": true,      // 왼쪽 상단 심볼 클릭 시 검색창 활성화
+        "show_symbol_logo": true,   // 코인 로고 표시
+        "allow_symbol_change": true // 종목 변경 허용
+    });
+</script>   
+
+
+<script>
+    let lastPrice = 0;
+    async function updatePrice() {
+        const priceDisplay = document.querySelector('#final-btc-price');
+        const arrowDisplay = document.querySelector('#price-arrow');
+        try {
+            const response = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
+            const result = await response.json();
+            const currentPrice = parseFloat(result.data.amount);
+            const formattedPrice = currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+            if (lastPrice !== 0) {
+                if (currentPrice > lastPrice) {
+                    priceDisplay.style.color = "#00ff88";
+                    arrowDisplay.innerText = "▲";
+                    arrowDisplay.style.color = "#00ff88";
+                } else if (currentPrice < lastPrice) {
+                    priceDisplay.style.color = "#ff4444";
+                    arrowDisplay.innerText = "▼";
+                    arrowDisplay.style.color = "#ff4444";
+                }
+                setTimeout(() => {
+                    priceDisplay.style.color = "#ffffff";
+                    arrowDisplay.style.color = "transparent";
+                }, 1200);
+            }
+            priceDisplay.innerText = `$ ${formattedPrice}`;
+            lastPrice = currentPrice;
+        } catch (err) { console.error(err); }
+    }
+    setInterval(updatePrice, 2000);
+    updatePrice();
+</script>
+
+
+<br><br>
+
+
+
+    <div class="card">
+        <h2>₿ 비트코인 히스토리 & 가격 예측 모델</h2>
+        <p class="desc">이전 년도까지 실제 기록 반영 | 이번 년도부터 비트 가격 예측</p>
+        
+        <div class="chart-wrapper">
+            <canvas id="myChart"></canvas>
+        </div>
+
+        <div class="input-area">
+            <p id="inputDesc" class="desc"></p>
+            <input type="number" id="targetYear"> 년
+            <button onclick="updateDisplay()">예측가 확인</button>
+            <div id="result">연도를 입력하세요</div>
+        </div>
+    </div>
+
+
+    <script>
+        // 1. 역사적 데이터 (2025년까지 확정값)
+        const historicalData = {
+            2009: 0, 2010: 0.4, 2011: 31, 2012: 13, 2013: 1100,
+            2014: 1200, 2015: 500, 2016: 950, 2017: 20000, 2018: 19000,
+            2019: 13000, 2020: 29000, 2021: 68000, 2022: 48000, 2023: 44000, 
+            2024: 73000, 2025: 120000 
+        };
+
+        let myChart;
+        const today = new Date();
+        const currentYear = today.getFullYear(); // 자동으로 현재 연도(2026) 계산
+
+        // 입력창 초기 자동 설정
+        const inputField = document.getElementById('targetYear');
+        inputField.value = currentYear;
+        inputField.min = currentYear; 
+        document.getElementById('inputDesc').innerText = "예측 가능 범위: " + currentYear + "년 ~ (자동 업데이트 적용됨)";
+
+        // 2. 질문자님의 정밀 모델 수식
+        function getModelPrice(year) {
+            var x = year - 2009;
+            var L = 501.077; var A = 500.077; var k = 0.1633;
+            var y = (L / (1 + (A * Math.exp(-k * x)))) - 1;
+            return Math.round(y * 10000);
+        }
+
+        function updateDisplay() {
+            const targetYear = parseInt(inputField.value);
+            
+            // 현재 연도보다 이전인 과거(이미 확정된 데이터) 입력 방지
+            if (targetYear < currentYear) {
+                alert(currentYear + "년(현재 진행 중)부터 예측 가능합니다.");
+                inputField.value = currentYear;
+                return;
+            }
+
+            const price = getModelPrice(targetYear);
+            document.getElementById('result').innerText = targetYear + "년 예상가: $ " + price.toLocaleString();
+            
+            drawChart(targetYear);
+        }
+
+        function drawChart(endYear) {
+            const labels = [];
+            const actualPoints = [];
+            const modelPoints = [];
+
+            for (let i = 2009; i <= endYear; i++) {
+                labels.push(i);
+                
+                // 2025년까지는 과거 실선 데이터
+                if (i <= 2025) {
+                    actualPoints.push(historicalData[i]);
+                    modelPoints.push(null);
+                } 
+                // 2026년부터는 모델 점선 데이터
+                else {
+                    actualPoints.push(null);
+                    modelPoints.push(getModelPrice(i));
+                    // 2025년 실선 끝점과 2026년 점선 시작점을 연결
+                    if (i === currentYear) {
+                        modelPoints[modelPoints.length - 2] = historicalData[2025];
+                    }
+                }
+            }
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '과거 실제 데이터',
+                            data: actualPoints,
+                            borderColor: '#848e9c',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '미래 모델 예측',
+                            data: modelPoints,
+                            borderColor: '#f3ba2f',
+                            borderWidth: 4,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            type: 'logarithmic', // 과거 저점과 미래 고점을 동시에 보기 위해 로그 스케일 유지
+                            grid: { color: '#333' }, 
+                            ticks: { 
+                                color: '#848e9c',
+                                callback: function(value) { return '$' + value.toLocaleString(); }
+                            } 
+                        },
+                        x: { grid: { display: false }, ticks: { color: '#848e9c' } }
+                    },
+                    plugins: { 
+                        legend: { display: true, labels: { color: '#f3ba2f' } },
+                        tooltip: { callbacks: { label: function(context) { return '$ ' + context.parsed.y.toLocaleString(); } } }
+                    }
+                }
+            });
+        }
+
+        // 페이지 로드 시 즉시 2026년 기준으로 그래프 실행
+        updateDisplay();
+    </script>
+
+<div style="background-color: #1e222d; /* 스크린샷 배경색과 비슷한 다크톤 */
+            padding: 20px; 
+            border-radius: 12px; 
+            margin: 40px auto; 
+            max-width: 900px; 
+            border: 1px solid #333;">
+
+    <h3 style="color: #ffffff; text-align: center; margin-bottom: 20px;">💬 2026 비트코인 예측 토론</h3>
+
+    <div style="filter: invert(0.9) hue-rotate(180deg); /* 흰색 위젯을 어둡게 반전시키는 마법의 코드 */">
+        <livere-comment client-id="jcwoZEmQMEDHEqMyQ2X1"></livere-comment>
+        <script type="module" src="https://www.livere.org/livere-widget.js"></script>
+    </div>
+    </div>
+
+<div style="margin-top: 50px; text-align: left; padding: 30px; background: #1e2329; border-radius: 15px; color: #848e9c; line-height: 1.8;">
+    <h3 style="color: #f3ba2f; border-bottom: 1px solid #333; padding-bottom: 10px;">📉 모델 설계 및 작동 원리</h3>
+    
+    <p>본 예측기는 비트코인의 장기적 가치 상승을 수학적 **로지스틱 성장 모델(Logistic Growth Model)**을 기반으로 분석합니다. 이는 유한한 자원을 가진 생태계에서 기술이나 자산이 채택되는 과정을 설명하는 가장 표준적인 모델입니다.</p>
+
+    <ul style="list-style-type: square; padding-left: 20px;">
+        <li><strong>수렴 목표 (L):</strong> 비트코인의 최종 가치를 약 500만 달러(501.077단위)로 설정했습니다. 이는 전 세계 자산 시장에서의 비트코인 점유율 확대를 가정한 수치입니다.</li>
+        <li><strong>성장 기울기 (k):</strong> 과거 2009년부터 2025년까지의 실제 가격 데이터를 바탕으로 산출된 <strong>0.1633</strong>의 기울기를 적용했습니다. 이는 급격한 거품보다는 지속 가능하고 점진적인 성장을 반영합니다.</li>
+        <li><strong>데이터의 정확성:</strong> 2025년까지는 실제 시장의 역사적 고점 데이터를 반영하며, 2026년부터는 현재 연도를 기점으로 미래 가치를 계산하여 시각화합니다.</li>
+    </ul>
+
+    <p style="font-size: 13px; color: #5e6673; margin-top: 20px; border-top: 1px dashed #333; pt: 10px;">
+        ※ 본 페이지는 개인적인 수학적 모델 연구용이며, 투자 권유를 목적으로 하지 않습니다. 모든 투자의 책임은 투자자 본인에게 있습니다.
+    </p>
+</div>
+
+
+<script data-goatcounter="https://bit-model-123.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
