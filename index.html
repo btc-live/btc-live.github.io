@@ -26,7 +26,28 @@
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
     </style>
 </head>
+
 <body>
+
+<div class="lang-selector-container" style="background: #1e2329; padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+    <span style="color: #848e9c; font-size: 12px;">Language:</span>
+    <div id="google_translate_element"></div>
+</div>
+
+<style>
+    /* 구글 위젯 디자인 커스텀 (촌스러운 부분 가리기) */
+    .goog-te-gadget { font-size: 0 !important; }
+    .goog-te-gadget .goog-te-combo {
+        background: #2b3139 !important;
+        color: #f3ba2f !important;
+        border: 1px solid #444 !important;
+        border-radius: 4px !important;
+        padding: 4px !important;
+        outline: none !important;
+    }
+    .goog-te-banner-frame.skiptranslate, .goog-te-gadget span { display: none !important; }
+    body { top: 0 !important; }
+</style>
 
 <div style="margin: 40px auto 60px auto; max-width: 900px; text-align: center;">
     <h1 style="font-size: 2.8rem; color: #f3ba2f; margin-bottom: 20px; letter-spacing: -1.5px; font-weight: 800; line-height: 1.2;">
@@ -553,6 +574,18 @@ if (dice < 0.18) {
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
     };
 </script>
+
+<script type="text/javascript">
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+        pageLanguage: 'ko',
+        includedLanguages: 'en,zh-CN,ja,fr,es,pt,de', // 지원하고 싶은 언어 코드들
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+    }, 'google_translate_element');
+}
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <script data-goatcounter="https://bit-model-123.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
