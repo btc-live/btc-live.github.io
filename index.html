@@ -319,12 +319,23 @@ if (dice < 0.18) {
 </div>
 
 
-<div class="card" style="margin-top: 20px; border-color: #333;">
-    <h2 style="color: #f3ba2f; margin-bottom: 20px;">📰 실시간 뉴스 브리핑</h2>
+<div class="card" style="margin-top: 20px; border: 1px solid #333; padding: 20px; border-radius: 12px; background-color: #1e222d;">
     
-    <div id="news-container" style="text-align: left; background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; max-height: 500px; overflow-y: auto;">
-        <div style="color: #848e9c; text-align: center; padding: 20px;">뉴스를 불러오는 중입니다...</div>
+    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 20px;">
+        <h2 style="color: #f3ba2f; margin: 0; font-size: 1.5rem; white-space: nowrap;">📰 실시간 뉴스 브리핑</h2>
+        
+        <button onclick="location.reload()" 
+                style="background: #1e2329; border: 1px solid #444; color: #848e9c; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s; white-space: nowrap;" 
+                onmouseover="this.style.borderColor='#f3ba2f'; this.style.color='#f3ba2f';" 
+                onmouseout="this.style.borderColor='#444'; this.style.color='#848e9c';">
+            <span>🔄</span> 업데이트 (실패시 클릭)
+        </button>
     </div>
+
+    <div id="news-container">
+        </div>
+
+</div>
 
     <p style="color: #848e9c; font-size: 12px; margin-top: 10px; text-align: right;">* 실시간 외신 및 마켓 데이터 연동 중</p>
 </div>
