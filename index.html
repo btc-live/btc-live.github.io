@@ -169,38 +169,23 @@
 </div>
 
 <div class="card">
-    <h2>₿ BTC 시나리오 기반 변동성 엔진</h2>
-    <p class="desc">현재 시세를 기점으로 하락장과 폭락 가능성을 반영한 12개월 시뮬레이션</p>
+    <h2>₿ BTC 가격 예측 계산기</h2>
+    <p class="desc">미래의 비트코인 가격을 예측해보세요!</p>
 
     <div id="crash-alert" class="crash-warning">⚠️ 경고: 연중 대규모 자산 조정(Crash) 시나리오가 감지되었습니다. 리스크 관리에 유의하세요.</div>
 
- <div style="text-align: right; margin-bottom: 5px; font-size: 13px; color: #848e9c;">
-    시뮬레이션 갱신 주기: <strong style="color: #f3ba2f;">10분</strong> 
-    | <span style="color: #00ff88;">다음 갱신까지: <strong id="countdown-timer">00:00</strong></span>
-</div>
+ 
 
-    <table class="forecast-table">
-        <thead>
-            <tr>
-                <th>예측 월</th>
-                <th>예상 가격 (USD)</th>
-                <th>시장 분석 신호</th>
-            </tr>
-        </thead>
-        <tbody id="forecast-body">
-            <tr><td colspan="3">데이터 분석 중...</td></tr>
-        </tbody>
-    </table>
-
+   
     <div class="chart-wrapper">
         <canvas id="myChart"></canvas>
     </div>
 
     <div class="input-area">
-        <p class="desc">장기 연도별 목표가 확인</p>
+        <p class="desc">년도별 예측가 확인</p>
         <input type="number" id="targetYear" value="2026"> 년
         <button onclick="updateDisplay()">예측가 확인</button>
-        <div id="result">연도를 입력하세요</div>
+        <div id="result">년도를 입력하세요</div>
     </div>
 </div>
 
