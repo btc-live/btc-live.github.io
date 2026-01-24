@@ -299,6 +299,57 @@ if (dice < 0.18) {
 </div>
 
 
+<div class="card" style="margin-top: 20px; border-color: #333;">
+    <h2 style="color: #f3ba2f; margin-bottom: 20px;">📰 실시간 뉴스 브리핑</h2>
+    
+    <div id="news-container" style="text-align: left; background: #1e2329; border-radius: 12px; padding: 15px; border: 1px solid #333; max-height: 500px; overflow-y: auto;">
+        <div style="color: #848e9c; text-align: center; padding: 20px;">뉴스를 불러오는 중입니다...</div>
+    </div>
+
+    <p style="color: #848e9c; font-size: 12px; margin-top: 10px; text-align: right;">* 실시간 외신 및 마켓 데이터 연동 중</p>
+</div>
+
+<script>
+    // 실시간 뉴스 불러오기 함수 (Google News RSS 활용)
+    async function fetchCryptoNews() {
+        const newsContainer = document.getElementById('news-container');
+        // RSS를 JSON으로 변환해주는 무료 API 서비스 사용
+        const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=bitcoin+crypto+when:1d&hl=ko&gl=KR&ceid=KR:ko');
+        const apiUrl = `https://api.allorigins.win/get?url=${rssUrl}`;
+
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+            const items = xmlDoc.querySelectorAll("item");
+
+            let html = '';
+            // 상위 8개 뉴스만 출력
+            for (let i = 0; i < 20; i++) {
+                if (!items[i]) break;
+                const title = items[i].querySelector("title").innerHTML;
+                const link = items[i].querySelector("link").innerHTML;
+                const pubDate = new Date(items[i].querySelector("pubDate").innerHTML).toLocaleTimeString('ko-KR', {hour: '2-digit', minute:'2-digit'});
+
+                html += `
+                    <div style="padding: 12px 5px; border-bottom: 1px solid #2b3139; display: flex; justify-content: space-between; align-items: center;">
+                        <a href="${link}" target="_blank" style="color: #ffffff; text-decoration: none; font-size: 14px; flex: 1; margin-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">• ${title}</a>
+                        <span style="color: #f3ba2f; font-size: 11px; white-space: nowrap;">${pubDate}</span>
+                    </div>
+                `;
+            }
+            newsContainer.innerHTML = html;
+        } catch (error) {
+            newsContainer.innerHTML = '<div style="color: #ff4444; text-align: center; padding: 20px;">뉴스를 불러올 수 없습니다.</div>';
+        }
+    }
+
+    // 페이지 로드 시 뉴스 실행
+    fetchCryptoNews();
+    // 10분마다 뉴스도 함께 갱신
+    setInterval(fetchCryptoNews, 600000);
+</script>
 
 <div id="tradingview_btc_chart" style="height: 600px; border: 1px solid #333; border-radius: 12px; overflow: hidden;"></div>
 <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
