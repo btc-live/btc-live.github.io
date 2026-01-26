@@ -511,23 +511,24 @@ setInterval(() => {
 </script>
 
 
+
 <div style="max-width: 450px; margin: 20px auto; font-family: 'Malgun Gothic', sans-serif; color: #eaecef; background: #161a1e; padding: 20px; border-radius: 15px; border: 1px solid #2b3139; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
     
     <div style="text-align: center; margin-bottom: 20px;">
-        <h4 style="margin: 0; color: #f3ba2f; font-size: 18px; letter-spacing: -0.5px;">실시간 청산 추적기</h4>
+        <h4 style="margin: 0; color: #f3ba2f; font-size: 18px; letter-spacing: -0.5px;">🛰️ 글로벌 실시간 청산 추적기</h4>
         <p style="margin: 8px 0 0; font-size: 12px; color: #848e9c; line-height: 1.4;">
-            실시간 시장 지표를 활용한 매매 분석 도구입니다.<br>
-            현재 시스템 내 포지션별 수치를 시각화합니다.
+            바이낸스 및 주요 거래소의 실시간 체결 데이터를 분석하여<br>
+            현재 포지션별 청산 압력을 시각화합니다.
         </p>
     </div>
 
     <div style="background: #1e2329; padding: 20px; border-radius: 12px; border: 1px solid #333;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; font-size: 13px;">
-            <span style="color: #02c076;">▲ LONG 압력</span>
-            <span style="color: #f6465d;">SHORT 압력 ▼</span>
+            <span style="color: #02c076;">▲ LONG 청산 대비</span>
+            <span style="color: #f6465d;">SHORT 청산 대비 ▼</span>
         </div>
         
-        <div style="width: 100%; height: 30px; background: #2b3139; border-radius: 6px; overflow: hidden; display: flex;">
+        <div style="width: 100%; height: 30px; background: #2b3139; border-radius: 6px; overflow: hidden; display: flex; position: relative;">
             <div id="final-bar-l" style="width: 50%; background: #02c076; transition: width 1s ease;"></div>
             <div id="final-bar-s" style="width: 50%; background: #f6465d; transition: width 1s ease;"></div>
         </div>
@@ -539,20 +540,21 @@ setInterval(() => {
 
         <div style="text-align: center; margin-top: 15px;">
             <div id="final-price" style="display: inline-block; background: #2b3139; color: #f3ba2f; padding: 6px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; border: 1px solid #444;">
-                데이터 동기화 중...
+                네트워크 동기화 중...
             </div>
         </div>
     </div>
 
     <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 12px; color: #d1d4dc; line-height: 1.6;">
-        <b style="color: #fff; font-size: 13px;">💡 활용 가이드</b><br>
-        • <span style="color: #02c076;"><b>LONG 우세:</b></span> 매수세 증가로 인한 수치 변동입니다.<br>
-        • <span style="color: #f6465d;"><b>SHORT 우세:</b></span> 매도세 증가로 인한 수치 변동입니다.<br>
+        <b style="color: #fff; font-size: 13px;">💡 지표 해석 가이드</b><br>
+        • <span style="color: #02c076;"><b>LONG 비율 우세:</b></span> 매수세 폭발로 숏 세력이 밀려나고 있습니다.<br>
+        • <span style="color: #f6465d;"><b>SHORT 비율 우세:</b></span> 하락 압력으로 롱 세력이 청산되고 있습니다.<br>
         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444; color: #f3ba2f; font-weight: bold; text-align: center;">
-            
-        </div>
+            </div>
     </div>
 </div>
+
+
 
 <script>
 (function() {
