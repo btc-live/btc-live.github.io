@@ -514,32 +514,22 @@ setInterval(() => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Bull vs Bear : Arena Pro</title>
+    <title>Bull vs Bear : Arena Pro V15</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
         body { background: #0b0e11; color: #fff; font-family: sans-serif; margin: 0; padding: 10px; }
         .game-header { text-align: center; margin-bottom: 10px; }
         .game-header h1 { color: #f3ba2f; margin: 0; font-size: 28px; text-shadow: 2px 2px #cf304a; letter-spacing: 2px; }
-        .game-header p { color: #848e9c; font-size: 12px; margin: 5px 0; }
-        
-        .main-container {
-            width: 98%; max-width: 1600px; height: 850px; margin: 0 auto;
-            background: #0b0e11; border: 1px solid #f3ba2f; border-radius: 12px;
-            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-        
-        .chart-section { flex: 1.1; display: flex; border-bottom: 2px solid #2b3139; }
-        #tg-tv-main { flex: 1; border-right: 1px solid #2b3139; }
-        #tg-sub-chart { flex: 1; background: #131722; }
-        
+        .main-container { width: 98%; max-width: 1600px; height: 850px; margin: 0 auto; background: #0b0e11; border: 1px solid #f3ba2f; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .chart-section { flex: 1.1; display: flex; border-bottom: 2px solid #2b3139; min-height: 450px; }
+        #tg-tv-main { flex: 1; border-right: 1px solid #2b3139; background: #131722; }
+        #tg-sub-chart { flex: 1; background: #131722; position: relative; }
         .control-section { flex: 0.9; background: #181a20; display: flex; padding: 20px; gap: 20px; }
         .box { background: #0b0e11; border-radius: 8px; border: 1px solid #2b3139; padding: 15px; }
-        
         .orderbook { flex: 0.7; font-family: monospace; }
         .trading { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
-        .status { flex: 1; background: #131722; position: relative; min-width: 280px; }
-        
+        .status { flex: 1; background: #131722; position: relative; min-width: 320px; overflow: hidden; }
         input { background: #1e2329; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; width: 90%; font-size: 14px; }
         button { cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
         button:hover { opacity: 0.8; }
@@ -547,9 +537,11 @@ setInterval(() => {
         .btn-short { background: #cf304a; color: #fff; padding: 15px; font-size: 16px; }
         .btn-exit { background: #fff; color: #000; padding: 12px; width: 100%; margin-top: 10px; font-size: 14px; }
         .btn-refill { background: linear-gradient(180deg, #f3ba2f 0%, #d9a522 100%); color: #000; padding: 8px 15px; font-size: 11px; }
-        
-        .order-item { display: flex; justify-content: space-between; font-size: 11px; color: #f3ba2f; padding: 5px 0; border-bottom: 1px solid #222; }
-        .cancel-btn { color: #848e9c; cursor: pointer; font-weight: bold; }
+        .order-item { display: flex; justify-content: space-between; font-size: 11px; padding: 6px 5px; border-bottom: 1px solid #222; }
+        .cancel-btn { color: #848e9c; cursor: pointer; }
+        .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; border-top: 1px solid #2b3139; padding-top: 5px; }
+        .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
+        .pos-value { font-size: 13px; font-weight: bold; color: #eee; }
     </style>
 </head>
 <body>
@@ -572,15 +564,12 @@ setInterval(() => {
         <div id="tg-tv-main"></div>
         <div id="tg-sub-chart"></div>
     </div>
-
     <div class="control-section">
         <div class="box orderbook">
-            <div style="font-size: 9px; color: #848e9c; text-align: center; margin-bottom: 5px;">LIVE ORDER BOOK</div>
             <div id="tg-asks" style="color: #cf304a;"></div>
             <div id="tg-mid-price" style="font-size: 22px; font-weight: bold; margin: 10px 0; color: #f3ba2f; text-align: center;">$0.00</div>
             <div id="tg-bids" style="color: #02c076;"></div>
         </div>
-
         <div class="trading">
             <div style="background: #1e2329; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
                 <div>
@@ -589,43 +578,52 @@ setInterval(() => {
                 </div>
                 <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
             </div>
-            
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div style="font-size: 10px; color: #848e9c;">MARGIN (USD)</div>
-                <div style="font-size: 10px; color: #848e9c;">LEVERAGE (X)</div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="tg-amt" value="5000">
-                <input type="number" id="tg-lev" value="10">
+                <input type="number" id="tg-amt" value="5000" placeholder="Margin (USDT)">
+                <input type="number" id="tg-lev" value="10" placeholder="Lev">
             </div>
             <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)" style="width: 94%;">
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
-                <button class="btn-long" onclick="tgPlace('long')">LONG (Add)</button>
-                <button class="btn-short" onclick="tgPlace('short')">SHORT (Add)</button>
-            </div>
-            <div style="display: flex; justify-content: space-around; font-size: 10px;">
-                <span id="tg-count-long" style="color:#02c076">0 Orders</span>
-                <span id="tg-count-short" style="color:#cf304a">0 Orders</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="btn-long" onclick="tgPlace('long')">OPEN LONG</button>
+                <button class="btn-short" onclick="tgPlace('short')">OPEN SHORT</button>
             </div>
         </div>
-
-        <div class="box status" id="tg-status-box">
-            <div id="tg-no-pos" style="text-align: center; padding: 40px 0; color: #3d4550; font-size: 12px; border: 1px dashed #2b3139;">WAITING FOR SIGNAL...</div>
+        <div class="box status">
+            <div id="tg-no-pos" style="text-align: center; padding: 20px 0; color: #3d4550; font-size: 12px;">NO ACTIVE POSITION</div>
             <div id="tg-pos-active" style="display: none;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span id="tg-side-badge" style="padding: 2px 6px; border-radius: 3px; font-weight:bold; font-size: 11px; color:#fff;"></span>
-                    <span id="tg-pnl-val" style="font-weight: bold; font-size: 14px;"></span>
-                </div>
-                <div id="tg-roe" style="font-size: 36px; font-weight: 900; text-align: center; margin: 10px 0;">0.00%</div>
-                <div id="tg-pos-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #848e9c; border-top: 1px solid #2b3139; padding-top: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="tg-side-badge" style="padding: 2px 8px; border-radius: 3px; font-weight:bold; font-size: 12px; color:#fff;"></span>
+                    <div style="text-align: right;">
+                        <div class="pos-label">Unrealized P&L</div>
+                        <div id="tg-pnl-val" style="font-size: 14px; font-weight: bold;"></div>
                     </div>
-                <button class="btn-exit" onclick="tgExit()">EXIT ARENA</button>
+                </div>
+                <div id="tg-roe" style="font-size: 17px; font-weight: 500; text-align: center; margin: 2px 0;">0.00%</div>
+                
+                <div class="pos-grid">
+                    <div>
+                        <div class="pos-label">Qty (BTC)</div>
+                        <div id="tg-pos-qty" class="pos-value">0.000</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="pos-label">Value (USDT)</div>
+                        <div id="tg-pos-value" class="pos-value">$0.00</div>
+                    </div>
+                    <div>
+                        <div class="pos-label">Avg. Entry</div>
+                        <div id="tg-pos-entry" class="pos-value">$0.00</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="pos-label">Liq. Price</div>
+                        <div id="tg-pos-liq" class="pos-value" style="color: #cf304a;">$0.00</div>
+                    </div>
+                </div>
+                <button class="btn-exit" onclick="tgExit()">MARKET EXIT (Full)</button>
             </div>
             
             <div style="margin-top: 15px; border-top: 1px solid #2b3139; padding-top: 10px;">
-                <div style="font-size: 10px; color: #848e9c; margin-bottom: 8px; font-weight: bold;">PENDING ADD ORDERS</div>
-                <div id="tg-order-list" style="max-height: 120px; overflow-y: auto;"></div>
+                <div style="font-size: 10px; color: #848e9c; font-weight: bold; margin-bottom: 5px;">PENDING ORDERS (Can use for Partial TP)</div>
+                <div id="tg-order-list" style="height: 350px; overflow-y: auto; background: #050505; border: 1px solid #1a1a1a;"></div>
             </div>
         </div>
     </div>
@@ -633,19 +631,16 @@ setInterval(() => {
 
 <script>
 (function() {
-    const STORAGE_KEY = 'bull_vs_bear_arena_v5_pro';
+    const STORAGE_KEY = 'bull_vs_bear_arena_v15_pro';
     let saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     
-    // 초기 자금 $30,000 설정
-    let cash = saved.cash !== undefined ? saved.cash : 30000;
+    let cash = Number(saved.cash !== undefined ? saved.cash : 30000);
     let pos = saved.pos || null;
     let orders = saved.orders || [];
     let btc = 0, candleSeries, lastCandle, entryLine, liqLine, orderLines = {};
 
-    // TradingView 위젯 (메인 차트)
     new TradingView.widget({ "autosize": true, "symbol": "BYBIT:BTCUSDT.P", "interval": "1", "theme": "dark", "container_id": "tg-tv-main", "locale": "kr" });
 
-    // Lightweight Charts (서브 캔들 차트)
     const chart = LightweightCharts.createChart(document.getElementById('tg-sub-chart'), {
         layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
         grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } },
@@ -653,41 +648,12 @@ setInterval(() => {
     });
     candleSeries = chart.addCandlestickSeries({ upColor: '#02c076', downColor: '#cf304a', borderVisible: false, wickUpColor: '#02c076', wickDownColor: '#cf304a' });
 
-    function save() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders }));
-    }
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
 
-    // ⚡ 리필 로직: 무조건 $0 & 24시간 1회 제한
     window.tgRefill = () => {
-        const NOW = Date.now();
-        const DAY_MS = 24 * 60 * 60 * 1000;
-        let totalValue = cash + (pos ? pos.amt : 0);
-
-        // 자산이 남아있으면 거절
-        if (totalValue > 0) {
-            return alert(`자산이 $${totalValue.toLocaleString()} 남았습니다.\n모든 자산을 잃고 $0이 되어야만 보급이 가능합니다.`);
-        }
-
-        // 시간 제한 확인
-        let lastRefill = localStorage.getItem('arena_last_refill_time') || 0;
-        let timePassed = NOW - lastRefill;
-
-        if (timePassed < DAY_MS) {
-            let remaining = DAY_MS - timePassed;
-            let h = Math.floor(remaining / (1000 * 60 * 60));
-            let m = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-            let s = Math.floor((remaining % (1000 * 60)) / 1000);
-            return alert(`보급품은 24시간에 한 번만 지원됩니다.\n\n재보급 가능까지: ${h}시간 ${m}분 ${s}초 남음`);
-        }
-
-        if (confirm(`파산하셨군요. 긴급 보급품 $30,000을 받으시겠습니까?\n(지금부터 24시간 동안 재보급 불가)`)) {
-            localStorage.setItem('arena_last_refill_time', NOW);
-            cash = 30000; pos = null; orders = [];
-            save(); location.reload();
-        }
+        if (confirm("Reset account to $30,000?")) { cash = 30000; pos = null; orders = []; save(); location.reload(); }
     };
 
-    // 실시간 웹소켓
     const ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
     ws.onopen = () => ws.send(JSON.stringify({"op": "subscribe", "args": ["tickers.BTCUSDT"]}));
     ws.onmessage = (e) => {
@@ -695,47 +661,71 @@ setInterval(() => {
         if (d.data && d.data.lastPrice) {
             btc = parseFloat(d.data.lastPrice);
             document.getElementById('tg-mid-price').innerText = "$" + btc.toLocaleString();
-            
             const min = Math.floor(Date.now() / 60000) * 60;
             if (!lastCandle || lastCandle.time !== min) lastCandle = { time: min, open: btc, high: btc, low: btc, close: btc };
             else { lastCandle.high = Math.max(lastCandle.high, btc); lastCandle.low = Math.min(lastCandle.low, btc); lastCandle.close = btc; }
             candleSeries.update(lastCandle);
-            
-            checkOrders(); render(); updateOrderBook();
+            checkLiquidation(); checkOrders(); render(); updateOrderBook();
         }
     };
 
     window.tgPlace = (side) => {
-        const lp = parseFloat(document.getElementById('tg-limit').value);
-        const val = parseFloat(document.getElementById('tg-amt').value);
-        const lev = parseInt(document.getElementById('tg-lev').value);
-        if (cash < val) return alert("자산 부족!");
+        const marginAmt = Number(document.getElementById('tg-amt').value);
+        const lp = Number(document.getElementById('tg-limit').value);
+        const lev = Number(document.getElementById('tg-lev').value);
 
-        if (isNaN(lp) || lp === 0) executeTrade(side, btc, val, lev);
-        else {
-            orders.push({ id: Date.now(), side, target: lp, amt: val, lev });
+        if (cash < marginAmt && (!pos || pos.side !== side)) return alert("Not enough Available Credit!");
+
+        if (!lp) {
+            executeTrade(side, btc, marginAmt, lev);
+        } else {
+            orders.push({ id: Date.now(), side, target: lp, amt: marginAmt, lev });
             updateOrderLines();
+            save();
         }
         document.getElementById('tg-limit').value = "";
-        save();
     };
 
-    function executeTrade(side, price, amt, lev) {
-        if (pos && pos.side !== side) return alert("이미 반대 방향 포지션이 있습니다.");
-        cash -= amt;
-        if (pos) {
-            const oldQ = pos.amt * pos.lev; const newQ = amt * lev;
-            pos.entry = (pos.entry * oldQ + price * newQ) / (oldQ + newQ);
-            pos.amt += amt;
-        } else pos = { side, entry: price, amt, lev };
-        updateLines(); save();
+    function executeTrade(side, price, marginAmt, lev) {
+        // 시장가 진입 시 반대 방향이면 일단 전량 종료 후 신규 진입 (가장 안전한 로직)
+        if (pos && pos.side !== side) {
+            tgExit(); 
+        }
+
+        if (cash >= marginAmt) {
+            cash -= marginAmt;
+            if (pos && pos.side === side) {
+                const currentQty = (pos.amt * pos.lev) / pos.entry;
+                const newQty = (marginAmt * lev) / price;
+                pos.entry = ((pos.entry * currentQty) + (price * newQty)) / (currentQty + newQty);
+                pos.amt += marginAmt;
+            } else {
+                pos = { side, entry: price, amt: marginAmt, lev };
+            }
+            updateLines(); render(); save();
+        }
     }
 
     function checkOrders() {
         orders.forEach((o, i) => {
-            if ((o.side === 'long' && btc <= o.target) || (o.side === 'short' && btc >= o.target)) {
-                executeTrade(o.side, o.target, o.amt, o.lev);
-                orders.splice(i, 1); updateOrderLines();
+            let hit = (o.side === 'long' && btc <= o.target) || (o.side === 'short' && btc >= o.target);
+            if (hit) {
+                // 부분 익절 체크 로직
+                if (pos && pos.side !== o.side) {
+                    const closeAmt = Math.min(pos.amt, o.amt);
+                    const diff = (o.target - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+                    const pnl = closeAmt * diff * pos.lev;
+                    
+                    cash += (closeAmt + pnl);
+                    pos.amt -= closeAmt;
+                    
+                    if (pos.amt < 1) pos = null; // 남은 증거금이 너무 적으면 종료
+                    alert(`Partial Close Filled at $${o.target.toLocaleString()}`);
+                } else {
+                    executeTrade(o.side, o.target, o.amt, o.lev);
+                }
+                orders.splice(i, 1);
+                updateOrderLines(); updateLines(); render(); save();
             }
         });
     }
@@ -745,15 +735,25 @@ setInterval(() => {
     window.tgExit = () => {
         if (!pos) return;
         const diff = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
-        cash += (pos.amt + (pos.amt * diff * pos.lev));
-        pos = null; updateLines(); save();
+        const pnl = pos.amt * diff * pos.lev;
+        cash += (pos.amt + pnl);
+        pos = null;
+        updateLines(); render(); save();
     };
+
+    function checkLiquidation() {
+        if (!pos) return;
+        if ((pos.side === 'long' && btc <= pos.liqPrice) || (pos.side === 'short' && btc >= pos.liqPrice)) {
+            pos = null; cash = Math.max(0, cash); save(); updateLines(); render(); 
+            alert("LIQUIDATED - Margin Lost");
+        }
+    }
 
     function updateLines() {
         if (entryLine) candleSeries.removePriceLine(entryLine);
         if (liqLine) candleSeries.removePriceLine(liqLine);
         if (pos) {
-            const liq = pos.side === 'long' ? pos.entry * (1 - (1 / pos.lev)) : pos.entry * (1 + (1 / pos.lev));
+            const liq = pos.side === 'long' ? pos.entry * (1 - (0.95/pos.lev)) : pos.entry * (1 + (0.95/pos.lev));
             pos.liqPrice = liq;
             entryLine = candleSeries.createPriceLine({ price: pos.entry, color: '#02c076', lineWidth: 2, title: 'ENTRY' });
             liqLine = candleSeries.createPriceLine({ price: liq, color: '#cf304a', lineWidth: 2, title: 'LIQ' });
@@ -762,57 +762,42 @@ setInterval(() => {
 
     function updateOrderLines() {
         for (let id in orderLines) candleSeries.removePriceLine(orderLines[id]);
-        orders.forEach(o => {
+        orderLines = {}; let html = '';
+        orders.sort((a,b) => b.target - a.target).forEach(o => {
             orderLines[o.id] = candleSeries.createPriceLine({ price: o.target, color: '#f3ba2f', lineStyle: 2, title: 'LIMIT' });
+            html += `<div class="order-item"><span style="color:${o.side==='long'?'#02c076':'#cf304a'}">${o.side.toUpperCase()} $${o.target.toLocaleString()}</span><span>$${o.amt.toLocaleString()} <b class="cancel-btn" onclick="tgCancel(${o.id})">✖</b></span></div>`;
         });
-        render();
+        document.getElementById('tg-order-list').innerHTML = html || '<div style="color:#444;text-align:center;font-size:11px;">No pending orders</div>';
     }
 
     function updateOrderBook() {
         let a = '', b = '';
-        for(let i=9; i>0; i--) a += `<div style="display:flex; justify-content:space-between; opacity:0.6"><span>${(btc+i*1.1).toFixed(1)}</span><span>${(Math.random()*1.5).toFixed(2)}</span></div>`;
-        for(let i=1; i<=9; i++) b += `<div style="display:flex; justify-content:space-between; opacity:0.6"><span>${(btc-i*1.1).toFixed(1)}</span><span>${(Math.random()*1.5).toFixed(2)}</span></div>`;
-        document.getElementById('tg-asks').innerHTML = a;
-        document.getElementById('tg-bids').innerHTML = b;
+        for(let i=11; i>0; i--) a += `<div style="display:flex; justify-content:space-between; opacity:0.6; font-size:11px"><span>${(btc+i*1.2).toFixed(1)}</span><span>${(Math.random()*0.3).toFixed(2)}</span></div>`;
+        for(let i=1; i<=11; i++) b += `<div style="display:flex; justify-content:space-between; opacity:0.6; font-size:11px"><span>${(btc-i*1.2).toFixed(1)}</span><span>${(Math.random()*0.3).toFixed(2)}</span></div>`;
+        document.getElementById('tg-asks').innerHTML = a; document.getElementById('tg-bids').innerHTML = b;
     }
 
     function render() {
-        document.getElementById('tg-equity').innerText = "$" + cash.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('tg-count-long').innerText = orders.filter(o=>o.side==='long').length + " Orders";
-        document.getElementById('tg-count-short').innerText = orders.filter(o=>o.side==='short').length + " Orders";
-        
-        document.getElementById('tg-order-list').innerHTML = orders.map(o => `
-            <div class="order-item">
-                <span>${o.side.toUpperCase()} ADD @${o.target.toLocaleString()}</span>
-                <span class="cancel-btn" onclick="tgCancel(${o.id})">[X]</span>
-            </div>
-        `).join('');
-
+        document.getElementById('tg-equity').innerText = "$" + Math.max(0, cash).toLocaleString(undefined, {minimumFractionDigits:2});
         if (pos) {
             document.getElementById('tg-pos-active').style.display = "block";
             document.getElementById('tg-no-pos').style.display = "none";
             const diff = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
-            const roe = diff * pos.lev * 100;
             const pnl = pos.amt * diff * pos.lev;
-            
-            const roeEl = document.getElementById('tg-roe');
-            roeEl.innerText = (roe >= 0 ? "+" : "") + roe.toFixed(2) + "%";
-            roeEl.style.color = roe >= 0 ? "#02c076" : "#cf304a";
-            
-            const pnlEl = document.getElementById('tg-pnl-val');
-            pnlEl.innerText = (pnl >= 0 ? "+$" : "-$") + Math.abs(pnl).toFixed(2);
-            pnlEl.style.color = pnl >= 0 ? "#02c076" : "#cf304a";
+            const roe = diff * pos.lev * 100;
+            const qty = (pos.amt * pos.lev) / pos.entry;
 
-            const badge = document.getElementById('tg-side-badge');
-            badge.innerText = pos.side.toUpperCase() + " " + pos.lev + "x";
-            badge.style.background = pos.side === 'long' ? "#02c076" : "#cf304a";
-
-            document.getElementById('tg-pos-details').innerHTML = `
-                <div>Value: <b style="color:#eee">$${(pos.amt + pnl).toLocaleString(undefined, {maximumFractionDigits:2})}</b></div>
-                <div style="text-align: right;">Avg: <b style="color:#eee">${pos.entry.toFixed(1)}</b></div>
-                <div>Liq: <b style="color:#cf304a">${(pos.liqPrice || 0).toFixed(1)}</b></div>
-                <div style="text-align: right;">Margin: <b style="color:#eee">$${pos.amt.toFixed(2)}</b></div>
-            `;
+            document.getElementById('tg-roe').innerText = (roe>=0?"+":"")+roe.toFixed(2) + "%";
+            document.getElementById('tg-roe').style.color = roe>=0?"#02c076":"#cf304a";
+            document.getElementById('tg-pnl-val').innerText = (pnl>=0?"+$":"-$")+Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits:2});
+            document.getElementById('tg-pnl-val').style.color = pnl>=0?"#02c076":"#cf304a";
+            document.getElementById('tg-side-badge').innerText = pos.side.toUpperCase()+" "+pos.lev+"x";
+            document.getElementById('tg-side-badge').style.background = pos.side==='long'?"#02c076":"#cf304a";
+            
+            document.getElementById('tg-pos-qty').innerText = qty.toFixed(3);
+            document.getElementById('tg-pos-value').innerText = "$" + (pos.amt * pos.lev + pnl).toLocaleString(undefined, {maximumFractionDigits:2});
+            document.getElementById('tg-pos-entry').innerText = "$" + pos.entry.toLocaleString();
+            document.getElementById('tg-pos-liq').innerText = "$" + pos.liqPrice.toLocaleString(undefined, {maximumFractionDigits:1});
         } else {
             document.getElementById('tg-pos-active').style.display = "none";
             document.getElementById('tg-no-pos').style.display = "block";
