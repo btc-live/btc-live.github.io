@@ -584,8 +584,8 @@ setInterval(() => {
             </div>
             <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)" style="width: 94%;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button class="btn-long" onclick="tgPlace('long')">OPEN LONG</button>
-                <button class="btn-short" onclick="tgPlace('short')">OPEN SHORT</button>
+                <button class="btn-long" onclick="checkUserBeforeGame('long')">OPEN LONG</button>
+                <button class="btn-short" onclick="checkUserBeforeGame('short')">OPEN SHORT</button>
             </div>
         </div>
         <div class="box status" style="flex: 1; background: #131722; position: relative; min-width: 320px; height: 380px; display: flex; flex-direction: column; overflow: hidden;">
@@ -864,42 +864,83 @@ setInterval(() => {
     </p>
 </div>
 
+<div id="entrance-gate" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(11, 14, 17, 0.98); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:#f3ba2f; font-family:sans-serif;">
+    <div style="background:#181a20; padding:40px; border-radius:20px; border:2px solid #f3ba2f; text-align:center; width:340px; box-shadow: 0 10px 50px rgba(0,0,0,0.8);">
+        <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" style="width:50px; margin-bottom:15px;">
+        <h2 style="margin:0 0 10px 0; font-size:24px;">🎮 게임 참여 인증</h2>
+        <p style="color:#848e9c; font-size:14px; margin-bottom:25px;">배팅 결과를 기록하기 위해 성함과 이메일을 입력해주세요.</p>
+        <input type="text" id="db-name" placeholder="성함" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:15px; box-sizing:border-box; outline:none;">
+        <input type="email" id="db-email" placeholder="이메일 주소" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:25px; box-sizing:border-box; outline:none;">
+        <button onclick="submitToSheet()" id="db-btn" style="padding:15px; width:100%; background:#f3ba2f; border:none; border-radius:8px; color:#000; font-weight:bold; cursor:pointer; font-size:18px;">인증하고 배팅하기</button>
+    </div>
+</div>
+
 <script>
-    function startTimer() {
+(function() {
+    let selectedType = "";
+    let isGateOpen = false;
+
+    // [롱/숏] 버튼 클릭 시 실행
+    window.checkUserBeforeGame = function(type) {
+        selectedType = type;
+        
+        if (localStorage.getItem('btc_user_done')) {
+            if (typeof tgPlace === "function") tgPlace(type); 
+        } else {
+            isGateOpen = true;
+            document.getElementById('entrance-gate').style.display = 'flex';
+        }
+    };
+
+    // 정보 입력 후 전송
+    window.submitToSheet = async function() {
+        const name = document.getElementById('db-name').value.trim();
+        const email = document.getElementById('db-email').value.trim();
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyf6lpCKjHrMvXWxipUpzlyjdDD1iKuB27BTvRRmqLnGOHWrVv6oqRG5CTlv_6KUrqXRw/exec"; 
+
+        if (!name || !email.includes('@')) {
+            alert("정보를 올바르게 입력해주세요.");
+            return;
+        }
+
+        try {
+            await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, email }) });
+            localStorage.setItem('btc_user_done', 'true');
+            document.getElementById('entrance-gate').style.display = 'none';
+            isGateOpen = false;
+            if (typeof tgPlace === "function") tgPlace(selectedType); 
+        } catch (e) {
+            document.getElementById('entrance-gate').style.display = 'none';
+            isGateOpen = false;
+            if (typeof tgPlace === "function") tgPlace(selectedType);
+        }
+    };
+
+    // 타이머 함수 재정의 (유저님 파일에 맞춤)
+    // 기존의 v2-timer를 제어하며, 창이 열려있을 땐 가격 갱신을 건너뜁니다.
+    window.startTimer = function() {
         setInterval(() => {
-            const now = new Date();
-            const minutes = now.getMinutes();
-            const seconds = now.getSeconds();
-
-            // 10분 단위까지 남은 시간 계산
-            const nextUpdate = 10 - (minutes % 10);
-            let remainMin = nextUpdate - 1;
-            let remainSec = 60 - seconds;
-
-            if (remainSec === 60) {
-                remainMin += 1;
-                remainSec = 0;
-            }
-
-            // 화면 표시 (00:00 포맷)
-            const displayMin = String(remainMin).padStart(2, '0');
-            const displaySec = String(remainSec).padStart(2, '0');
-
-            const timerElement = document.getElementById('countdown-timer');
-            if (timerElement) {
-                timerElement.innerText = `${displayMin}:${displaySec}`;
-                
-                // 10초 남았을 때 빨간색으로 강조
-                timerElement.style.color = (remainMin === 0 && remainSec <= 10) ? "#ff4444" : "#00ff88";
-            }
-            
-            // 00:00이 되면 시나리오 자동 갱신
-            if (remainMin === 0 && remainSec === 0) {
-                updatePriceAndForecast(); 
+            const timerEl = document.getElementById('v2-timer');
+            if (timerEl) {
+                let current = parseInt(timerEl.innerText);
+                if (current <= 0) {
+                    timerEl.innerText = 600;
+                    if (!isGateOpen && typeof updatePriceAndForecast === "function") {
+                        updatePriceAndForecast();
+                    }
+                } else {
+                    timerEl.innerText = current - 1;
+                }
             }
         }, 1000);
-    }
-    startTimer(); // 타이머 실행
+    };
+
+    // 페이지 로드 후 타이머 실행
+    startTimer();
+
+    // 우클릭 차단 (기존 유지)
+    document.addEventListener('contextmenu', e => e.preventDefault());
+})();
 </script>
 
 <script>
