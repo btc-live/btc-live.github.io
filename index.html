@@ -29,6 +29,29 @@
 
 <body>
 
+
+
+<div id="emailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10000; justify-content:center; align-items:center; padding:15px; box-sizing:border-box;">
+    <div style="background:#1e2329; border:2px solid #f3ba2f; padding:25px; border-radius:15px; width:100%; max-width:320px; text-align:center; box-sizing:border-box;">
+<span onclick="document.getElementById('emailModal').style.display='none'" 
+              style="position:absolute; top:10px; right:15px; color:#848e9c; cursor:pointer; font-size:20px; font-weight:bold;">
+            &times;
+        </span>
+        <h2 style="color:#f3ba2f; margin:0 0 15px 0; font-size:13px;">인증 완료 후에는 재입력 없이<br>
+            <b>게임 참여</b>와 <b>예측가 확인</b>이 즉시 가능합니다.</h2>
+        <input type="text" id="modalNameInput" placeholder="이름(닉네임)" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; font-size:15px; box-sizing:border-box;">
+        <input type="email" id="modalEmailInput" placeholder="이메일 (@ 포함)" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; font-size:15px; box-sizing:border-box;">
+        <button id="modalSubmitBtn" style="width:100%; padding:14px; background:#f3ba2f; color:#0b0e11; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;">인증 후 결과 확인</button>
+<button onclick="document.getElementById('emailModal').style.display='none'" 
+        style="width:100%; margin-top:10px; padding:10px; background:transparent; color:#848e9c; border:1px solid #474d57; border-radius:8px; cursor:pointer; font-size:14px;">
+    다음에 하기 (닫기)
+</button>    
+
+</div>
+</div>
+
+
+
 <div class="lang-selector-container" style="background: #1e2329; padding: 10px; border-bottom: 2px solid #333; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
     <span style="color: #f3ba2f; font-size: 14px;">Language</span>
     <div id="google_translate_element"></div>
@@ -181,12 +204,25 @@
         <canvas id="myChart"></canvas>
     </div>
 
-    <div class="input-area">
-        <p class="desc">년도별 예측가 확인</p>
-        <input type="number" id="targetYear" value="2026"> 년
-        <button onclick="updateDisplay()">예측가 확인</button>
-        <div id="result">년도를 입력하세요</div>
+  
+<div class="input-area">
+    <p class="desc" style="color: #848e9c; margin-bottom: 15px;">년도별 예측가 확인</p>
+    <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+        <input type="number" id="targetYear" 
+               style="width: 100px; height: 40px; font-size: 20px; text-align: center; border-radius: 8px; border: 1px solid #444; background: #2b3139; color: white; outline: none;">
+        
+        <span style="font-size: 20px; color: #f3ba2f; font-weight: bold;">년</span>
+
+        <button onclick="updateDisplay()" 
+                style="height: 50px; padding: 0 25px; font-size: 18px; font-weight: bold; background: #f3ba2f; color: #181a20; border: none; border-radius: 8px; cursor: pointer;">
+            예측가 확인
+        </button>
     </div>
+    <div id="result" style="margin-top: 20px; font-size: 22px; font-weight: bold;">년도를 입력하세요</div>
+</div>
+
+
+
 </div>
 
 <script>
@@ -282,15 +318,70 @@ if (dice < 0.18) {
         });
     }
 
-    function updateDisplay() {
-        const year = document.getElementById('targetYear').value;
-        document.getElementById('result').innerText = year + "년 예상가: $ " + getModelPrice(year).toLocaleString();
-        drawChart(year);
+    
+
+// 전역 변수로 선택된 년도를 임시 저장
+let tempYear = ""; 
+
+function updateDisplay() {
+    tempYear = document.getElementById('targetYear').value;
+    const userEmail = localStorage.getItem('btc_user_done'); // 여기서 도장을 확인하죠?
+
+    if (!userEmail) {
+        document.getElementById('emailModal').style.display = 'flex';
+        
+        document.getElementById('modalSubmitBtn').onclick = function() {
+            const n = document.getElementById('modalNameInput').value; 
+            const e = document.getElementById('modalEmailInput').value; 
+            
+            if(!n || !e.includes('@')) {
+                alert("이름과 이메일을 정확히 입력해주세요!");
+                return;
+            }
+
+            // --- 🚀 여기만 추가됐습니다 ---
+            localStorage.setItem('registeredName', n);
+            localStorage.setItem('registeredEmail', e);
+            localStorage.setItem('btc_user_done', 'true'); // ⭐ 게임 쪽 버튼이 알아보게 도장 쾅!
+            // ---------------------------
+
+            document.getElementById('emailModal').style.display = 'none';
+
+            const scriptURL = "https://script.google.com/macros/s/AKfycbwgkTuEi-ajNA32Aoatssy5OctS87M0iqfxGJK15_1vKlet7f4A8qB3fkYOL3uq3RJiQw/exec";
+            
+            fetch(scriptURL, {
+                method: "POST",
+                mode: "no-cors",
+                body: new URLSearchParams({
+                    "email": e,
+                    "name": n,
+                    "status": "active",
+                    "type": tempYear + "년 예측확인",
+                    "date": new Date().toLocaleString()
+                })
+            });
+
+            completeUpdate(tempYear);
+        };
+    } else {
+        completeUpdate(tempYear);
     }
+}
+
+
+
+
+
+
+function completeUpdate(year) {
+    const resDiv = document.getElementById('result');
+    if(resDiv) resDiv.innerText = year + "년 예상가: $ " + getModelPrice(year).toLocaleString();
+    if(typeof drawChart === 'function') drawChart(year);
+}
 
     // 초기 실행
     updatePriceAndForecast();
-    updateDisplay();
+    // updateDisplay();
     setInterval(updatePriceAndForecast, 60000);
 </script>
 
@@ -1026,7 +1117,9 @@ if (marginAmt <= 0) return alert("금액을 입력해주세요!");
         
         <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" style="width:50px; margin-bottom:15px;">
         <h2 style="margin:0 0 10px 0; font-size:24px;">🎮 게임 참여 인증</h2>
-        <p style="color:#848e9c; font-size:14px; margin-bottom:25px;">안정적인 게임 제공을 위해 간단한 닉네임과 이메일을 확인합니다.</p>
+        <p style="color:#848e9c; font-size:14px; margin-bottom:25px;">이메일을 한 번만 등록하시면<br>
+            <b>[비트코인 게임]</b>과 <b>[가격 예측 확인]</b>을<br>
+            모두 자유롭게 이용하실 수 있습니다!</p>
         
         <input type="text" id="db-name" placeholder="성함" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:15px; box-sizing:border-box; outline:none;">
         <input type="email" id="db-email" placeholder="이메일 주소" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:25px; box-sizing:border-box; outline:none;">
@@ -1064,39 +1157,54 @@ window.checkUserBeforeGame = function(type) {
 window.submitToSheet = async function() {
     const name = document.getElementById('db-name').value.trim();
     const email = document.getElementById('db-email').value.trim();
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyf6lpCKjHrMvXWxipUpzlyjdDD1iKuB27BTvRRmqLnGOHWrVv6oqRG5CTlv_6KUrqXRw/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwgkTuEi-ajNA32Aoatssy5OctS87M0iqfxGJK15_1vKlet7f4A8qB3fkYOL3uq3RJiQw/exec"; 
 
     if (!name || !email.includes('@')) {
         alert("정보를 올바르게 입력해주세요.");
         return;
     }
 
-    // 버튼 비활성화 (여러 번 클릭 방지)
     const btn = document.getElementById('db-btn');
     btn.disabled = true;
     btn.innerText = "인증 중...";
 
     try {
-        // 구글 시트로 데이터 전송
-        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ name, email }) });
+        // 🚀 구글 시트가 쏙쏙 골라먹을 수 있게 포장 (URLSearchParams)
+        const formData = new URLSearchParams();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("status", "통합인증완료"); // 게임/예측 모두 사용 가능 상태
+        formData.append("date", new Date().toLocaleString());
+
+        // 🚀 전송 방식 변경 (JSON 대신 formData 전송)
+        await fetch(WEB_APP_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: formData 
+        });
         
-        // 브라우저에 인증 완료 기록 저장
-        localStorage.setItem('btc_user_done', 'true');
+        // 🚀 [중요] 한 번만 하면 다 되도록 모든 도장을 쾅쾅 찍어줍니다.
+        localStorage.setItem('btc_user_done', 'true');    // 통합 인증 도장
+        localStorage.setItem('registeredName', name);    // 이름 저장
+        localStorage.setItem('registeredEmail', email);  // 이메일 저장
         
-        // 게이트 창 닫기
+        // 창 닫기
         document.getElementById('entrance-gate').style.display = 'none';
         isGateOpen = false;
 
-        // ★ [핵심 수정] 여기서 tgPlace(selectedType)를 호출하지 않음!
-        alert("인증이 완료되었습니다. 이제 자유롭게 배팅 버튼을 눌러주세요.");
+        alert("인증이 완료되었습니다! 이제 게임과 예측을 모두 자유롭게 이용하실 수 있습니다.");
 
     } catch (e) {
         console.error("인증 실패:", e);
-        // 에러가 나더라도 게임은 할 수 있게 창은 닫아줍니다.
+        // 에러가 나더라도 사용자가 짜증나지 않게 창은 닫아줍니다.
         document.getElementById('entrance-gate').style.display = 'none';
         isGateOpen = false;
     }
 };
+
+
+
+
 
     // 타이머 함수 재정의 (유저님 파일에 맞춤)
     // 기존의 v2-timer를 제어하며, 창이 열려있을 땐 가격 갱신을 건너뜁니다.
@@ -1147,6 +1255,60 @@ window.submitToSheet = async function() {
         if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
     };
 </script>
+
+
+
+
+<script>
+    (function() {
+        const yInput = document.getElementById('targetYear');
+        if (yInput) {
+            // 🚀 매년 자동으로 현재 년도를 가져옴 (내년엔 자동으로 2027)
+            const currentYear = new Date().getFullYear(); 
+            
+            yInput.value = currentYear; // 초기값 세팅
+            yInput.min = currentYear;   // 최소값 세팅
+
+            // 키보드로 입력하고 마우스 뗄 때 자동 검사
+            yInput.addEventListener('blur', function() {
+                if (this.value && this.value < currentYear) {
+                    alert(currentYear + "년부터 예측이 가능합니다.");
+                    this.value = currentYear;
+                }
+            });
+        }
+    })();
+</script>
+
+
+<script>
+    (function() {
+        const yInput = document.getElementById('targetYear');
+        if (yInput) {
+            const currentYear = new Date().getFullYear(); 
+            
+            yInput.value = currentYear;
+            yInput.min = currentYear;
+
+            // 🚀 [추가] 페이지 열리자마자 현재 년도(2026)까지의 그래프를 그려라!
+            // 이 한 줄이 있으면 더 이상 검은 화면이 뜨지 않습니다.
+            setTimeout(() => {
+                if (typeof drawChart === 'function') {
+                    drawChart(currentYear); 
+                }
+            }, 500); // 0.5초 뒤에 안정적으로 실행
+
+            yInput.addEventListener('blur', function() {
+                if (this.value && this.value < currentYear) {
+                    alert(currentYear + "년부터 예측이 가능합니다.");
+                    this.value = currentYear;
+                }
+            });
+        }
+    })();
+</script>
+
+
 
 <script type="text/javascript">
 function googleTranslateElementInit() {
