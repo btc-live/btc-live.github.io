@@ -524,8 +524,8 @@ setInterval(() => {
 
     <div style="background: #1e2329; padding: 20px; border-radius: 12px; border: 1px solid #333;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; font-size: 13px;">
-            <span style="color: #02c076;">▲ LONG 청산 대비</span>
-            <span style="color: #f6465d;">SHORT 청산 대비 ▼</span>
+            <span style="color: #02c076;">▲ LONG 비율</span>
+            <span style="color: #f6465d;">SHORT 비율 ▼</span>
         </div>
         
         <div style="width: 100%; height: 30px; background: #2b3139; border-radius: 6px; overflow: hidden; display: flex; position: relative;">
@@ -692,13 +692,22 @@ setInterval(() => {
         <span style="font-size: 22px; color: #ffffff; font-weight: normal; margin-left: 12px; vertical-align: middle;">가상 트레이딩 게임</span>
     </h1>
 
-    <div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 10px; border-radius: 8px; display: inline-block; text-align: left; font-size: 13px; color: #d1d4dc; line-height: 1.6;">
-        <span style="color: #f3ba2f; font-weight: bold;">[게임 규칙]</span> 
-        시드 <b>$30,000</b> 제공(언제든 리셋 가능) | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> | 
-        <span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
-        <span style="color: #848e9c; font-size: 12px;">※ 브라우저를 바꾸거나 쿠키를 삭제하면 데이터가 초기화되니 주의하세요!</span>
+<div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 15px; border-radius: 8px; display: inline-block; text-align: left; font-size: 13px; color: #d1d4dc; line-height: 1.6; max-width: 850px;">
+    <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
+        <span style="color: #f3ba2f; font-weight: bold;">💡 제작 의도:</span> 
+        선물 투자의 위험성을 알면서도 연습할 곳이 마땅치 않았던 분들을 위해 만들었습니다. <br>
+        실전 투자 전, 이곳에서 <b>충분한 연습과 전략 검증</b>을 통해 소중한 자산을 지키시길 바랍니다.
     </div>
-</div>
+
+    <span style="color: #f3ba2f; font-weight: bold;">[게임 규칙]</span> 
+    시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> | 
+    <span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
+    <span style="color: #848e9c; font-size: 11px;">※ 브라우저를 바꾸거나 쿠키를 삭제하면 데이터가 초기화되니 주의하세요!</span>
+</div>  
+
+
+<div style="height: 2px;"></div>
+
 <div class="main-container">
     <div class="chart-section">
         <div id="tg-tv-main"></div>
@@ -718,14 +727,19 @@ setInterval(() => {
                 </div>
                 <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="tg-amt" value="5000" placeholder="Margin (USDT)">
-                <input type="number" id="tg-lev" value="10" placeholder="Lev">
-            </div>
+            
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <input type="number" id="tg-amt" placeholder="달러 입력">
+    
+    <input type="number" id="tg-lev" placeholder="레버리지 입력(1~∞)">
+</div>
+
+
             <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)" style="width: 94%;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button class="btn-long" onclick="checkUserBeforeGame('long')">OPEN LONG</button>
-                <button class="btn-short" onclick="checkUserBeforeGame('short')">OPEN SHORT</button>
+                <button class="btn-long" onclick="checkUserBeforeGame('long')">LONG(Add)</button>
+                <button class="btn-short" onclick="checkUserBeforeGame('short')">SHORT(Add)</button>
             </div>
         </div>
         <div class="box status" style="flex: 1; background: #131722; position: relative; min-width: 320px; height: 380px; display: flex; flex-direction: column; overflow: hidden;">
@@ -813,7 +827,8 @@ setInterval(() => {
         const marginAmt = Number(document.getElementById('tg-amt').value);
         const lp = Number(document.getElementById('tg-limit').value);
         const lev = Number(document.getElementById('tg-lev').value);
-
+if (marginAmt <= 0) return alert("금액을 입력해주세요!");
+    if (lev <= 0) return alert("레버리지를 입력해주세요!");
         if (cash < marginAmt && (!pos || pos.side !== side)) return alert("Not enough Available Credit!");
 
         if (!lp) {
