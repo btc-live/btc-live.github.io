@@ -30,7 +30,40 @@
         .signal-neutral { color: #848e9c; font-weight: bold; }
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
     
-
+<style>
+    /* 🚀 352라인: 가로 스크롤을 여기서 확실하게 다시 살려줍니다 */
+    .sim-v2-card { 
+        background: #1e2329; 
+        border-radius: 15px; 
+        padding: 20px; 
+        margin: 20px auto; 
+        border: 1px solid #333; 
+        max-width: 900px; 
+        font-family: sans-serif; 
+        overflow-x: auto !important; /* 옆으로 밀기 허용 */
+        -webkit-overflow-scrolling: touch; 
+    }
+    
+    .sim-v2-title { color: #f3ba2f; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
+    
+    /* 🚀 356라인: 표가 찌그러지지 않게 600px로 딱 고정합니다 */
+    .sim-v2-table { 
+        min-width: 600px !important; 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 15px; 
+    }
+    
+    .sim-v2-table th, .sim-v2-table td { 
+        padding: 12px; 
+        border-bottom: 1px solid #2b3139; 
+        font-size: 14px; 
+        white-space: nowrap !important; /* 글자 줄바꿈 방지 */
+    }
+    
+    .sig-up { color: #00ff88 !important; font-weight: bold !important; }
+    .sig-down { color: #ff4444 !important; font-weight: bold !important; }
+    .sig-neutral { color: #f3ba2f !important; font-weight: bold !important; }
 
 </style>
 </head>
