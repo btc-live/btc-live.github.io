@@ -29,7 +29,16 @@
         .signal-down { color: #ff4444; font-weight: bold; }
         .signal-neutral { color: #848e9c; font-weight: bold; }
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
-    </style>
+    
+@media (max-width: 600px) {
+    .card { padding: 10px; }
+    h1 { font-size: 20px; }
+    #result { font-size: 24px; }
+    .forecast-table td, .forecast-table th { font-size: 11px; padding: 5px 2px; }
+    .chart-wrapper { height: 250px; }
+}
+
+</style>
 </head>
 
 <body>
