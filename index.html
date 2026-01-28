@@ -31,37 +31,30 @@
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
     
 <style>
-    /* 🚀 가로 스크롤을 강제로 열어줍니다 (여기가 대장입니다) */
+    /* 1. 숏롱 시뮬레이션 박스: 강제로 가로 스크롤 생성 */
     .sim-v2-card { 
-        background: #1e2329; 
-        border-radius: 15px; 
-        padding: 20px; 
-        margin: 20px auto; 
-        border: 1px solid #333; 
-        max-width: 900px; 
-        font-family: sans-serif; 
         overflow-x: auto !important; 
-        -webkit-overflow-scrolling: touch; 
+        -webkit-overflow-scrolling: touch !important; 
+        display: block !important;
+        width: 100% !important;
+        max-width: 900px !important;
+        margin: 20px auto !important;
     }
-    .sim-v2-title { color: #f3ba2f; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
-    
-    /* 🚀 표가 찌그러지지 않게 600px로 고정합니다 */
+
+    /* 2. 표: PC 버전 크기(800px)로 강제 고정 */
     .sim-v2-table { 
-        min-width: 600px !important; 
-        width: 100%; 
-        border-collapse: collapse; 
-        margin-top: 15px; 
+        width: 800px !important; /* 👈 숫자를 키우면 더 넓어집니다 */
+        min-width: 800px !important; 
+        border-collapse: collapse !important;
+        table-layout: auto !important;
     }
+
+    /* 3. 표 안의 글자: 절대 줄바꿈 금지 */
     .sim-v2-table th, .sim-v2-table td { 
-        padding: 12px; 
-        border-bottom: 1px solid #2b3139; 
-        font-size: 14px; 
-        white-space: nowrap !important; /* 글자 줄바꿈 절대 방지 */
-        text-align: center;
+        white-space: nowrap !important; 
+        padding: 12px !important;
+        text-align: center !important;
     }
-    .sig-up { color: #00ff88 !important; font-weight: bold !important; }
-    .sig-down { color: #ff4444 !important; font-weight: bold !important; }
-    .sig-neutral { color: #f3ba2f !important; font-weight: bold !important; }
 </style>
 </head>
 
