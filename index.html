@@ -791,7 +791,7 @@ setInterval(() => {
   .pc-only-scroll{
     width: 100%;
     overflow-x: auto;
-    overflow-y: hidden; /* 높이 보정하니 세로는 숨김 */
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     text-align: center;
   }
@@ -801,6 +801,16 @@ setInterval(() => {
     transform: scale(0.6);
     transform-origin: top left;
     display: inline-block;
+  }
+
+  /* ✅ 추가 1: 아래 잘림 방지(모바일에서만) */
+  .main-container{
+    overflow: visible;   /* (또는 overflow-y: visible) */
+  }
+
+  /* ✅ 추가 2: 아래쪽 여백 줄이기(선택) */
+  .pc-only-scroll{
+    padding-bottom: 0;   /* 혹시 생기는 공간 정리 */
   }
 }
 
@@ -914,25 +924,26 @@ setInterval(() => {
 
 <script>
 (function () {
-  const scale = 0.6;
-
   function fitGameHeight() {
     const scroll = document.querySelector('.pc-only-scroll');
     const wrap = document.querySelector('.pc-only-wrapper');
     if (!scroll || !wrap) return;
 
-    // 원래 높이(스케일 적용 전)
-    const originalH = wrap.scrollHeight;
-
-    // 바깥 박스 높이를 "보이는 높이"로 맞춤
-    scroll.style.height = (originalH * scale) + 'px';
+    // ✅ 스케일 적용된 "실제 화면 높이"를 그대로 사용
+    const h = wrap.getBoundingClientRect().height;
+    scroll.style.height = Math.ceil(h) + 'px';
   }
 
   window.addEventListener('load', fitGameHeight);
   window.addEventListener('resize', fitGameHeight);
-  setTimeout(fitGameHeight, 300); // 차트 로딩 지연 대비
+
+  // ✅ TradingView/차트 로딩이 늦어서 높이가 뒤늦게 커지는 경우 대비
+  setTimeout(fitGameHeight, 300);
+  setTimeout(fitGameHeight, 1200);
+  setTimeout(fitGameHeight, 2500);
 })();
 </script>
+
 
 
 
