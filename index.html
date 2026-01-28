@@ -48,10 +48,20 @@
 
             /* 🚀 롱숏게임 표(Table) 안 짤리게 하기 */
             .forecast-table { 
-                display: block; /* 표를 박스 형태로 변환 */
-                width: 100% !important; 
-                overflow-x: auto; /* 혹시나 넘치면 옆으로 밀어서 보게 함 */
-            }
+                width: 100%; 
+    min-width: 600px; /* 🚀 핵심: PC 버전처럼 보이기 위해 최소 너비를 600으로 고정 */
+    border-collapse: collapse; 
+    background: #1e2329; 
+    border-radius: 12px; 
+    overflow: hidden; 
+    color: white; 
+    margin-top: 20px; 
+    font-size: 11px; /* 🚀 글자를 아주 작게 해서 한눈에 들어오게 함 */
+}
+/* 표를 감싸는 박스에 스크롤을 줘서 안 짤리게 함 */
+.card {
+    overflow-x: auto; /* 🚀 박스 안에서 옆으로 밀어서 볼 수 있게 설정 */
+}
             .forecast-table th, .forecast-table td { 
                 padding: 5px 2px !important; 
                 font-size: 10px !important; /* 글자 크기를 더 과감하게 줄임 */
