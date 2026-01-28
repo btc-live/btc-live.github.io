@@ -794,6 +794,8 @@ setInterval(() => {
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     text-align: center;
+
+    margin-bottom: -200px;   /* ✅ 이 줄 추가 (공간 줄이기 핵심) */
   }
 
   .pc-only-wrapper{
@@ -803,17 +805,14 @@ setInterval(() => {
     display: inline-block;
   }
 
-  /* ✅ 추가 1: 아래 잘림 방지(모바일에서만) */
   .main-container{
-    overflow: visible;   /* (또는 overflow-y: visible) */
+    overflow: visible;
   }
 
-  /* ✅ 추가 2: 아래쪽 여백 줄이기(선택) */
   .pc-only-scroll{
-    padding-bottom: 0;   /* 혹시 생기는 공간 정리 */
+    padding-bottom: 0;
   }
 }
-
 
     /* 🔼 여기까지 */
     </style>
