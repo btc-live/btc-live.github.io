@@ -2,316 +2,315 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <!-- ✅ 모바일에서 확대/스크롤 흔들림 최소화 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bull vs Bear : Arena Pro V15</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bull vs Bear : Arena Pro V15 (Mobile)</title>
 
-  <!-- 게임 라이브러리 -->
+  <!-- 라이브러리 -->
   <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
   <style>
-    :root{
-      --pcw: 1600; /* PC 기준 폭 */
-      --pch: 940;  /* PC 기준 높이(대략) */
-      --scale: 1;
-    }
-
-    /* ✅ 스크롤 없는 뷰어: 페이지 전체 고정 */
     html, body{
       height: 100%;
       margin: 0;
-      overflow: hidden; /* 핵심: 스크롤 제거 (pull-to-refresh 원천 차단) */
-      background: #0b0e11;
-      color: #fff;
+      background:#0b0e11;
+      color:#fff;
       font-family: sans-serif;
-      touch-action: manipulation; /* 확대/더블탭 성향 억제 */
-      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none; /* Android/Chrome pull-to-refresh 완화 */
     }
 
-    /* ✅ 뷰어 프레임 */
-    .viewer{
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      background: #0b0e11;
+    /* ✅ 스크롤은 이 컨테이너에서만 */
+    #page-scroll{
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: none;
+      padding: 10px;
+      box-sizing: border-box;
     }
 
-    /* ✅ PC 화면 축소 캔버스 */
-    .pc-canvas{
-      width: calc(var(--pcw) * 1px);
-      transform-origin: top center;
-      transform: scale(var(--scale));
-    }
-
-    /* ✅ 상단 HUD (조작 방해 최소) */
-    .hud{
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      z-index: 99999;
-      display: flex;
+    /* 상단 네비 */
+    .topbar{
+      display:flex;
       justify-content: space-between;
-      align-items: center;
-      pointer-events: none;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-    .hud a, .hud .pill{
-      pointer-events: auto;
-      text-decoration: none;
-      font-weight: 900;
-      font-size: 13px;
+    .topbar a{
+      color:#f3ba2f;
+      text-decoration:none;
+      font-weight:900;
       padding: 8px 10px;
-      border-radius: 12px;
+      border-radius: 10px;
       border: 1px solid rgba(243,186,47,0.35);
-      background: rgba(24,26,32,0.78);
-      color: #f3ba2f;
-      backdrop-filter: blur(6px);
+      background: rgba(24,26,32,0.75);
     }
-    .hud .pill{
-      color: #d1d4dc;
-      border-color: rgba(209,212,220,0.18);
+    .topbar .pill{
+      color:#d1d4dc;
       font-weight: 700;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(209,212,220,0.18);
+      background: rgba(24,26,32,0.55);
     }
 
-    /* (선택) 세로모드 안내 */
-    .rotate-hint{
-      position: fixed;
-      inset: 0;
-      z-index: 99998;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
-      background: rgba(0,0,0,0.75);
-      color: #f3ba2f;
-      font-weight: 900;
-      line-height: 1.5;
-    }
-    .rotate-hint small{
-      display:block;
-      margin-top: 8px;
-      color: #d1d4dc;
-      font-weight: 700;
-    }
-
-    /* =========================
-       ✅ 게임 CSS (기존 game.html과 동일)
-    ========================= */
+    /* ===== 기존 게임 스타일(필요한 만큼 유지) ===== */
     .game-header { text-align: center; margin-bottom: 10px; }
-    .game-header h1 { color: #f3ba2f; margin: 0; font-size: 28px; text-shadow: 2px 2px #cf304a; letter-spacing: 2px; }
-    .main-container { width: 98%; max-width: 1600px; height: 850px; margin: 0 auto; background: #0b0e11; border: 1px solid #f3ba2f; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-    .chart-section { flex: 1.1; display: flex; border-bottom: 2px solid #2b3139; min-height: 450px; }
-    #tg-tv-main { flex: 1; border-right: 1px solid #2b3139; background: #131722; }
-    #tg-sub-chart { flex: 1; background: #131722; position: relative; }
-    .control-section { flex: 0.9; background: #181a20; display: flex; padding: 20px; gap: 20px; }
+    .game-header h1 { color: #f3ba2f; margin: 0; font-size: 26px; text-shadow: 2px 2px #cf304a; letter-spacing: 1px; }
+
+    .main-container {
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      background: #0b0e11;
+      border: 1px solid #f3ba2f;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    }
+
+    /* ✅ 모바일은 세로 스택 */
+    .chart-section{
+      display:flex;
+      flex-direction: column;
+      border-bottom: 2px solid #2b3139;
+    }
+
+    #tg-tv-main{
+      background:#131722;
+      border-bottom: 1px solid #2b3139;
+      height: 360px;
+    }
+    #tg-sub-chart{
+      background:#131722;
+      height: 260px;
+      position: relative;
+    }
+
+    .control-section{
+      display:flex;
+      flex-direction: column; /* 핵심 */
+      gap: 12px;
+      padding: 12px;
+      background:#181a20;
+    }
 
     .box { background: #0b0e11; border-radius: 8px; border: 1px solid #2b3139; padding: 15px; }
-    .orderbook { flex: 0.7; font-family: monospace; }
-    .trading { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
-    .status { flex: 1; background: #131722; position: relative; min-width: 320px; overflow: hidden; }
 
-    input { background: #1e2329; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; width: 90%; font-size: 14px; }
-    button { cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-    button:hover { opacity: 0.8; }
-
-    .btn-long { background: #02c076; color: #fff; padding: 15px; font-size: 16px; }
-    .btn-short { background: #cf304a; color: #fff; padding: 15px; font-size: 16px; }
-    .btn-exit { background: #fff; color: #000; padding: 12px; width: 100%; margin-top: 10px; font-size: 14px; }
-    .btn-refill { background: linear-gradient(180deg, #f3ba2f 0%, #d9a522 100%); color: #000; padding: 8px 15px; font-size: 11px; }
-
+    /* ✅ 호가창(빨강/초록) */
+    .orderbook{
+      font-family: monospace;
+    }
     .order-item { display: flex; justify-content: space-between; font-size: 11px; padding: 6px 5px; border-bottom: 1px solid #222; }
     .cancel-btn { color: #848e9c; cursor: pointer; }
 
-    .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; border-top: 1px solid #2b3139; padding-top: 5px; }
+    /* ✅ 트레이딩 입력/버튼 */
+    .trading { display: flex; flex-direction: column; gap: 12px; }
+    input{
+      background:#1e2329;
+      border:1px solid #333;
+      color:#fff;
+      padding: 12px;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+
+    button { cursor:pointer; border:none; border-radius: 6px; font-weight: 900; transition: 0.2s; }
+    button:hover { opacity: 0.9; }
+
+    .btn-long { background:#02c076; color:#fff; padding: 16px; font-size: 18px; }
+    .btn-short{ background:#cf304a; color:#fff; padding: 16px; font-size: 18px; }
+    .btn-exit { background:#fff; color:#000; padding: 14px; width: 100%; margin-top: 10px; font-size: 15px; }
+    .btn-refill { background: linear-gradient(180deg, #f3ba2f 0%, #d9a522 100%); color: #000; padding: 10px 14px; font-size: 12px; }
+
+    /* ✅ status(포지션/주문) */
+    .status{
+      background:#131722;
+      border: 1px solid #2b3139;
+      border-radius: 8px;
+      padding: 12px;
+      overflow: hidden;
+    }
+    .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; border-top: 1px solid #2b3139; padding-top: 8px; }
     .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
-    .pos-value { font-size: 13px; font-weight: bold; color: #eee; }
+    .pos-value { font-size: 13px; font-weight: 900; color: #eee; }
+
+    /* ✅ 핵심: 모바일에서 순서 = 호가창을 롱/숏 근처(=trading 위) */
+    .orderbook{ order: 1; } /* 호가창 */
+    .trading { order: 2; }  /* 입력/롱숏 */
+    .status  { order: 3; }  /* 포지션/주문 */
+
+    /* 인증 게이트 */
+    #entrance-gate{
+      display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(11, 14, 17, 0.98); z-index:10000;
+      flex-direction:column; align-items:center; justify-content:center; color:#f3ba2f;
+    }
   </style>
 </head>
 
 <body>
+  <div id="page-scroll">
+    <div class="topbar">
+      <a href="index.html">← 돌아가기</a>
+      <div class="pill">모바일 전용 세로 레이아웃</div>
+    </div>
 
-  <!-- ✅ 상단 HUD -->
-  <div class="hud">
-    <a href="index.html">← 돌아가기</a>
-    <div class="pill">모바일은 PC 화면 축소 뷰어 모드</div>
-  </div>
+    <div class="game-header" style="margin-bottom: 12px;">
+      <h1>
+        <span style="color:#f3ba2f;">BULL vs BEAR : ARENA</span><br>
+        <span style="font-size:25px; color:#d1d4dc; font-weight:700; margin-left:8px;">가상 트레이딩 게임</span>
+      </h1>
 
-  <!-- (선택) 세로모드 안내 -->
-  <div class="rotate-hint" id="rotateHint">
-    📱 가로모드를 권장합니다
-    <small>모바일에서는 PC 화면을 축소해 보여주는 뷰어 모드입니다</small>
-  </div>
-
-  <!-- ✅ 스크롤 없는 뷰어 -->
-  <div class="viewer">
-    <div class="pc-canvas" id="pcCanvas">
-
-      <!-- ====== 게임 HTML ====== -->
-      <div class="game-header" style="margin-bottom: 20px;">
-        <h1 style="font-size: 34px; margin-bottom: 10px;">
-          <span style="color: #f3ba2f;">BULL vs BEAR : ARENA</span>
-          <span style="font-size: 22px; color: #ffffff; font-weight: normal; margin-left: 12px; vertical-align: middle;">가상 트레이딩 게임</span>
-        </h1>
-
-        <div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 15px; border-radius: 8px; display: inline-block; text-align: left; font-size: 13px; color: #d1d4dc; line-height: 1.6; max-width: 850px;">
-          <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
-            <span style="color: #f3ba2f; font-weight: bold;">💡 제작 의도:</span>
-            선물 투자의 위험성을 알면서도 연습할 곳이 마땅치 않았던 분들을 위해 만들었습니다. <br>
-            실전 투자 전, 이곳에서 <b>충분한 연습과 전략 검증</b>을 통해 소중한 자산을 지키시길 바랍니다.
-          </div>
-
-          <span style="color: #f3ba2f; font-weight: bold;">[게임 규칙]</span>
-          시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> |
-          <span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
-          <span style="color: #848e9c; font-size: 11px;">※ 브라우저를 바꾸거나 쿠키를 삭제하면 데이터가 초기화되니 주의하세요!</span>
+      <div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 12px; border-radius: 10px; text-align:left; font-size: 12px; color: #d1d4dc; line-height: 1.55;">
+        <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
+          <b style="color:#f3ba2f;">💡 제작 의도:</b> 실전 투자 전, 충분한 연습과 전략 검증을 위해 제작
         </div>
+        <b style="color:#f3ba2f;">[게임 규칙]</b>
+        시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> |
+        <span style="color:#cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
+        <span style="color:#848e9c; font-size: 11px;">※ 브라우저/쿠키 변경 시 데이터 초기화</span>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="chart-section">
+        <div id="tg-tv-main"></div>
+        <div id="tg-sub-chart"></div>
       </div>
 
-      <div class="main-container">
-        <div class="chart-section">
-          <div id="tg-tv-main"></div>
-          <div id="tg-sub-chart"></div>
+      <div class="control-section">
+
+        <!-- ✅ 1) 호가창(맨 위/롱숏 근처) -->
+        <div class="box orderbook">
+          <div id="tg-asks" style="color:#cf304a;"></div>
+          <div id="tg-mid-price" style="font-size: 22px; font-weight: 900; margin: 10px 0; color: #f3ba2f; text-align: center;">$0.00</div>
+          <div id="tg-bids" style="color:#02c076;"></div>
         </div>
 
-        <div class="control-section">
-          <div class="box orderbook">
-            <div id="tg-asks" style="color: #cf304a;"></div>
-            <div id="tg-mid-price" style="font-size: 22px; font-weight: bold; margin: 10px 0; color: #f3ba2f; text-align: center;">$0.00</div>
-            <div id="tg-bids" style="color: #02c076;"></div>
+        <!-- ✅ 2) 리필/입력/롱숏 -->
+        <div class="trading">
+          <div style="background: #1e2329; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+            <div>
+              <div style="font-size: 10px; color: #848e9c; font-weight:900;">AVAILABLE CREDITS</div>
+              <div id="tg-equity" style="font-size: 20px; font-weight: 900; color: #f3ba2f;">$30,000.00</div>
+            </div>
+            <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
           </div>
 
-          <div class="trading">
-            <div style="background: #1e2329; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+          <input type="number" id="tg-amt" placeholder="달러 입력">
+          <input type="number" id="tg-lev" placeholder="레버리지 입력(1~∞)">
+          <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)">
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn-long" onclick="checkUserBeforeGame('long')">LONG(Add)</button>
+            <button class="btn-short" onclick="checkUserBeforeGame('short')">SHORT(Add)</button>
+          </div>
+        </div>
+
+        <!-- ✅ 3) 포지션/주문 -->
+        <div class="status">
+          <div id="tg-no-pos" style="text-align:center; padding: 12px 0; color:#3d4550; font-size: 12px; font-weight:900;">NO ACTIVE POSITION</div>
+
+          <div id="tg-pos-active" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span id="tg-side-badge" style="padding: 2px 8px; border-radius: 3px; font-weight:900; font-size: 12px; color:#fff;"></span>
+              <div style="text-align:right;">
+                <div class="pos-label">Unrealized P&L</div>
+                <div id="tg-pnl-val" style="font-size: 14px; font-weight: 900;"></div>
+              </div>
+            </div>
+
+            <div id="tg-roe" style="font-size: 18px; font-weight: 900; text-align:center; margin: 6px 0;">0.00%</div>
+
+            <div class="pos-grid">
               <div>
-                <div style="font-size: 9px; color: #848e9c;">AVAILABLE CREDITS</div>
-                <div id="tg-equity" style="font-size: 20px; font-weight: 900; color: #f3ba2f;">$30,000.00</div>
+                <div class="pos-label">Qty (BTC)</div>
+                <div id="tg-pos-qty" class="pos-value">0.000</div>
               </div>
-              <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
+              <div style="text-align:right;">
+                <div class="pos-label">Value (USDT)</div>
+                <div id="tg-pos-value" class="pos-value">$0.00</div>
+              </div>
+              <div>
+                <div class="pos-label">Avg. Entry</div>
+                <div id="tg-pos-entry" class="pos-value">$0.00</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="pos-label">Liq. Price</div>
+                <div id="tg-pos-liq" class="pos-value" style="color:#cf304a;">$0.00</div>
+              </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <input type="number" id="tg-amt" placeholder="달러 입력">
-              <input type="number" id="tg-lev" placeholder="레버리지 입력(1~∞)">
-            </div>
-
-            <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)" style="width: 94%;">
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <button class="btn-long" onclick="checkUserBeforeGame('long')">LONG(Add)</button>
-              <button class="btn-short" onclick="checkUserBeforeGame('short')">SHORT(Add)</button>
-            </div>
+            <button class="btn-exit" onclick="tgExit()">MARKET EXIT (Full)</button>
           </div>
 
-          <div class="box status" style="flex: 1; background: #131722; position: relative; min-width: 320px; height: 380px; display: flex; flex-direction: column; overflow: hidden;">
-            <div id="tg-no-pos" style="text-align: center; padding: 20px 0; color: #3d4550; font-size: 12px;">NO ACTIVE POSITION</div>
-
-            <div id="tg-pos-active" style="display: none; flex-shrink: 0;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="tg-side-badge" style="padding: 2px 8px; border-radius: 3px; font-weight:bold; font-size: 12px; color:#fff;"></span>
-                <div style="text-align: right;">
-                  <div class="pos-label">Unrealized P&L</div>
-                  <div id="tg-pnl-val" style="font-size: 14px; font-weight: bold;"></div>
-                </div>
-              </div>
-
-              <div id="tg-roe" style="font-size: 17px; font-weight: 500; text-align: center; margin: 2px 0;">0.00%</div>
-
-              <div class="pos-grid">
-                <div>
-                  <div class="pos-label">Qty (BTC)</div>
-                  <div id="tg-pos-qty" class="pos-value">0.000</div>
-                </div>
-                <div style="text-align: right;">
-                  <div class="pos-label">Value (USDT)</div>
-                  <div id="tg-pos-value" class="pos-value">$0.00</div>
-                </div>
-                <div>
-                  <div class="pos-label">Avg. Entry</div>
-                  <div id="tg-pos-entry" class="pos-value">$0.00</div>
-                </div>
-                <div style="text-align: right;">
-                  <div class="pos-label">Liq. Price</div>
-                  <div id="tg-pos-liq" class="pos-value" style="color: #cf304a;">$0.00</div>
-                </div>
-              </div>
-
-              <button class="btn-exit" onclick="tgExit()">MARKET EXIT (Full)</button>
-            </div>
-
-            <div style="margin-top: 15px; border-top: 1px solid #2b3139; padding-top: 10px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
-              <div style="font-size: 10px; color: #848e9c; font-weight: bold; margin-bottom: 5px; flex-shrink: 0;">PENDING ORDERS (SCROLL)</div>
-              <div id="tg-order-list" style="flex: 1; overflow-y: auto; background: #050505; border: 1px solid #1a1a1a;"></div>
-            </div>
+          <div style="margin-top: 12px; border-top: 1px solid #2b3139; padding-top: 10px;">
+            <div style="font-size: 11px; color: #848e9c; font-weight: 900; margin-bottom: 6px;">PENDING ORDERS</div>
+            <div id="tg-order-list" style="max-height: 220px; overflow-y:auto; background:#050505; border:1px solid #1a1a1a;"></div>
           </div>
         </div>
+
       </div>
+    </div>
+  </div>
 
-      <!-- ✅ 인증 게이트 -->
-      <div id="entrance-gate" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(11, 14, 17, 0.98); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:#f3ba2f; font-family:sans-serif;">
-        <div style="background:#181a20; padding:40px; border-radius:20px; border:2px solid #f3ba2f; text-align:center; width:340px; box-shadow: 0 10px 50px rgba(0,0,0,0.8); position: relative;">
-          <span onclick="closeGate()" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:28px; color:#848e9c;">&times;</span>
+  <!-- ✅ 인증 게이트 -->
+  <div id="entrance-gate">
+    <div style="background:#181a20; padding:34px; border-radius:20px; border:2px solid #f3ba2f; text-align:center; width:320px; box-shadow: 0 10px 50px rgba(0,0,0,0.8); position: relative;">
+      <span onclick="closeGate()" style="position:absolute; right:18px; top:12px; cursor:pointer; font-size:28px; color:#848e9c;">&times;</span>
+      <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" style="width:46px; margin-bottom:12px;">
+      <h2 style="margin:0 0 8px 0; font-size:22px;">🎮 게임 참여 인증</h2>
+      <p style="color:#848e9c; font-size:13px; margin-bottom:18px;">이메일을 한 번만 등록하시면<br><b>[비트코인 게임]</b>과 <b>[가격 예측 확인]</b>을<br>모두 이용할 수 있습니다.</p>
 
-          <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" style="width:50px; margin-bottom:15px;">
-          <h2 style="margin:0 0 10px 0; font-size:24px;">🎮 게임 참여 인증</h2>
-          <p style="color:#848e9c; font-size:14px; margin-bottom:25px;">이메일을 한 번만 등록하시면<br>
-            <b>[비트코인 게임]</b>과 <b>[가격 예측 확인]</b>을<br>
-            모두 자유롭게 이용하실 수 있습니다!</p>
+      <input type="text" id="db-name" placeholder="성함" style="margin-bottom:10px;">
+      <input type="email" id="db-email" placeholder="이메일 주소" style="margin-bottom:16px;">
 
-          <input type="text" id="db-name" placeholder="성함" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:15px; box-sizing:border-box; outline:none;">
-          <input type="email" id="db-email" placeholder="이메일 주소" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:25px; box-sizing:border-box; outline:none;">
-
-          <button onclick="submitToSheet()" id="db-btn" style="padding:15px; width:100%; background:#f3ba2f; border:none; border-radius:8px; color:#000; font-weight:bold; cursor:pointer; font-size:18px;">인증하고 배팅하기</button>
-
-          <p onclick="closeGate()" style="margin-top:20px; text-decoration:underline; cursor:pointer; color:#848e9c; font-size:13px;">그냥 구경만 할래요 (취소)</p>
-        </div>
-      </div>
-      <!-- ====== 게임 HTML 끝 ====== -->
-
+      <button onclick="submitToSheet()" id="db-btn" style="padding:14px; width:100%; background:#f3ba2f; border:none; border-radius:10px; color:#000; font-weight:900; cursor:pointer; font-size:16px;">인증하고 배팅하기</button>
+      <p onclick="closeGate()" style="margin-top:16px; text-decoration:underline; cursor:pointer; color:#848e9c; font-size:13px;">그냥 구경만 할래요 (취소)</p>
     </div>
   </div>
 
   <script>
-    // ✅ 스크롤 없는 뷰어: 화면에 딱 맞게 축소(가로/세로 모두 고려)
-    let raf = 0;
+    /* iOS까지 pull-to-refresh 완화 (컨테이너 맨 위에서 아래로 당길 때만 방지) */
+    (function blockPullToRefresh(){
+      const scroller = document.getElementById('page-scroll');
+      if (!scroller) return;
+      let startY = 0;
 
-    function fitToScreen(){
-      const pcw = 1600;
-      const pch = 940;
+      scroller.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
 
-      const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-
-      const safeW = vw - 10;
-      const safeH = vh - 70; // HUD 여유
-
-      const s = Math.min(1, safeW / pcw, safeH / pch);
-      document.documentElement.style.setProperty('--scale', String(s));
-
-      // 세로 & 좁으면 안내
-      const hint = document.getElementById('rotateHint');
-      if (hint) {
-        const shouldHint = (vw < 520 && vw < vh);
-        hint.style.display = shouldHint ? 'flex' : 'none';
-      }
-    }
-
-    function scheduleFit(){
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(fitToScreen);
-    }
-
-    window.addEventListener('resize', scheduleFit, { passive: true });
-    window.addEventListener('orientationchange', scheduleFit, { passive: true });
-    document.addEventListener('DOMContentLoaded', fitToScreen);
+      scroller.addEventListener('touchmove', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        const y = e.touches[0].clientY;
+        const pullingDown = (y - startY) > 0;
+        if (scroller.scrollTop === 0 && pullingDown) e.preventDefault();
+      }, { passive: false });
+    })();
   </script>
 
   <script>
-    /* ====== 인증 게이트 + 게임 버튼 연결 ====== */
+    /* TradingView 위젯 */
+    new TradingView.widget({
+      autosize: true,
+      symbol: "BYBIT:BTCUSDT.P",
+      interval: "1",
+      theme: "dark",
+      container_id: "tg-tv-main",
+      locale: "kr"
+    });
+  </script>
+
+  <script>
+    /* 인증 게이트 로직 */
     (function() {
       let selectedType = "";
 
@@ -352,11 +351,7 @@
           formData.append("status", "통합인증완료");
           formData.append("date", new Date().toLocaleString());
 
-          await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: formData
-          });
+          await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: formData });
 
           localStorage.setItem('btc_user_done', 'true');
           localStorage.setItem('registeredName', name);
@@ -365,9 +360,7 @@
           closeGate();
           alert("인증 완료! 이제 게임/예측을 자유롭게 이용할 수 있습니다.");
 
-          if (selectedType && typeof tgPlace === "function") {
-            tgPlace(selectedType);
-          }
+          if (selectedType && typeof tgPlace === "function") tgPlace(selectedType);
         } catch (e) {
           console.error("인증 실패:", e);
           closeGate();
@@ -380,7 +373,7 @@
   </script>
 
   <script>
-    /* ====== 게임 JS ====== */
+    /* 게임 JS (네 기존 로직 유지) */
     (function() {
       const STORAGE_KEY = 'bull_vs_bear_arena_v15_pro';
       let saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
@@ -389,23 +382,15 @@
       let pos = saved.pos || null;
       let orders = saved.orders || [];
       let btc = 0, candleSeries, lastCandle, entryLine, liqLine, orderLines = {};
-
-      // TradingView
-      new TradingView.widget({
-        autosize: true,
-        symbol: "BYBIT:BTCUSDT.P",
-        interval: "1",
-        theme: "dark",
-        container_id: "tg-tv-main",
-        locale: "kr"
-      });
+      let chart;
 
       // Lightweight Charts
-      const chart = LightweightCharts.createChart(document.getElementById('tg-sub-chart'), {
+      chart = LightweightCharts.createChart(document.getElementById('tg-sub-chart'), {
         layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
         grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } },
         timeScale: { timeVisible: true, borderColor: '#2b3139' }
       });
+
       candleSeries = chart.addCandlestickSeries({
         upColor: '#02c076',
         downColor: '#cf304a',
@@ -415,6 +400,21 @@
       });
 
       function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
+
+      // 리사이즈 시 차트만 안전하게 리사이즈(무한루프 없음)
+      let raf = 0;
+      function resizeSubChart(){
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          const el = document.getElementById('tg-sub-chart');
+          if (!el || !chart) return;
+          const r = el.getBoundingClientRect();
+          chart.resize(Math.floor(r.width), Math.floor(r.height));
+        });
+      }
+      window.addEventListener('resize', () => setTimeout(resizeSubChart, 50), { passive: true });
+      window.addEventListener('orientationchange', () => setTimeout(resizeSubChart, 120), { passive: true });
+      setTimeout(resizeSubChart, 500);
 
       window.tgRefill = () => {
         if (confirm("Reset account to $30,000?")) {
@@ -428,8 +428,7 @@
         const d = JSON.parse(e.data);
         if (d.data && d.data.lastPrice) {
           btc = parseFloat(d.data.lastPrice);
-          const mid = document.getElementById('tg-mid-price');
-          if (mid) mid.innerText = "$" + btc.toLocaleString();
+          document.getElementById('tg-mid-price').innerText = "$" + btc.toLocaleString();
 
           const min = Math.floor(Date.now() / 60000) * 60;
           if (!lastCandle || lastCandle.time !== min) lastCandle = { time: min, open: btc, high: btc, low: btc, close: btc };
@@ -453,19 +452,16 @@
         if (lev <= 0) return alert("레버리지를 입력해주세요!");
         if (cash < marginAmt && (!pos || pos.side !== side)) return alert("Not enough Available Credit!");
 
-        if (!lp) {
-          executeTrade(side, btc, marginAmt, lev);
-        } else {
+        if (!lp) executeTrade(side, btc, marginAmt, lev);
+        else {
           orders.push({ id: Date.now(), side, target: lp, amt: marginAmt, lev });
-          updateOrderLines();
-          save();
+          updateOrderLines(); save();
         }
         document.getElementById('tg-limit').value = "";
       };
 
       function executeTrade(side, price, marginAmt, lev) {
         if (pos && pos.side !== side) tgExit();
-
         if (cash >= marginAmt) {
           cash -= marginAmt;
           if (pos && pos.side === side) {
@@ -473,9 +469,7 @@
             const newQty = (marginAmt * lev) / price;
             pos.entry = ((pos.entry * currentQty) + (price * newQty)) / (currentQty + newQty);
             pos.amt += marginAmt;
-          } else {
-            pos = { side, entry: price, amt: marginAmt, lev };
-          }
+          } else pos = { side, entry: price, amt: marginAmt, lev };
           updateLines(); render(); save();
         }
       }
@@ -494,20 +488,15 @@
 
               if (pos.amt < 1) pos = null;
               alert(`Partial Close Filled at $${o.target.toLocaleString()}`);
-            } else {
-              executeTrade(o.side, o.target, o.amt, o.lev);
-            }
+            } else executeTrade(o.side, o.target, o.amt, o.lev);
+
             orders.splice(i, 1);
             updateOrderLines(); updateLines(); render(); save();
           }
         });
       }
 
-      window.tgCancel = (id) => {
-        orders = orders.filter(o => o.id !== id);
-        updateOrderLines();
-        save();
-      };
+      window.tgCancel = (id) => { orders = orders.filter(o => o.id !== id); updateOrderLines(); save(); };
 
       window.tgExit = () => {
         if (!pos) return;
@@ -530,9 +519,7 @@
         if (entryLine) candleSeries.removePriceLine(entryLine);
         if (liqLine) candleSeries.removePriceLine(liqLine);
         if (pos) {
-          const liq = pos.side === 'long'
-            ? pos.entry * (1 - (0.95/pos.lev))
-            : pos.entry * (1 + (0.95/pos.lev));
+          const liq = pos.side === 'long' ? pos.entry * (1 - (0.95/pos.lev)) : pos.entry * (1 + (0.95/pos.lev));
           pos.liqPrice = liq;
           entryLine = candleSeries.createPriceLine({ price: pos.entry, color: '#02c076', lineWidth: 2, title: 'ENTRY' });
           liqLine = candleSeries.createPriceLine({ price: liq, color: '#cf304a', lineWidth: 2, title: 'LIQ' });
@@ -541,13 +528,12 @@
 
       function updateOrderLines() {
         for (let id in orderLines) candleSeries.removePriceLine(orderLines[id]);
-        orderLines = {};
-        let html = '';
+        orderLines = {}; let html = '';
         orders.sort((a,b) => b.target - a.target).forEach(o => {
           orderLines[o.id] = candleSeries.createPriceLine({ price: o.target, color: '#f3ba2f', lineStyle: 2, title: 'LIMIT' });
           html += `<div class="order-item"><span style="color:${o.side==='long'?'#02c076':'#cf304a'}">${o.side.toUpperCase()} $${o.target.toLocaleString()}</span><span>$${o.amt.toLocaleString()} <b class="cancel-btn" onclick="tgCancel(${o.id})">✖</b></span></div>`;
         });
-        document.getElementById('tg-order-list').innerHTML = html || '<div style="color:#444;text-align:center;font-size:11px;">No pending orders</div>';
+        document.getElementById('tg-order-list').innerHTML = html || '<div style="color:#444;text-align:center;font-size:11px; padding:10px;">No pending orders</div>';
       }
 
       function updateOrderBook() {
@@ -591,4 +577,5 @@
 
 </body>
 </html>
+
 
