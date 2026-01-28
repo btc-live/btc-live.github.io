@@ -797,8 +797,13 @@ setInterval(() => {
     .pc-only-wrapper {
         transform: scale(0.6);
         transform-origin: top left;
-        margin: 0 auto;      /* 가운데로 */
+        margin: 0 auto;
         display: inline-block;
+    }
+
+    /* ✅ 이 줄만 추가 */
+    .main-container {
+        height: 510px;   /* 850px × 0.6 */
     }
 }
 
