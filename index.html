@@ -786,25 +786,22 @@ setInterval(() => {
 
 /* 모바일에서만 PC 유지 + 가로 스크롤 가능 */
 @media (max-width: 768px) {
-    body { padding: 0; }
+  body { padding: 0; }
 
-    .pc-only-scroll {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+  .pc-only-scroll{
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden; /* 높이 보정하니 세로는 숨김 */
+    -webkit-overflow-scrolling: touch;
+    text-align: center;
+  }
 
-    .pc-only-wrapper {
-        transform: scale(0.6);
-        transform-origin: top left;
-        margin: 0 auto;
-        display: inline-block;
-    }
-
-    /* ✅ 이 줄만 추가 */
-    .main-container {
-        height: 510px;   /* 850px × 0.6 */
-    }
+  .pc-only-wrapper{
+    width: 1600px;
+    transform: scale(0.6);
+    transform-origin: top left;
+    display: inline-block;
+  }
 }
 
 
@@ -912,6 +909,36 @@ setInterval(() => {
 </div>
 </div>
 </div>
+
+
+
+<script>
+(function () {
+  const scale = 0.6;
+
+  function fitGameHeight() {
+    const scroll = document.querySelector('.pc-only-scroll');
+    const wrap = document.querySelector('.pc-only-wrapper');
+    if (!scroll || !wrap) return;
+
+    // 원래 높이(스케일 적용 전)
+    const originalH = wrap.scrollHeight;
+
+    // 바깥 박스 높이를 "보이는 높이"로 맞춤
+    scroll.style.height = (originalH * scale) + 'px';
+  }
+
+  window.addEventListener('load', fitGameHeight);
+  window.addEventListener('resize', fitGameHeight);
+  setTimeout(fitGameHeight, 300); // 차트 로딩 지연 대비
+})();
+</script>
+
+
+
+
+
+
 
 <script>
 (function() {
