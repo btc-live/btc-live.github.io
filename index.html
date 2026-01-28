@@ -778,10 +778,23 @@ setInterval(() => {
         .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; border-top: 1px solid #2b3139; padding-top: 5px; }
         .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
         .pos-value { font-size: 13px; font-weight: bold; color: #eee; }
+ /* 🔽 여기부터 추가 */
+    .pc-only-wrapper {
+        width: 1600px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .pc-only-wrapper {
+            transform: scale(0.6);
+            transform-origin: top center;
+        }
+    }
+    /* 🔼 여기까지 */
     </style>
 </head>
 <body>
-
+<div class="pc-only-wrapper">
 <div class="game-header" style="margin-bottom: 20px;">
     <h1 style="font-size: 34px; margin-bottom: 10px;">
         <span style="color: #f3ba2f;">BULL vs BEAR : ARENA</span> 
@@ -877,6 +890,7 @@ setInterval(() => {
     </div>
 </div>
     </div>
+</div>
 </div>
 
 <script>
