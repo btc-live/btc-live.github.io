@@ -31,36 +31,6 @@
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
     
 
-/* 1. 숏롱게임 외곽 박스 (무조건 가로 스크롤 생성) */
-.sim-v2-card { 
-    background: #1e2329 !important; 
-    border: 1px solid #333 !important;
-    border-radius: 15px !important;
-    padding: 15px !important;
-    margin: 20px auto !important;
-    
-    /* 🚀 핵심: 넘치면 무조건 스크롤바를 만들어라! */
-    overflow-x: auto !important; 
-    display: block !important;
-    width: 95% !important;
-    -webkit-overflow-scrolling: touch !important; 
-}
-
-/* 2. 그 안의 모든 표(table)를 PC 버전처럼 강제 확장 */
-.sim-v2-card table { 
-    /* 🚀 폰 화면보다 훨씬 넓은 650px를 강제로 박아버립니다 */
-    min-width: 650px !important; 
-    width: 100% !important;
-    border-collapse: collapse !important;
-}
-
-/* 3. 글자 겹침 방지 */
-.sim-v2-card td, .sim-v2-card th {
-    white-space: nowrap !important;
-    padding: 10px 5px !important;
-    font-size: 12px !important;
-    color: white !important;
-}
 
 </style>
 </head>
