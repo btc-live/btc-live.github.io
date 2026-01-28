@@ -30,32 +30,6 @@
         .signal-neutral { color: #848e9c; font-weight: bold; }
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
     
-<style>
-    /* 1. 숏롱 시뮬레이션 박스: 강제로 가로 스크롤 생성 */
-    .sim-v2-card { 
-        overflow-x: auto !important; 
-        -webkit-overflow-scrolling: touch !important; 
-        display: block !important;
-        width: 100% !important;
-        max-width: 900px !important;
-        margin: 20px auto !important;
-    }
-
-    /* 2. 표: PC 버전 크기(800px)로 강제 고정 */
-    .sim-v2-table { 
-        width: 800px !important; /* 👈 숫자를 키우면 더 넓어집니다 */
-        min-width: 800px !important; 
-        border-collapse: collapse !important;
-        table-layout: auto !important;
-    }
-
-    /* 3. 표 안의 글자: 절대 줄바꿈 금지 */
-    .sim-v2-table th, .sim-v2-table td { 
-        white-space: nowrap !important; 
-        padding: 12px !important;
-        text-align: center !important;
-    }
-</style>
 </head>
 
 <body>
