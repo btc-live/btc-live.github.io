@@ -30,13 +30,42 @@
         .signal-neutral { color: #848e9c; font-weight: bold; }
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
     
-@media (max-width: 600px) {
-    .card { padding: 10px; }
-    h1 { font-size: 20px; }
-    #result { font-size: 24px; }
-    .forecast-table td, .forecast-table th { font-size: 11px; padding: 5px 2px; }
-    .chart-wrapper { height: 250px; }
-}
+/* 📱 모바일 화면 강제 최적화 (절대 안 짤리는 버전) */
+        @media (max-width: 600px) {
+            body { padding: 10px 0; } /* 양옆 여백 제거 */
+            
+            .card { 
+                width: 100% !important; /* 화면 가로에 딱 맞춤 */
+                padding: 10px !important; 
+                margin: 0 auto 20px auto !important;
+                border-radius: 0; /* 둥근 모서리보다 꽉 차는 게 안 짤림 */
+                box-sizing: border-box !important;
+            }
+
+            h1 { font-size: 1.1rem !important; }
+            #result { font-size: 22px !important; }
+
+            /* 🚀 롱숏게임 표(Table) 안 짤리게 하기 */
+            .forecast-table { 
+                display: block; /* 표를 박스 형태로 변환 */
+                width: 100% !important; 
+                overflow-x: auto; /* 혹시나 넘치면 옆으로 밀어서 보게 함 */
+            }
+            .forecast-table th, .forecast-table td { 
+                padding: 5px 2px !important; 
+                font-size: 10px !important; /* 글자 크기를 더 과감하게 줄임 */
+                white-space: nowrap; /* 글자 줄바꿈 방지 */
+            }
+
+            /* 📊 차트 크기 조절 */
+            .chart-wrapper { 
+                height: 250px !important; 
+                width: 100% !important;
+            }
+            
+            input { width: 60px !important; font-size: 14px !important; }
+            button { padding: 8px 12px !important; font-size: 14px !important; }
+        }
 
 </style>
 </head>
