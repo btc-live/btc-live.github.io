@@ -779,30 +779,35 @@ setInterval(() => {
         .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
         .pos-value { font-size: 13px; font-weight: bold; color: #eee; }
  /* 🔽 여기부터 추가 */
-    .pc-only-wrapper {
-        width: 1600px;
-        margin: 0 auto;
+  .pc-only-wrapper {
+    width: 1600px;
+    margin: 0 auto;
+}
+
+/* 모바일에서만 PC 유지 + 가로 스크롤 가능 */
+@media (max-width: 768px) {
+    body { padding: 0; }
+
+    .pc-only-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-   @media (max-width: 768px) {
-    body {
-        padding: 0;
-    }
-
     .pc-only-wrapper {
-        width: 1600px;
         transform: scale(0.6);
         transform-origin: top left;
-        position: relative;
-        left: 50%;
-        translate: -50% 0;
+        margin: 0 auto;      /* 가운데로 */
+        display: inline-block;
     }
 }
+
 
     /* 🔼 여기까지 */
     </style>
 </head>
 <body>
+<div class="pc-only-scroll">
 <div class="pc-only-wrapper">
 <div class="game-header" style="margin-bottom: 20px;">
     <h1 style="font-size: 34px; margin-bottom: 10px;">
@@ -899,6 +904,7 @@ setInterval(() => {
     </div>
 </div>
     </div>
+</div>
 </div>
 </div>
 
