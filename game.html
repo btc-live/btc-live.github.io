@@ -67,6 +67,16 @@
   }
   .goog-te-banner-frame.skiptranslate, .goog-te-gadget span { display: none !important; }
   body { top: 0 !important; }
+  /* ✅ 모바일 pull-to-refresh 방지 */
+html, body {
+  height: 100%;
+  overscroll-behavior-y: none; /* Android / Chrome */
+}
+
+body {
+  overflow-x: hidden;
+}
+
   </style>
 </head>
 
@@ -517,6 +527,29 @@
     }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    
+    <script>
+        (function disablePullToRefresh(){
+          let startY = 0;
+        
+          window.addEventListener('touchstart', function(e){
+            if (!e.touches || e.touches.length !== 1) return;
+            startY = e.touches[0].clientY;
+          }, { passive: true });
+        
+          window.addEventListener('touchmove', function(e){
+            // 확대/두 손가락 제스처는 건드리지 않음
+            if (!e.touches || e.touches.length !== 1) return;
+        
+            const y = e.touches[0].clientY;
+            const isPullingDown = (y - startY) > 0;
+        
+            // 페이지 맨 위에서 아래로 끌면(=새로고침 제스처) 막기
+            if (window.scrollY === 0 && isPullingDown) {
+              e.preventDefault();
+            }
+          }, { passive: false });
+        })();
+        </script>
+         
 </body>
 </html>
