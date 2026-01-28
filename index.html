@@ -6,7 +6,6 @@
 <meta name="naver-site-verification" content="e6cf1e8cb9cfdaa08bb9507230d016acf44af605" />
 <meta name="google-site-verification" content="OAhCbV8G6f6Xf603PHsm5ZRWDZZD-5Rd6N77ZKGVMEw" />
 <meta name="naver-site-verification" content="2cd179fc7bb3b1bf99983a6a19db87a495f1e68f" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>BTC 실시간 변동성 예측 모델</title>
     <link rel="icon" href="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" type="image/x-icon">
@@ -780,62 +779,7 @@ setInterval(() => {
         .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
         .pos-value { font-size: 13px; font-weight: bold; color: #eee; }
  /* 🔽 여기부터 추가 */
- /* PC 기본: 버튼 숨김 */
-.mobile-game-btn { 
-  display: none;
-  text-align: center;
-  line-height: 1.2;
-}
-
-/* 버튼 안 작은 설명 */
-.mobile-game-btn .btn-subtext {
-  display: block;
-  margin-top: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #5e6673;
-}
-
-/* PC 기본: 게임은 원래대로 보임 */
-#game-section {
-  display: flex;
-}
-
-/* 모바일 */
-@media (max-width: 768px) {
-  .game-header h1 { 
-    display: none;
-  }
-
-  .mobile-game-btn {
-    display: inline-block;
-    margin: 10px auto 0;
-    padding: 16px 26px 18px; /* 아래 줄 여유 */
-    font-size: 20px;
-    font-weight: 900;
-    background: #f3ba2f;
-    color: #000;
-    border-radius: 12px;
-    text-decoration: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-  }
-
-  /* 모바일 기본: 게임 숨김 */
-  #game-section {
-    display: none;
-  }
-
-  /* 모바일에서 열렸을 때: PC 화면 축소 */
-  #game-section.game-open {
-    display: flex;
-    width: 1600px;
-    transform-origin: top left;
-    transform: scale(0.24);
-    margin-bottom: -650px;
-  }
-}
-
-
+ 
     /* 🔼 여기까지 */
     </style>
 </head>
@@ -845,7 +789,7 @@ setInterval(() => {
         <span style="color: #f3ba2f;">BULL vs BEAR : ARENA</span> 
         <span style="font-size: 22px; color: #ffffff; font-weight: normal; margin-left: 12px; vertical-align: middle;">가상 트레이딩 게임</span>
     </h1>
- 
+
 <div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 15px; border-radius: 8px; display: inline-block; text-align: left; font-size: 13px; color: #d1d4dc; line-height: 1.6; max-width: 850px;">
     <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
         <span style="color: #f3ba2f; font-weight: bold;">💡 제작 의도:</span> 
@@ -857,21 +801,12 @@ setInterval(() => {
     시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> | 
     <span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
     <span style="color: #848e9c; font-size: 11px;">※ 브라우저를 바꾸거나 쿠키를 삭제하면 데이터가 초기화되니 주의하세요!</span>
-<!-- ✅ 모바일 전용 게임 입장 버튼 -->
-<div style="text-align:center; margin-top:15px;">
-    <a href="game.html" class="mobile-game-btn">
-        🎮 게임입장
-        <span class="btn-subtext">(모바일 전용 · PC에서는 바로 표시)</span>
-      </a>
-      
-  </div>
-  
 </div>  
 
 
 <div style="height: 2px;"></div>
 
-<div class="main-container" id="game-section">
+<div class="main-container">
     <div class="chart-section">
         <div id="tg-tv-main"></div>
         <div id="tg-sub-chart"></div>
@@ -1125,17 +1060,6 @@ if (marginAmt <= 0) return alert("금액을 입력해주세요!");
     setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);
 })();
 </script>
-<script>
-    function openGame(e){
-      e.preventDefault();
-      const game = document.getElementById('game-section');
-      if (!game) return;
-    
-      game.classList.add('game-open');
-      game.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    </script>
-    
 </body>
 </html>
 
@@ -1391,6 +1315,7 @@ window.submitToSheet = async function() {
         }
     })();
 </script>
+
 
 <script type="text/javascript">
 function googleTranslateElementInit() {
