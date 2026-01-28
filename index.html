@@ -6,7 +6,7 @@
 <meta name="naver-site-verification" content="e6cf1e8cb9cfdaa08bb9507230d016acf44af605" />
 <meta name="google-site-verification" content="OAhCbV8G6f6Xf603PHsm5ZRWDZZD-5Rd6N77ZKGVMEw" />
 <meta name="naver-site-verification" content="2cd179fc7bb3b1bf99983a6a19db87a495f1e68f" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>BTC 실시간 변동성 예측 모델</title>
     <link rel="icon" href="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -779,42 +779,11 @@ setInterval(() => {
         .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
         .pos-value { font-size: 13px; font-weight: bold; color: #eee; }
  /* 🔽 여기부터 추가 */
-  .pc-only-wrapper {
-    width: 1600px;
-    margin: 0 auto;
-}
-
-/* 모바일에서만 PC 유지 + 가로 스크롤 가능 */
-@media (max-width: 768px) {
-  body { padding: 0; }
-
-  .pc-only-scroll{
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    text-align: center;
-  }
-
-  .pc-only-wrapper{
-    width: 1600px;
-    transform: scale(0.6);
-    transform-origin: top left;
-    display: inline-block;
-  }
-
-  .main-container{
-    overflow: visible;
-    height: auto;          /* ✅ 이 줄 추가 (핵심) */
-  }
-}
-
+ 
     /* 🔼 여기까지 */
     </style>
 </head>
 <body>
-<div class="pc-only-scroll">
-<div class="pc-only-wrapper">
 <div class="game-header" style="margin-bottom: 20px;">
     <h1 style="font-size: 34px; margin-bottom: 10px;">
         <span style="color: #f3ba2f;">BULL vs BEAR : ARENA</span> 
@@ -911,38 +880,6 @@ setInterval(() => {
 </div>
     </div>
 </div>
-</div>
-</div>
-
-
-
-<script>
-(function () {
-  function fitGameHeight() {
-    const scroll = document.querySelector('.pc-only-scroll');
-    const wrap = document.querySelector('.pc-only-wrapper');
-    if (!scroll || !wrap) return;
-
-    // ✅ 스케일 적용된 "실제 화면 높이"를 그대로 사용
-    const h = wrap.getBoundingClientRect().height;
-    scroll.style.height = Math.ceil(h) + 'px';
-  }
-
-  window.addEventListener('load', fitGameHeight);
-  window.addEventListener('resize', fitGameHeight);
-
-  // ✅ TradingView/차트 로딩이 늦어서 높이가 뒤늦게 커지는 경우 대비
-  setTimeout(fitGameHeight, 300);
-  setTimeout(fitGameHeight, 1200);
-  setTimeout(fitGameHeight, 2500);
-})();
-</script>
-
-
-
-
-
-
 
 
 <script>
