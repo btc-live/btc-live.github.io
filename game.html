@@ -169,12 +169,26 @@
 
       <div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 12px; border-radius: 10px; text-align:left; font-size: 12px; color: #d1d4dc; line-height: 1.55;">
         <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
-          <b style="color:#f3ba2f;">💡 제작 의도:</b> 실전 투자 전, 충분한 연습과 전략 검증을 위해 제작
-        </div>
-        <b style="color:#f3ba2f;">[게임 규칙]</b>
-        시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> |
-        <span style="color:#cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
-        <span style="color:#848e9c; font-size: 11px;">※ 브라우저/쿠키 변경 시 데이터 초기화</span>
+            <span style="color: #f3ba2f; font-weight: bold;">💡 제작 의도:</span>
+            실전 투자 전, 충분한 연습과 전략 검증을 위해 제작
+          
+            <div style="margin-top:6px; color:#9aa4b2; font-size:11px; font-weight:700;">
+             Our Mission: For practice and strategy testing before real trading.
+            </div>
+          </div>
+          
+          <span style="color: #f3ba2f; font-weight: bold;">[게임 규칙]</span>
+          시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> |
+          <span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
+          
+          <div style="margin-top:6px; color:#9aa4b2; font-size:11px; font-weight:700;">
+            Rules: $30,000 start • Limit if price set, otherwise Market • Liquidated on LIQ line.
+          </div>
+          
+          <div style="margin-top:4px; color:#848e9c; font-size:10.5px;">
+            ※ 브라우저/쿠키 변경 시 데이터 초기화<br>
+            Data resets if browser or cookies are changed.
+          </div>
       </div>
     </div>
 
@@ -203,8 +217,8 @@
             <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
           </div>
 
-          <input type="number" id="tg-amt" placeholder="달러 입력">
-          <input type="number" id="tg-lev" placeholder="레버리지 입력(1~∞)">
+          <input type="number" id="tg-amt" placeholder="달러($) 입력">
+          <input type="number" id="tg-lev" placeholder="레버리지(x) 입력(1~∞)">
           <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)">
 
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
