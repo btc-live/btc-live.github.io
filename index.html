@@ -32,34 +32,29 @@
     
 
 /* 1. 표 설정: 폰 사이즈보다 훨씬 넓게 강제 고정 */
-.forecast-table { 
-    width: 100%; 
-    /* 🚀 형님이 주신 430px보다 훨씬 넓은 650px로 고정해서 PC 느낌을 냅니다 */
-    min-width: 650px !important; 
+..forecast-table { 
+    /* 🚀 폰 화면(430px)보다 훨씬 넓게 600px로 고정해버립니다 */
+    min-width: 600px !important; 
+    width: 100%;
     border-collapse: collapse; 
-    background: #1e2329; 
-    border-radius: 12px; 
-    color: white; 
-    margin-top: 20px; 
-    font-size: 12px; /* 글자를 작게 해서 PC 버전 느낌 강조 */
+    font-size: 12px !important; /* 글자를 작게 해서 PC 느낌 */
+    margin-top: 20px;
 }
 
 /* 2. 카드 설정: 표가 넓어져도 밖으로 안 터지게 막아줌 */
 .card { 
-    display: block; 
-    padding: 20px 10px; 
-    border: 2px solid #f3ba2f; 
-    border-radius: 20px; 
+    display: block !important; 
+    width: 95% !important;
+    margin: 0 auto !important;
+    padding: 15px 5px !important;
     background: #181a20; 
-    width: 95%; 
-    max-width: 900px; 
-    margin: 0 auto;
+    border: 2px solid #f3ba2f; 
+    border-radius: 15px; 
     
-    /* 🚀 핵심: 표가 430px를 넘어가면 손가락으로 옆으로 밀 수 있게 함 */
-    overflow-x: auto; 
-    -webkit-overflow-scrolling: touch; /* 아이폰에서 부드럽게 밀리게 함 */
+    /* 🚀 핵심: 여기서 '가로로 넘치면 스크롤해라'가 먹혀야 합니다 */
+    overflow-x: auto !important; 
+    -webkit-overflow-scrolling: touch !important; /* 아이폰 전용 부드러운 스크롤 */
 }
-
 /* 3. 형님이 말씀하신 400px 전후 모바일 기기용 예외 처리 */
 @media only screen and (max-width: 440px) {
     body { padding: 10px 5px; }
@@ -73,6 +68,12 @@
     .forecast-table td, .forecast-table th {
         padding: 8px 4px !important;
     }
+.forecast-table th, .forecast-table td {
+    padding: 10px 5px !important;
+    white-space: nowrap !important; /* 글자가 아래로 안 꺾이게 고정 */
+    text-align: center;
+}
+
 }
 
 
