@@ -794,8 +794,6 @@ setInterval(() => {
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     text-align: center;
-
-    margin-bottom: -200px;   /* ✅ 이 줄 추가 (공간 줄이기 핵심) */
   }
 
   .pc-only-wrapper{
@@ -807,10 +805,7 @@ setInterval(() => {
 
   .main-container{
     overflow: visible;
-  }
-
-  .pc-only-scroll{
-    padding-bottom: 0;
+    height: auto;          /* ✅ 이 줄 추가 (핵심) */
   }
 }
 
