@@ -214,7 +214,7 @@
               <div style="font-size: 10px; color: #848e9c; font-weight:900;">AVAILABLE CREDITS</div>
               <div id="tg-equity" style="font-size: 20px; font-weight: 900; color: #f3ba2f;">$30,000.00</div>
             </div>
-            <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
+            
           </div>
 
           <input type="number" id="tg-amt" placeholder="달러($) 입력">
@@ -347,7 +347,7 @@
       window.submitToSheet = async function() {
         const name = document.getElementById('db-name').value.trim();
         const email = document.getElementById('db-email').value.trim();
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
 
         if (!name || !email.includes('@')) {
           alert("정보를 올바르게 입력해주세요.");
@@ -408,7 +408,7 @@ if (saved && saved.cash !== undefined && saved.cash !== null && saved.cash !== 3
     const email = (localStorage.getItem("registeredEmail") || "").trim();
     if (!email) return;
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
     const res = await fetch(`${WEB_APP_URL}?action=getUser&email=${encodeURIComponent(email)}`);
     const data = await res.json();
 
@@ -463,31 +463,7 @@ tgInitCashFromSheetIfNeeded();
       window.addEventListener('orientationchange', () => setTimeout(resizeSubChart, 120), { passive: true });
       setTimeout(resizeSubChart, 500);
 
-      window.tgRefill = () => {
-  // ① 인증 안 했으면 리필 불가 → 인증창 표시
-  if (localStorage.getItem("btc_user_done") !== "true") {
-    const gate = document.getElementById("entrance-gate");
-    if (gate) gate.style.display = "flex";
-    return;
-  }
-
-  // ② 최근 잔액이 $1 초과면 리필 불가
-  if (Number(cash) > 1) {
-    alert("리필은 잔액이 $1 이하일 때만 가능합니다.");
-    return;
-  }
-
-  // ③ 조건 통과 → 리필
-  if (confirm("Reset account to $30,000?")) {
-    cash = 30000;
-    pos = null;
-    orders = [];
-    save();
-    location.reload();
-  }
-};
-
-
+    
       const ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
       ws.onopen = () => ws.send(JSON.stringify({ op: "subscribe", args: ["tickers.BTCUSDT"] }));
       ws.onmessage = (e) => {
@@ -566,7 +542,7 @@ tgInitCashFromSheetIfNeeded();
 
 /* ===== SAFE PROFIT SYNC (INDEX DESKTOP GAME) ===== */
 window.TG_PROFIT_SYNC = window.TG_PROFIT_SYNC || (function(){
-  const PROFIT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+  const PROFIT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
   const AUTO_SAVE_MS = 10 * 60 * 1000; // 10분
   const THROTTLE_MS = 3000;
 
@@ -695,6 +671,32 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
         document.getElementById('tg-bids').innerHTML = b;
       }
 
+
+/* 🔽🔽🔽 여기 딱 이 자리에 붙여넣기 🔽🔽🔽 */
+function autoRefillIfNeeded(){
+  try{
+    if (localStorage.getItem("btc_user_done") !== "true") return;
+    if (pos) return;
+
+    const THRESHOLD = 100;
+    if (Number(cash) > THRESHOLD) return;
+
+    const key = "tg_auto_refill_at";
+    const last = Number(localStorage.getItem(key) || 0);
+    if (Date.now() - last < 5 * 60 * 1000) return;
+
+    cash = 30000;
+    orders = [];
+    save();
+    render();
+
+    localStorage.setItem(key, String(Date.now()));
+    window.TG_PROFIT_SYNC?.send?.("auto_refill");
+  }catch(e){}
+}
+/* 🔼🔼🔼 여기까지 🔼🔼🔼 */
+
+
       function render() {
 
         const authed = (localStorage.getItem("btc_user_done") === "true");
@@ -731,6 +733,7 @@ document.getElementById('tg-equity').innerText =
           document.getElementById('tg-pos-active').style.display = "none";
           document.getElementById('tg-no-pos').style.display = "block";
         }
+        autoRefillIfNeeded();
       }
 
       setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);

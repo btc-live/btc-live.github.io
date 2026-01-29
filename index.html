@@ -357,7 +357,7 @@ setTimeout(() => window.tgInitCashFromSheetIfNeeded?.(), 1000);
 
             document.getElementById('emailModal').style.display = 'none';
 
-            const scriptURL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+            const scriptURL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
             
             fetch(scriptURL, {
                 method: "POST",
@@ -892,7 +892,7 @@ setInterval(() => {
                     <div style="font-size: 9px; color: #848e9c;">AVAILABLE CREDITS</div>
                     <div id="tg-equity" style="font-size: 20px; font-weight: 900; color: #f3ba2f;">$30,000.00</div>
                     </div>
-                <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
+              
             </div>
             
 
@@ -971,7 +971,24 @@ setInterval(() => {
     candleSeries = chart.addCandlestickSeries({ upColor: '#02c076', downColor: '#cf304a', borderVisible: false, wickUpColor: '#02c076', wickDownColor: '#cf304a' });
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
+    let autoRefillLock = false;
 
+function autoRefillIfNeeded(reason = "auto_refill") {
+  if (cash <= 100 && !autoRefillLock) {
+    autoRefillLock = true;
+
+    cash = 30000;
+    pos = null;
+    orders = [];
+    save();
+    render();
+
+    window.TG_PROFIT_SYNC?.send?.(reason);
+    console.log("[AUTO REFILL] cash reset to 30000");
+  }
+
+  if (cash > 100 && autoRefillLock) autoRefillLock = false;
+}
 // ✅ 인증 유저: 기본값(30000)일 때만 시트 최근잔액으로 시작
 async function tgInitCashFromSheetIfNeeded(){
   try{
@@ -983,7 +1000,7 @@ async function tgInitCashFromSheetIfNeeded(){
     const email = (localStorage.getItem("registeredEmail") || "").trim().toLowerCase();
     if (!email || !email.includes("@")) return;
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
 
     for (let t = 0; t < 3; t++) {
       const res = await fetch(`${WEB_APP_URL}?action=getUser&email=${encodeURIComponent(email)}`);
@@ -1017,30 +1034,6 @@ window.addEventListener("load", () => setTimeout(tgInitCashFromSheetIfNeeded, 30
 setTimeout(tgInitCashFromSheetIfNeeded, 1500);
 
 
-
-window.tgRefill = () => {
-  // ① 인증 안 했으면 리필 불가 → 인증 게이트
-  if (localStorage.getItem("btc_user_done") !== "true") {
-    const gate = document.getElementById("entrance-gate");
-    if (gate) gate.style.display = "flex";
-    return;
-  }
-
-  // ② 최근 잔액이 $1 초과면 리필 불가
-  if (Number(cash) > 1) {
-    alert("리필은 잔액이 $1 이하일 때만 가능합니다.");
-    return;
-  }
-
-  // ③ 조건 통과 → 리필 허용
-  if (confirm("Reset account to $30,000?")) {
-    cash = 30000;
-    pos = null;
-    orders = [];
-    save();
-    location.reload();
-  }
-};
 
 
     const ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
@@ -1125,7 +1118,7 @@ if (marginAmt <= 0) return alert("금액을 입력해주세요!");
 
 /* ===== SAFE PROFIT SYNC (INDEX DESKTOP GAME) ===== */
 window.TG_PROFIT_SYNC = window.TG_PROFIT_SYNC || (function(){
-  const PROFIT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+  const PROFIT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
   const AUTO_SAVE_MS = 10 * 60 * 1000; // 10분
   const THROTTLE_MS = 3000;
 
@@ -1291,6 +1284,7 @@ document.getElementById('tg-equity').innerText =
             document.getElementById('tg-pos-active').style.display = "none";
             document.getElementById('tg-no-pos').style.display = "block";
         }
+        autoRefillIfNeeded(); 
     }
     setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);
 })();
@@ -1412,7 +1406,7 @@ window.checkUserBeforeGame = function(type) {
 window.submitToSheet = async function() {
     const name = document.getElementById('db-name').value.trim();
     const email = document.getElementById('db-email').value.trim();
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec"; 
 
     if (!name || !email.includes('@')) {
         alert("정보를 올바르게 입력해주세요.");
