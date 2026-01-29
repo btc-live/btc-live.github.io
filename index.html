@@ -850,7 +850,7 @@ setInterval(() => {
         <span style="font-size: 22px; color: #ffffff; font-weight: normal; margin-left: 12px; vertical-align: middle;">가상 트레이딩 게임</span>
     </h1>
  
-<div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 15px; border-radius: 8px; display: inline-block; text-align: left; font-size: 13px; color: #d1d4dc; line-height: 1.6; max-width: 850px;">
+<div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 15px; border-radius: 8px; display: inline-block; text-align: left; font-size: 13px; color: #d1d4dc; line-height: 1.6; max-width: 850px; position:relative;">
     <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
         <span style="color: #f3ba2f; font-weight: bold;">💡 제작 의도:</span> 
         선물 투자의 위험성을 알면서도 연습할 곳이 마땅치 않았던 분들을 위해 만들었습니다. <br>
@@ -871,6 +871,19 @@ setInterval(() => {
   </div>
   
 </div>  
+
+<div id="tg-auth-panel" style="display:none; margin:12px auto 0; max-width:850px;
+     border:2px solid #f3ba2f; border-radius:14px; padding:10px 14px;
+     background:rgba(243,186,47,0.06);">
+  <div style="font-size:13px; font-weight:900; color:#f3ba2f; text-align:center; line-height:1.3;">
+    <!-- 내용은 JS로 채움 -->
+  </div>
+  <div style="margin-top:6px; font-size:11px; color:#848e9c; text-align:center; line-height:1.4;">
+    인증 해제 전에 포지션 정리해야 기록 반영
+  </div>
+</div>
+
+
 
 
 <div style="height: 2px;"></div>
@@ -1246,6 +1259,77 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
         document.getElementById('tg-asks').innerHTML = a; document.getElementById('tg-bids').innerHTML = b;
     }
 
+
+    // ===== AUTH BADGE (email mask + logout link) =====
+    function tgMaskedEmail(){
+      const email = (localStorage.getItem("registeredEmail") || "").trim();
+      if (!email.includes("@")) return "";
+      const p = (email.split("@")[0] || "");
+      const n = Math.min(5, Math.max(3, p.length));
+      return p.slice(0, n) + "***";
+    }
+
+    function tgDoLogout(){
+      try{
+        localStorage.removeItem("btc_user_done");
+        localStorage.removeItem("registeredEmail");
+        localStorage.removeItem("registeredName");
+      }catch(e){}
+      try{ tgUpdateAuthBadge(false); }catch(e){}
+      try{ render(); }catch(e){}
+    }
+
+    function tgRequestLogout(){
+      try{
+        if (localStorage.getItem("btc_user_done") !== "true") return;
+
+        const hasPos = !!pos;
+
+        if (hasPos){
+          const msg =
+`인증을 해제하기 전에
+현재 포지션을 정리해야 기록에 반영됩니다.
+
+지금 인증을 해제하면
+열려 있는 포지션은 기록되지 않습니다.`;
+
+          if (!confirm(msg + "\n\n[확인] 포지션 정리하고 인증 해제\n[취소] 유지")) return;
+
+          if (typeof window.tgExit === "function") window.tgExit();
+          setTimeout(tgDoLogout, 350);
+          return;
+        }
+
+        if (confirm("인증을 해제할까요?")) tgDoLogout();
+      }catch(e){}
+    }
+
+    function tgUpdateAuthBadge(authed){
+  try{
+    const panel = document.getElementById("tg-auth-panel");
+    if (!panel) return;
+
+    if (!authed) { panel.style.display = "none"; return; }
+
+    const m = tgMaskedEmail();
+    if (!m) { panel.style.display = "none"; return; }
+
+    panel.firstElementChild.innerHTML =
+      `<span style="pointer-events:none;">🔓 트레이더 ${m} 님 </span>` +
+      `<span id="tg-logout-link" style="cursor:pointer; text-decoration:underline; color:#f3ba2f;">(인증 해제)</span>`;
+
+    panel.style.display = "block";
+
+    const link = document.getElementById("tg-logout-link");
+    if (link && link.dataset.bound !== "1") {
+      link.dataset.bound = "1";
+      link.addEventListener("click", tgRequestLogout);
+    }
+  }catch(e){}
+}
+
+    // ===== /AUTH BADGE =====
+
     function render() {
         
         const authed = (localStorage.getItem("btc_user_done") === "true");
@@ -1284,6 +1368,7 @@ document.getElementById('tg-equity').innerText =
             document.getElementById('tg-pos-active').style.display = "none";
             document.getElementById('tg-no-pos').style.display = "block";
         }
+        tgUpdateAuthBadge(authed);
         autoRefillIfNeeded(); 
     }
     setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);
@@ -1383,10 +1468,22 @@ document.getElementById('tg-equity').innerText =
 (function() {
     let selectedType = "";
     let isGateOpen = false;
+// ✅ 인증창 버튼/문구 초기화 (재인증 시 '응답 없음' 방지)
+function tgResetAuthGateUI(){
+  try{
+    const btn = document.getElementById('db-btn');
+    if (btn){
+      btn.disabled = false;
+      btn.innerText = "인증하고 배팅하기";
+    }
+  }catch(e){}
+}
+
 // --- 여기에 closeGate 함수를 추가하세요 ---
     window.closeGate = function() {
         isGateOpen = false;
         document.getElementById('entrance-gate').style.display = 'none';
+        tgResetAuthGateUI();
     };
     // --------------------------------------
 
@@ -1398,6 +1495,7 @@ window.checkUserBeforeGame = function(type) {
             if (typeof tgPlace === "function") tgPlace(type); 
         } else {
             isGateOpen = true;
+            tgResetAuthGateUI();
             document.getElementById('entrance-gate').style.display = 'flex';
         }
     };
@@ -1444,6 +1542,7 @@ window.submitToSheet = async function() {
         // 창 닫기
         document.getElementById('entrance-gate').style.display = 'none';
         isGateOpen = false;
+        tgResetAuthGateUI();
 
         alert("인증이 완료되었습니다! 이제 게임과 예측을 모두 자유롭게 이용하실 수 있습니다.");
 
