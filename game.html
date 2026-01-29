@@ -673,6 +673,32 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
       setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);
     })();
   </script>
+  <!-- 게임 코드들 쭉... -->
+
+  <!-- GoatCounter (game daily unique) -->
+  <script>
+    window.goatcounter = { no_onload: true };
+  </script>
+  <script async src="https://gc.zgo.at/count.js"
+          data-goatcounter="https://bit-model-123.goatcounter.com/count"></script>
+
+  <script>
+    (function(){
+      try{
+        const today = new Date().toISOString().slice(0,10);
+        const key = "gc_game_daily_" + today;
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, "1");
+
+        setTimeout(function(){
+          window.goatcounter?.count?.({
+            path: location.pathname + "#game_daily"
+          });
+        }, 2000);
+      }catch(e){}
+    })();
+  </script>
+</body>
 
 </body>
 </html>
