@@ -677,7 +677,12 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
       }
 
       function render() {
-        document.getElementById('tg-equity').innerText = "$" + Math.max(0, cash).toLocaleString(undefined, {minimumFractionDigits:2});
+        document.getElementById('tg-equity').innerText =
+  "$" + Math.max(0, cash).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
         if (pos) {
           document.getElementById('tg-pos-active').style.display = "block";
           document.getElementById('tg-no-pos').style.display = "none";
