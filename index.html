@@ -1018,9 +1018,30 @@ setTimeout(tgInitCashFromSheetIfNeeded, 1500);
 
 
 
-    window.tgRefill = () => {
-        if (confirm("Reset account to $30,000?")) { cash = 30000; pos = null; orders = []; save(); location.reload(); }
-    };
+window.tgRefill = () => {
+  // ① 인증 안 했으면 리필 불가 → 인증 게이트
+  if (localStorage.getItem("btc_user_done") !== "true") {
+    const gate = document.getElementById("entrance-gate");
+    if (gate) gate.style.display = "flex";
+    return;
+  }
+
+  // ② 최근 잔액이 $1 초과면 리필 불가
+  if (Number(cash) > 1) {
+    alert("리필은 잔액이 $1 이하일 때만 가능합니다.");
+    return;
+  }
+
+  // ③ 조건 통과 → 리필 허용
+  if (confirm("Reset account to $30,000?")) {
+    cash = 30000;
+    pos = null;
+    orders = [];
+    save();
+    location.reload();
+  }
+};
+
 
     const ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
     ws.onopen = () => ws.send(JSON.stringify({"op": "subscribe", "args": ["tickers.BTCUSDT"]}));
@@ -1234,11 +1255,17 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
 
     function render() {
         
-        document.getElementById('tg-equity').innerText =
-  "$" + Math.max(0, cash).toLocaleString(undefined, {
+        const authed = (localStorage.getItem("btc_user_done") === "true");
+const displayCash = authed ? cash : 0;
+
+document.getElementById('tg-equity').innerText =
+  "$" + Math.max(0, displayCash).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+
+
+
 
 
         if (pos) {
