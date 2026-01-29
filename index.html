@@ -348,8 +348,12 @@ function updateDisplay() {
             // --- 🚀 여기만 추가됐습니다 ---
             localStorage.setItem('registeredName', n);
             localStorage.setItem('registeredEmail', e);
-            localStorage.setItem('btc_user_done', 'true'); // ⭐ 게임 쪽 버튼이 알아보게 도장 쾅!
-            // ---------------------------
+            localStorage.setItem('btc_user_done', 'true'); 
+
+
+
+
+setTimeout(() => window.tgInitCashFromSheetIfNeeded?.(), 1000);
 
             document.getElementById('emailModal').style.display = 'none';
 
@@ -887,7 +891,7 @@ setInterval(() => {
                 <div>
                     <div style="font-size: 9px; color: #848e9c;">AVAILABLE CREDITS</div>
                     <div id="tg-equity" style="font-size: 20px; font-weight: 900; color: #f3ba2f;">$30,000.00</div>
-                </div>
+                    </div>
                 <button class="btn-refill" onclick="tgRefill()">REFILL ⚡</button>
             </div>
             
@@ -967,6 +971,52 @@ setInterval(() => {
     candleSeries = chart.addCandlestickSeries({ upColor: '#02c076', downColor: '#cf304a', borderVisible: false, wickUpColor: '#02c076', wickDownColor: '#cf304a' });
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
+
+// ✅ 인증 유저: 기본값(30000)일 때만 시트 최근잔액으로 시작
+async function tgInitCashFromSheetIfNeeded(){
+  try{
+    if (localStorage.getItem("btc_user_done") !== "true") return;
+
+    if (isFinite(cash) && cash !== 30000) return;  // ✅ 현재 cash가 기본값(30000)일 때만 덮어씀
+
+
+    const email = (localStorage.getItem("registeredEmail") || "").trim().toLowerCase();
+    if (!email || !email.includes("@")) return;
+
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+
+    for (let t = 0; t < 3; t++) {
+      const res = await fetch(`${WEB_APP_URL}?action=getUser&email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+     
+      const raw = (data && data.recentBalance);
+const rb = parseFloat(String(raw).replace(/[^0-9.-]/g, "")); // 콤마, $ 제거
+
+if (isFinite(rb) && rb > 0) {
+
+      
+        cash = rb;
+        const eqEl = document.getElementById('tg-equity');
+if (eqEl) eqEl.innerText = "$" + rb.toLocaleString(undefined, {minimumFractionDigits:2});
+
+        save();
+        render();
+        return;
+      }
+      await new Promise(r => setTimeout(r, 700)); // 0.7초 기다렸다 재시도
+    }
+  }catch(e){
+    console.log("index init cash error", e);
+  }
+}
+
+window.tgInitCashFromSheetIfNeeded = tgInitCashFromSheetIfNeeded;
+
+// ✅ DOM/위젯 다 뜬 다음에 실행 (2번)
+window.addEventListener("load", () => setTimeout(tgInitCashFromSheetIfNeeded, 300));
+setTimeout(tgInitCashFromSheetIfNeeded, 1500);
+
+
 
     window.tgRefill = () => {
         if (confirm("Reset account to $30,000?")) { cash = 30000; pos = null; orders = []; save(); location.reload(); }
@@ -1221,7 +1271,8 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
       game.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     </script>
-    
+   
+        
 </body>
 </html>
 
@@ -1345,6 +1396,7 @@ window.submitToSheet = async function() {
         formData.append("email", email);
         formData.append("status", "active"); // 게임/예측 모두 사용 가능 상태
         formData.append("date", new Date().toLocaleString());
+        
 
         // 🚀 전송 방식 변경 (JSON 대신 formData 전송)
         await fetch(WEB_APP_URL, { 
@@ -1358,6 +1410,9 @@ window.submitToSheet = async function() {
         localStorage.setItem('registeredName', name);    // 이름 저장
         localStorage.setItem('registeredEmail', email);  // 이메일 저장
         
+        setTimeout(() => window.tgInitCashFromSheetIfNeeded?.(), 1000);
+
+
         // 창 닫기
         document.getElementById('entrance-gate').style.display = 'none';
         isGateOpen = false;

@@ -370,6 +370,8 @@
           localStorage.setItem('btc_user_done', 'true');
           localStorage.setItem('registeredName', name);
           localStorage.setItem('registeredEmail', email);
+          
+          window.tgInitCashFromSheetIfNeeded();
 
           closeGate();
           alert("인증 완료! 이제 게임/예측을 자유롭게 이용할 수 있습니다.");
@@ -393,6 +395,37 @@
       let saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
 
       let cash = Number(saved.cash !== undefined ? saved.cash : 30000);
+
+      async function tgInitCashFromSheetIfNeeded(){
+  try{
+    // 인증 안 했으면 그대로 30000
+    if (localStorage.getItem("btc_user_done") !== "true") return;
+
+    // 이미 로컬에 cash 있으면 덮어쓰지 않음
+// 🔥 인증 직후 첫 진입이면 시트값 우선 적용
+if (saved && saved.cash !== undefined && saved.cash !== null && saved.cash !== 30000) return;
+
+    const email = (localStorage.getItem("registeredEmail") || "").trim();
+    if (!email) return;
+
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+    const res = await fetch(`${WEB_APP_URL}?action=getUser&email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+
+    const rb = Number(data && data.recentBalance);
+    if (!isFinite(rb)) return;
+
+    cash = rb;
+    save();
+    render();
+  }catch(e){}
+}
+window.tgInitCashFromSheetIfNeeded = tgInitCashFromSheetIfNeeded;
+
+// 페이지 로드 후 1회 실행
+tgInitCashFromSheetIfNeeded();
+
+
       let pos = saved.pos || null;
       let orders = saved.orders || [];
       let btc = 0, candleSeries, lastCandle, entryLine, liqLine, orderLines = {};
