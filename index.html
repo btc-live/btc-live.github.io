@@ -353,7 +353,7 @@ function updateDisplay() {
 
             document.getElementById('emailModal').style.display = 'none';
 
-            const scriptURL = "https://script.google.com/macros/s/AKfycbwgkTuEi-ajNA32Aoatssy5OctS87M0iqfxGJK15_1vKlet7f4A8qB3fkYOL3uq3RJiQw/exec";
+            const scriptURL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
             
             fetch(scriptURL, {
                 method: "POST",
@@ -1051,6 +1051,85 @@ if (marginAmt <= 0) return alert("금액을 입력해주세요!");
 
     window.tgCancel = (id) => { orders = orders.filter(o => o.id !== id); updateOrderLines(); save(); };
 
+
+/* ===== SAFE PROFIT SYNC (INDEX DESKTOP GAME) ===== */
+window.TG_PROFIT_SYNC = window.TG_PROFIT_SYNC || (function(){
+  const PROFIT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec";
+  const AUTO_SAVE_MS = 10 * 60 * 1000; // 10분
+  const THROTTLE_MS = 3000;
+
+  let lastSentAt = 0;
+  let lastIntervalProfit = null;
+
+  function getUser(){
+    if (localStorage.getItem("btc_user_done") !== "true") return null;
+    const email = (localStorage.getItem("registeredEmail") || "").trim();
+    const name  = (localStorage.getItem("registeredName") || "익명").trim();
+    if (!email || !email.includes("@")) return null;
+    return { email, name };
+  }
+
+  function send(reason, pnlOpt){
+    try{
+      // game scope guard
+      if (typeof cash !== "number") return;
+
+      const now = Date.now();
+      if (now - lastSentAt < THROTTLE_MS) return;
+      lastSentAt = now;
+
+      const user = getUser();
+      if (!user) return;
+
+      const profit = Number((cash - 30000).toFixed(2));
+
+      // ✅ 최근 잔액(현금 기준 balance)도 함께 기록
+const last_balance = Number(cash.toFixed(2));
+
+// (선택) 브라우저에도 저장해두면 UI에서도 안정적으로 표시 가능
+localStorage.setItem("tg_last_balance", String(last_balance));
+localStorage.setItem("tg_last_balance_at", String(Date.now()));
+
+      // interval은 같은 값이면 전송 생략
+      if (reason === "interval" && lastIntervalProfit !== null && Math.abs(lastIntervalProfit - profit) < 0.01) return;
+      if (reason === "interval") lastIntervalProfit = profit;
+
+      const body = new URLSearchParams();
+      body.append("email", user.email);
+      body.append("name", user.name);
+      body.append("profit", String(profit));
+      body.append("last_balance", String(last_balance)); // ✅ 추가
+      body.append("reason", reason);
+
+      if (typeof pnlOpt === "number" && isFinite(pnlOpt)) {
+        body.append("pnl", pnlOpt.toFixed(2));
+      }
+
+      fetch(PROFIT_WEB_APP_URL, { method:"POST", mode:"no-cors", body });
+    }catch(e){
+      console.log("TG_PROFIT_SYNC error", e);
+    }
+  }
+
+  function start(){
+    setInterval(() => {
+      try{
+        if (typeof cash !== "number") return;
+         // ✅ 포지션 없어도 '최근 잔액'은 저장/전송되게
+        send("interval");
+      }catch(e){}
+    }, AUTO_SAVE_MS);
+  }
+
+  return { send, start };
+})();
+
+// 시작
+window.TG_PROFIT_SYNC.start();
+
+
+
+
     window.tgExit = () => {
         if (!pos) return;
         const diff = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
@@ -1058,11 +1137,18 @@ if (marginAmt <= 0) return alert("금액을 입력해주세요!");
         cash += (pos.amt + pnl);
         pos = null;
         updateLines(); render(); save();
+
+        window.TG_PROFIT_SYNC.send("exit", pnl);
     };
 
     function checkLiquidation() {
         if (!pos) return;
         if ((pos.side === 'long' && btc <= pos.liqPrice) || (pos.side === 'short' && btc >= pos.liqPrice)) {
+            
+            const loss = -pos.amt;
+window.TG_PROFIT_SYNC.send("liquidation", loss);
+
+            
             pos = null; cash = Math.max(0, cash); save(); updateLines(); render(); 
             alert("LIQUIDATED - Margin Lost");
         }
@@ -1241,7 +1327,7 @@ window.checkUserBeforeGame = function(type) {
 window.submitToSheet = async function() {
     const name = document.getElementById('db-name').value.trim();
     const email = document.getElementById('db-email').value.trim();
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwgkTuEi-ajNA32Aoatssy5OctS87M0iqfxGJK15_1vKlet7f4A8qB3fkYOL3uq3RJiQw/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyExTJfMAEKkzTPJHsYGSGjbwRXQ0wzmi8vb7LpvI7BjD94ARaOK9PjpMRR_UyljEORag/exec"; 
 
     if (!name || !email.includes('@')) {
         alert("정보를 올바르게 입력해주세요.");
@@ -1257,7 +1343,7 @@ window.submitToSheet = async function() {
         const formData = new URLSearchParams();
         formData.append("name", name);
         formData.append("email", email);
-        formData.append("status", "통합인증완료"); // 게임/예측 모두 사용 가능 상태
+        formData.append("status", "active"); // 게임/예측 모두 사용 가능 상태
         formData.append("date", new Date().toLocaleString());
 
         // 🚀 전송 방식 변경 (JSON 대신 formData 전송)
