@@ -31,9 +31,15 @@
         .signal-neutral { color: #848e9c; font-weight: bold; }
         .crash-warning { background: rgba(255, 68, 68, 0.15); border: 1px solid #ff4444; color: #ff4444; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; display: none; }
 </style>
+
+  <script src="tg-common.js"></script>
 </head>
 
 <body>
+<div id="tg-auth-panel" style="display:none; position:fixed; top:12px; right:12px; z-index:9999; padding:10px 12px; border-radius:12px; background:rgba(24,26,32,0.72); border:1px solid rgba(243,186,47,0.28); box-shadow:0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(6px);">
+  <div style="font-size:12px; color:#d1d4dc; font-weight:800;"></div>
+</div>
+
 
 
 
@@ -1167,6 +1173,17 @@ const last_balance = Number(cash.toFixed(2));
 localStorage.setItem("tg_last_balance", String(last_balance));
 localStorage.setItem("tg_last_balance_at", String(Date.now()));
 
+      // ✅ Equity(총자산) = cash + pos.amt(증거금) + 평가손익(pnl)
+      let equity = cash;
+      try{
+        if (typeof pos === "object" && pos && typeof btc === "number") {
+          const diffEq = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+          const pnlEq  = pos.amt * diffEq * pos.lev;
+          equity = cash + pos.amt + pnlEq;
+        }
+      }catch(e){}
+      equity = Number(equity.toFixed(2));
+
       // interval은 같은 값이면 전송 생략
       if (reason === "interval" && lastIntervalProfit !== null && Math.abs(lastIntervalProfit - profit) < 0.01) return;
       if (reason === "interval") lastIntervalProfit = profit;
@@ -1176,6 +1193,7 @@ localStorage.setItem("tg_last_balance_at", String(Date.now()));
       body.append("name", user.name);
       body.append("profit", String(profit));
       body.append("last_balance", String(last_balance)); // ✅ 추가
+      body.append("equity", String(equity)); // ✅ 추가
       body.append("reason", reason);
 
       if (typeof pnlOpt === "number" && isFinite(pnlOpt)) {
@@ -1217,6 +1235,17 @@ window.TG_PROFIT_SYNC.start();
 
         window.TG_PROFIT_SYNC.send("exit", pnl);
     };
+      // ✅ shared auth panel (tg-common.js)
+      const tgAuthUpdate = (window.TG_COMMON && typeof window.TG_COMMON.attachAuthPanel === "function")
+        ? window.TG_COMMON.attachAuthPanel({
+            panelId: "tg-auth-panel",
+            getAuthed: () => (localStorage.getItem("btc_user_done") === "true"),
+            getHasPos: () => !!pos,
+            onExitPos: () => (typeof window.tgExit === "function" ? window.tgExit() : null),
+            onAfterLogout: () => { try{ render(); }catch(e){} }
+          })
+        : null;
+
 
     function checkLiquidation() {
         if (!pos) return;
@@ -1259,80 +1288,13 @@ window.TG_PROFIT_SYNC.send("liquidation", loss);
         document.getElementById('tg-asks').innerHTML = a; document.getElementById('tg-bids').innerHTML = b;
     }
 
-
-    // ===== AUTH BADGE (email mask + logout link) =====
-    function tgMaskedEmail(){
-      const email = (localStorage.getItem("registeredEmail") || "").trim();
-      if (!email.includes("@")) return "";
-      const p = (email.split("@")[0] || "");
-      const n = Math.min(5, Math.max(3, p.length));
-      return p.slice(0, n) + "***";
-    }
-
-    function tgDoLogout(){
-      try{
-        localStorage.removeItem("btc_user_done");
-        localStorage.removeItem("registeredEmail");
-        localStorage.removeItem("registeredName");
-      }catch(e){}
-      try{ tgUpdateAuthBadge(false); }catch(e){}
-      try{ render(); }catch(e){}
-    }
-
-    function tgRequestLogout(){
-      try{
-        if (localStorage.getItem("btc_user_done") !== "true") return;
-
-        const hasPos = !!pos;
-
-        if (hasPos){
-          const msg =
-`인증을 해제하기 전에
-현재 포지션을 정리해야 기록에 반영됩니다.
-
-지금 인증을 해제하면
-열려 있는 포지션은 기록되지 않습니다.`;
-
-          if (!confirm(msg + "\n\n[확인] 포지션 정리하고 인증 해제\n[취소] 유지")) return;
-
-          if (typeof window.tgExit === "function") window.tgExit();
-          setTimeout(tgDoLogout, 350);
-          return;
-        }
-
-        if (confirm("인증을 해제할까요?")) tgDoLogout();
-      }catch(e){}
-    }
-
-    function tgUpdateAuthBadge(authed){
-  try{
-    const panel = document.getElementById("tg-auth-panel");
-    if (!panel) return;
-
-    if (!authed) { panel.style.display = "none"; return; }
-
-    const m = tgMaskedEmail();
-    if (!m) { panel.style.display = "none"; return; }
-
-    panel.firstElementChild.innerHTML =
-      `<span style="pointer-events:none;">🔓 트레이더 ${m} 님 </span>` +
-      `<span id="tg-logout-link" style="cursor:pointer; text-decoration:underline; color:#f3ba2f;">(인증 해제)</span>`;
-
-    panel.style.display = "block";
-
-    const link = document.getElementById("tg-logout-link");
-    if (link && link.dataset.bound !== "1") {
-      link.dataset.bound = "1";
-      link.addEventListener("click", tgRequestLogout);
-    }
-  }catch(e){}
-}
-
-    // ===== /AUTH BADGE =====
-
     function render() {
-        
+
         const authed = (localStorage.getItem("btc_user_done") === "true");
+
+        // ✅ auth-panel 표시 업데이트용 (기존 기능 영향 없음)
+        try{ window.__TG_HAS_POS = !!pos; window.__TG_AUTH_UPDATE && window.__TG_AUTH_UPDATE(authed); }catch(e){}
+
 const displayCash = authed ? cash : 0;
 
 document.getElementById('tg-equity').innerText =
@@ -1340,6 +1302,23 @@ document.getElementById('tg-equity').innerText =
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+
+
+// ✅ 인증 유저: 총자산/순이익률(인증패널 표시용) 갱신 (웹 기능 영향 없음)
+try{
+  if (authed) {
+    let equityNow = cash;
+    if (pos && typeof btc === "number") {
+      const diffEq = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+      const pnlEq  = pos.amt * diffEq * pos.lev;
+      equityNow = cash + pos.amt + pnlEq;
+    }
+    equityNow = Number(equityNow.toFixed(2));
+    const roiNow = Number((((equityNow - 30000) / 30000) * 100).toFixed(2)); // %값
+    window.TG_COMMON?.setAuthMetrics?.(equityNow, roiNow);
+  }
+}catch(e){}
+
 
 
 
@@ -1368,7 +1347,7 @@ document.getElementById('tg-equity').innerText =
             document.getElementById('tg-pos-active').style.display = "none";
             document.getElementById('tg-no-pos').style.display = "block";
         }
-        tgUpdateAuthBadge(authed);
+        if (typeof tgAuthUpdate === 'function') tgAuthUpdate(authed);
         autoRefillIfNeeded(); 
     }
     setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);
@@ -1386,6 +1365,35 @@ document.getElementById('tg-equity').innerText =
     </script>
    
         
+
+<script>
+(function(){
+  function initAuthPanel(){
+    if (!window.TG_COMMON || typeof window.TG_COMMON.attachAuthPanel !== "function") return;
+
+    // Avoid double-init
+    if (window.__TG_AUTH_UPDATE) return;
+
+    window.__TG_HAS_POS = window.__TG_HAS_POS || false;
+
+    window.__TG_AUTH_UPDATE = window.TG_COMMON.attachAuthPanel({
+      panelId: "tg-auth-panel",
+      getAuthed: () => (localStorage.getItem("btc_user_done") === "true"),
+      getHasPos: () => !!window.__TG_HAS_POS,
+      onExitPos: () => { try{ window.tgExit && window.tgExit(); }catch(e){} },
+      onAfterLogout: () => { try{ location.reload(); }catch(e){} }
+    });
+
+    // initial paint
+    try{ window.__TG_AUTH_UPDATE( localStorage.getItem("btc_user_done") === "true"); }catch(e){}
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAuthPanel);
+  } else initAuthPanel();
+})();
+</script>
+
 </body>
 </html>
 
