@@ -45,10 +45,16 @@
 
   function loadActivity(){
     try{
-      const a = Number(localStorage.getItem("tg_activity_index"));
+      const raw = localStorage.getItem("tg_activity_index");
+      if (raw === null || raw === "") {
+        _activity = null;   // 값이 없으면 0으로 만들지 않음
+        return;
+      }
+      const a = Number(raw);
       _activity = isFinite(a) ? a : null;
     }catch(e){}
   }
+
 
   function gradeFromActivity(v){
     if (typeof v !== "number" || !isFinite(v) || v < 1) return "-";
@@ -79,6 +85,11 @@
     try{
       _activity = (typeof activityIndex === "number" && isFinite(activityIndex)) ? activityIndex : null;
       if (_activity !== null) localStorage.setItem("tg_activity_index", String(_activity));
+    
+      if (window.TG_COMMON && typeof window.TG_COMMON._updateAuthPanel === "function") {
+        window.TG_COMMON._updateAuthPanel(true);
+      }
+     
     }catch(e){}
   }
 
@@ -160,24 +171,36 @@
           const eqTxt = fmtMoney(_equity);
           const roiTxt = fmtPct(_roi);
 
+          const hasAct = (typeof _activity === "number" && isFinite(_activity));
+
           const actTxt = fmtAct(_activity);
           const gradeTxt = gradeFromActivity(_activity);
 
-          const hasAny = !!(eqTxt || roiTxt || (_activity !== null));
+          const hasAny = true; // 항상 stats 블록 보여주기
+
 
           const eqColor = "#ff8a00";
           const roiColor = (_roi === null) ? "#848e9c" : (_roi >= 0 ? "#02c076" : "#cf304a");
 
+
+
+
           head.innerHTML =
-            `<span style="pointer-events:none;">🔓 트레이더 ${m} 님 </span>` +
-            `<span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(인증 해제)</span>` +
-            (hasAny
-              ? ` <span class="tg-stats" style="font-weight:900; display:block; margin-top:6px;">
-                    <div style="color:${eqColor};">[총자산 ${eqTxt || "-"}]</div>
-                    <div style="color:${roiColor};">[순이익률 ${roiTxt || "-"}]</div>
-                    <div style="color:#d1d4dc;">[활동지수 ${actTxt}점, ${gradeTxt}]</div>
-                  </span>`
-              : "");
+  `<span style="pointer-events:none;">🔓 트레이더 ${m} 님 </span>` +
+  `<span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(인증 해제)</span>` +
+  (hasAny
+    ? ` <span class="tg-stats" style="font-weight:900; display:block; margin-top:6px;">
+          <div style="color:${eqColor};">[총자산 ${eqTxt || "-"}]</div>
+          <div style="color:${roiColor};">[순이익률 ${roiTxt || "-"}]</div>
+          ${hasAct 
+            ? `<div style="color:#d1d4dc;">[활동지수 ${actTxt}점, ${gradeTxt}]</div>`
+                : `<div style="color:#848e9c;">[활동지수 평가 중..]</div>`
+              }
+        </span>`
+    : "");
+
+
+
         }
         panel.style.display = "block";
       }catch(e){}
