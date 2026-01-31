@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bull vs Bear : 1회 체험</title>
+  <style>
+    :root{
+      --bg:#0b0e11; --panel:#181a20; --panel2:#131722; --line:#2b3139;
+      --gold:#f3ba2f; --muted:#9aa4b2; --green:#02c076; --red:#cf304a;
+    }
+    html,body{height:100%; margin:0; background:var(--bg); color:#fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;}
+    .wrap{max-width:980px; margin:0 auto; padding:18px;}
+    .card{background:rgba(24,26,32,0.85); border:1px solid rgba(243,186,47,0.22);
+      border-radius:18px; padding:18px; box-shadow:0 18px 50px rgba(0,0,0,0.55); backdrop-filter: blur(6px);}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;}
+    h1{margin:0; font-size:22px; letter-spacing:0.2px}
+    .sub{color:var(--muted); margin-top:6px; font-size:13px; line-height:1.5}
+    .pill{display:inline-flex; gap:8px; align-items:center; padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(209,212,220,0.18); background:rgba(24,26,32,0.55); color:#d1d4dc; font-weight:800; font-size:12px;}
+    .grid{display:grid; grid-template-columns: 1.3fr 1fr; gap:14px; margin-top:14px;}
+    @media (max-width: 860px){ .grid{grid-template-columns:1fr;} }
+    .panel{background:var(--panel2); border:1px solid var(--line); border-radius:16px; padding:14px;}
+    .price{font-size:34px; font-weight:950; color:var(--gold); margin-top:6px}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    label{font-size:12px; color:var(--muted); font-weight:800}
+    input{background:#1e2329; border:1px solid #333; color:#fff; padding:12px; border-radius:10px;
+      width:100%; box-sizing:border-box; font-size:14px;}
+    .btn{cursor:pointer; border:none; border-radius:12px; font-weight:950; transition:0.18s; padding:14px 14px; font-size:16px;}
+    .btn:hover{opacity:0.92}
+    .btn-long{background:var(--green); color:#fff;}
+    .btn-short{background:var(--red); color:#fff;}
+    .btn-ghost{background:transparent; border:1px solid rgba(243,186,47,0.35); color:var(--gold);}
+    .btn-dark{background:#fff; color:#000;}
+    .muted{color:var(--muted); font-size:12px; line-height:1.5}
+    .kv{display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px}
+    .k{color:#848e9c; font-size:11px; font-weight:900}
+    .v{font-size:14px; font-weight:950}
+    .sep{height:1px; background:rgba(209,212,220,0.12); margin:12px 0}
+    .warn{color:#d1d4dc; font-size:12px}
+    .center{text-align:center}
+    .hide{display:none !important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <div class="pill">🎮 1회 체험 (이메일 없음)</div>
+          <h1 style="margin-top:10px;">
+            <span style="color:var(--gold);">BULL vs BEAR</span> : 비트코인 롱·숏 연습 게임
+          </h1>
+          <div class="sub">
+            실전 투자 전에, 실제 시세 기반으로 <b>한 번</b>만 테스트해보세요.<br/>
+            체험이 끝나면 <b>본 게임(기록 저장/랭킹)</b>으로 이동합니다.
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn btn-ghost" onclick="goIndex()">메인으로</button>
+          <button class="btn btn-dark" onclick="goGame()">본 게임으로</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <div class="k">BTCUSDT 실시간 가격</div>
+              <div id="price" class="price">$0.00</div>
+              <div id="wsStatus" class="muted">연결 중…</div>
+            </div>
+            <div class="pill" id="trialBadge">🔒 체험 1회 제한</div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div id="trialLocked" class="center hide">
+            <div style="font-weight:950; font-size:18px;">체험 1회가 이미 완료되었습니다.</div>
+            <div class="sub" style="margin-top:8px;">계속하려면 본 게임으로 이동해 주세요.</div>
+            <div class="row" style="justify-content:center; margin-top:12px;">
+              <button class="btn btn-dark" onclick="goGame()">본 게임 시작</button>
+              <button class="btn btn-ghost" onclick="resetTrial()">체험 다시(테스트용)</button>
+            </div>
+            <div class="muted" style="margin-top:10px;">* 운영 중엔 “체험 다시” 버튼을 숨기세요.</div>
+          </div>
+
+          <div id="trialPlay" class="hide">
+            <div class="row">
+              <div style="flex:1; min-width:220px;">
+                <label>진입 금액(USDT)</label>
+                <input id="amt" type="number" inputmode="decimal" placeholder="예: 1000" />
+              </div>
+              <div style="flex:1; min-width:220px;">
+                <label>레버리지(x)</label>
+                <input id="lev" type="number" inputmode="numeric" placeholder="예: 10" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:12px;">
+              <button id="btnLong" class="btn btn-long" onclick="enter('long')">LONG (1회)</button>
+              <button id="btnShort" class="btn btn-short" onclick="enter('short')">SHORT (1회)</button>
+              <button id="btnExit" class="btn btn-dark hide" onclick="exitPos()">EXIT</button>
+            </div>
+
+            <div id="posBox" class="sep hide"></div>
+
+            <div id="posInfo" class="hide">
+              <div class="kv">
+                <div>
+                  <div class="k">방향</div>
+                  <div id="side" class="v">-</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="k">평가 손익 (Unrealized)</div>
+                  <div id="pnl" class="v">-</div>
+                </div>
+                <div>
+                  <div class="k">진입가</div>
+                  <div id="entry" class="v">-</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="k">ROE</div>
+                  <div id="roe" class="v">-</div>
+                </div>
+              </div>
+
+              <div class="muted" style="margin-top:12px;">
+                * 이 체험판은 저장/랭킹이 없고, <b>1회</b>만 가능해요.<br/>
+                * “EXIT” 후 본 게임으로 자동 이동합니다.
+              </div>
+            </div>
+
+            <div id="doneBox" class="hide" style="margin-top:14px;">
+              <div style="font-weight:950; font-size:18px;">체험 완료 ✅</div>
+              <div class="sub" style="margin-top:8px;">결과를 저장하고 계속 하려면 본 게임으로 이동하세요.</div>
+              <div class="row" style="margin-top:12px;">
+                <button class="btn btn-dark" onclick="goGame()">본 게임으로</button>
+                <button class="btn btn-ghost" onclick="goIndex()">메인으로</button>
+              </div>
+              <div class="muted" style="margin-top:10px;">3초 후 자동 이동합니다…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="font-weight:950; font-size:16px;">이 체험판이 하는 일</div>
+          <div class="sep"></div>
+          <div class="warn">
+            ✅ 실시간 시세로 롱/숏 1회 체험<br/>
+            ✅ 손익/ROE 변화를 직접 확인<br/>
+            ✅ 끝나면 본 게임으로 이동 (기록/랭킹은 그쪽에서)<br/><br/>
+            <span class="muted">
+              ※ 브라우저/쿠키 변경 시 데이터가 초기화될 수 있습니다.<br/>
+              본 페이지는 가상 시뮬레이션이며 실제 투자와 무관합니다.
+            </span>
+          </div>
+
+          <div class="sep"></div>
+
+          <div style="font-weight:950; font-size:16px;">본 게임에서 가능한 것</div>
+          <div class="sep"></div>
+          <div class="warn">
+            🏆 랭킹/기록 저장<br/>
+            📌 활동지수/등급 반영<br/>
+            🔐 이메일 인증(한 번) 후 이용
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="center">
+            <button class="btn btn-dark" style="width:100%;" onclick="goGame()">본 게임 시작</button>
+            <div class="muted" style="margin-top:10px;">* 본 게임에서만 이메일 인증이 나옵니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const TRIAL_KEY = "tg_trial_used_v1";
+  const PRICE_EL = document.getElementById("price");
+  const WS_EL = document.getElementById("wsStatus");
+
+  const locked = (localStorage.getItem(TRIAL_KEY) === "1");
+
+  const viewLocked = document.getElementById("trialLocked");
+  const viewPlay   = document.getElementById("trialPlay");
+
+  function showLocked(){
+    viewLocked.classList.remove("hide");
+    viewPlay.classList.add("hide");
+  }
+  function showPlay(){
+    viewLocked.classList.add("hide");
+    viewPlay.classList.remove("hide");
+  }
+
+  if (locked) showLocked(); else showPlay();
+
+  // defaults
+  const amtEl = document.getElementById("amt");
+  const levEl = document.getElementById("lev");
+  amtEl.value = "1000";
+  levEl.value = "10";
+
+  let btc = 0;
+  let pos = null; // { side, entry, amt, lev, openedAt }
+  let doneTimer = null;
+
+  function fmtMoney(n){
+    if (!isFinite(n)) return "-";
+    return "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function fmtPrice(n){
+    if (!isFinite(n)) return "$0.00";
+    return "$" + n.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  }
+
+  function paint(){
+    PRICE_EL.textContent = fmtPrice(btc);
+
+    if (!pos) return;
+
+    const diff = (btc - pos.entry) / pos.entry * (pos.side === "short" ? -1 : 1);
+    const pnl  = pos.amt * diff * pos.lev;
+    const roe  = diff * pos.lev * 100;
+
+    const sideEl = document.getElementById("side");
+    const entryEl = document.getElementById("entry");
+    const pnlEl = document.getElementById("pnl");
+    const roeEl = document.getElementById("roe");
+
+    sideEl.textContent = (pos.side === "long" ? "LONG" : "SHORT") + "  " + pos.lev + "x";
+    sideEl.style.color = (pos.side === "long") ? "var(--green)" : "var(--red)";
+    entryEl.textContent = fmtPrice(pos.entry);
+
+    pnlEl.textContent = (pnl >= 0 ? "+" : "-") + fmtMoney(pnl);
+    pnlEl.style.color = (pnl >= 0) ? "var(--green)" : "var(--red)";
+
+    roeEl.textContent = (roe >= 0 ? "+" : "") + roe.toFixed(2) + "%";
+    roeEl.style.color = (roe >= 0) ? "var(--green)" : "var(--red)";
+  }
+
+  // Bybit public WS
+  try{
+    const ws = new WebSocket("wss://stream.bybit.com/v5/public/linear");
+    ws.onopen = () => {
+      WS_EL.textContent = "실시간 연결됨";
+      ws.send(JSON.stringify({ op:"subscribe", args:["tickers.BTCUSDT"] }));
+    };
+    ws.onmessage = (e) => {
+      try{
+        const d = JSON.parse(e.data);
+        if (d && d.data && d.data.lastPrice){
+          btc = parseFloat(d.data.lastPrice);
+          paint();
+        }
+      }catch(err){}
+    };
+    ws.onclose = () => { WS_EL.textContent = "연결 종료됨 (새로고침 해보세요)"; };
+    ws.onerror = () => { WS_EL.textContent = "연결 오류 (네트워크 확인)"; };
+  }catch(e){
+    WS_EL.textContent = "웹소켓 실패 (브라우저 제한 가능)";
+  }
+
+  // expose controls
+  window.enter = function(side){
+    if (localStorage.getItem(TRIAL_KEY) === "1"){
+      alert("체험 1회가 완료되었습니다. 본 게임으로 이동합니다.");
+      goGame();
+      return;
+    }
+    if (!isFinite(btc) || btc <= 0){
+      alert("가격을 불러오는 중입니다. 잠시만요.");
+      return;
+    }
+    const amt = Number(amtEl.value);
+    const lev = Number(levEl.value);
+    if (!isFinite(amt) || amt <= 0) return alert("진입 금액을 입력해주세요.");
+    if (!isFinite(lev) || lev <= 0) return alert("레버리지를 입력해주세요.");
+
+    // open pos
+    pos = { side, entry: btc, amt, lev, openedAt: Date.now() };
+
+    // lock trial immediately after first entry
+    localStorage.setItem(TRIAL_KEY, "1");
+
+    // UI
+    document.getElementById("btnLong").classList.add("hide");
+    document.getElementById("btnShort").classList.add("hide");
+    document.getElementById("btnExit").classList.remove("hide");
+
+    document.getElementById("posBox").classList.remove("hide");
+    document.getElementById("posInfo").classList.remove("hide");
+
+    paint();
+  };
+
+  window.exitPos = function(){
+    if (!pos) return;
+    pos = null;
+
+    document.getElementById("btnExit").classList.add("hide");
+    document.getElementById("doneBox").classList.remove("hide");
+
+    clearTimeout(doneTimer);
+    doneTimer = setTimeout(() => goGame(), 3000);
+  };
+
+  window.goGame = function(){ location.href = "game.html"; };
+  window.goIndex = function(){ location.href = "index.html"; };
+
+  // test helper
+  window.resetTrial = function(){
+    localStorage.removeItem(TRIAL_KEY);
+    location.reload();
+  };
+})();
+</script>
+
+<!-- GoatCounter -->
+<script>
+  window.goatcounter = { no_onload: true };
+</script>
+<script async src="https://gc.zgo.at/count.js"
+        data-goatcounter="https://bit-model-123.goatcounter.com/count"></script>
+
+<script>
+  // landing page view
+  setTimeout(function(){
+    try{
+      window.goatcounter?.count?.({ path: location.pathname + "#landing" });
+    }catch(e){}
+  }, 500);
+
+  // expose helpers for navigation tracking
+  (function(){
+    const _goGame = window.goGame;
+    const _goIndex = window.goIndex;
+
+    window.goGame = function(){
+      try{ window.goatcounter?.count?.({ path: location.pathname + "#to_game" }); }catch(e){}
+      return _goGame && _goGame();
+    };
+    window.goIndex = function(){
+      try{ window.goatcounter?.count?.({ path: location.pathname + "#to_index" }); }catch(e){}
+      return _goIndex && _goIndex();
+    };
+  })();
+</script>
+
+</body>
+</html>
