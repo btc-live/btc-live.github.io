@@ -30,9 +30,14 @@
 
   function fmtAct(v){
     if (typeof v !== "number" || !isFinite(v)) return "-";
-    // interval 0.001 때문에 소수 3자리 권장
-    return v.toFixed(3);
+  
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
+    if (v >= 10_000)    return Math.round(v / 1000) + "K";
+    if (v >= 1000)      return (v / 1000).toFixed(1) + "K";
+  
+    return (v % 1 === 0) ? String(v) : v.toFixed(1);
   }
+  
 
   function loadMetrics(){
     try{
@@ -58,16 +63,17 @@
 
   function gradeFromActivity(v){
     if (typeof v !== "number" || !isFinite(v) || v < 1) return "-";
-    if (v < 11) return "입문";
-    if (v < 51) return "초반 참여";
-    if (v < 101) return "정착";
-    if (v < 201) return "적극";
-    if (v < 501) return "헤비";
-    if (v < 1001) return "파워";
-    if (v < 2001) return "마스터";
-    if (v < 5001) return "그랜드";
-    if (v < 10001) return "레전드";
-    return "🌍 월드클래스";
+    if (v < 11) return "Beginner";
+    if (v < 51) return "Rookie";
+    if (v < 101) return "Settled";
+    if (v < 201) return "Active";
+    if (v < 501) return "Heavy";
+    if (v < 1001) return "Elite";
+    if (v < 2001) return "Master";
+    if (v < 5001) return "Grandmaster";
+    if (v < 10001) return "Legend";
+    if (v < 50001) return "🌍 World Class";
+     return "👑 God";
   }
   
 
@@ -186,15 +192,15 @@
 
 
           head.innerHTML =
-  `<span style="pointer-events:none;">🔓 트레이더 ${m} 님 </span>` +
-  `<span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(인증 해제)</span>` +
+  `<span style="pointer-events:none;">🔓 Trader ${m} 님 </span>` +
+  `<span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(Log out)</span>` +
   (hasAny
     ? ` <span class="tg-stats" style="font-weight:900; display:block; margin-top:6px;">
-          <div style="color:${eqColor};">[총자산 ${eqTxt || "-"}]</div>
-          <div style="color:${roiColor};">[순이익률 ${roiTxt || "-"}]</div>
+          <div style="color:${eqColor};">[Equity ${eqTxt || "-"}]</div>
+          <div style="color:${roiColor};">[ROI ${roiTxt || "-"}]</div>
           ${hasAct 
-            ? `<div style="color:#d1d4dc;">[활동지수 ${actTxt}점, ${gradeTxt}]</div>`
-                : `<div style="color:#848e9c;">[활동지수 평가 중..]</div>`
+            ? `<div style="color:#d1d4dc;">[Activity ${actTxt}p, ${gradeTxt}]</div>`
+                : `<div style="color:#848e9c;">[Activity evaluating…]</div>`
               }
         </span>`
     : "");
