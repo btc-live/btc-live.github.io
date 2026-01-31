@@ -1,14 +1,19 @@
 /* tg-common.js  (shared between index.html and game.html)
    - Auth panel UI + logout flow (with position-close warning)
    - Email masking
+   - Activity index + grade display
 */
 (function(){
   "use strict";
 
   // ===== Auth metrics (Equity / ROI) =====
-  // Stored in-memory + localStorage so both index/game can reuse.
   let _equity = null;
   let _roi = null; // percent value, e.g. -0.19 means -0.19%
+
+  // ===== Activity / Grade =====
+  let _activity = null; // number
+
+  
 
   function fmtMoney(v){
     if (typeof v !== "number" || !isFinite(v)) return "";
@@ -20,8 +25,13 @@
 
   function fmtPct(v){
     if (typeof v !== "number" || !isFinite(v)) return "";
-    // v already represents percent value
     return (v >= 0 ? "+" : "") + v.toFixed(2) + "%";
+  }
+
+  function fmtAct(v){
+    if (typeof v !== "number" || !isFinite(v)) return "-";
+    // interval 0.001 때문에 소수 3자리 권장
+    return v.toFixed(3);
   }
 
   function loadMetrics(){
@@ -33,6 +43,28 @@
     }catch(e){}
   }
 
+  function loadActivity(){
+    try{
+      const a = Number(localStorage.getItem("tg_activity_index"));
+      _activity = isFinite(a) ? a : null;
+    }catch(e){}
+  }
+
+  function gradeFromActivity(v){
+    if (typeof v !== "number" || !isFinite(v) || v < 1) return "-";
+    if (v < 11) return "입문";
+    if (v < 51) return "초반 참여";
+    if (v < 101) return "정착";
+    if (v < 201) return "적극";
+    if (v < 501) return "헤비";
+    if (v < 1001) return "파워";
+    if (v < 2001) return "마스터";
+    if (v < 5001) return "그랜드";
+    if (v < 10001) return "레전드";
+    return "🌍 월드클래스";
+  }
+  
+
   function setAuthMetrics(equity, roi){
     try{
       _equity = (typeof equity === "number" && isFinite(equity)) ? equity : null;
@@ -42,7 +74,16 @@
     }catch(e){}
   }
 
+  // ✅ 활동지수 저장 함수 (index/game에서 불러서 넣을 것)
+  function setAuthActivity(activityIndex){
+    try{
+      _activity = (typeof activityIndex === "number" && isFinite(activityIndex)) ? activityIndex : null;
+      if (_activity !== null) localStorage.setItem("tg_activity_index", String(_activity));
+    }catch(e){}
+  }
+
   loadMetrics();
+  loadActivity();
 
   function maskedEmail(){
     const email = (localStorage.getItem("registeredEmail") || "").trim();
@@ -57,6 +98,9 @@
       localStorage.removeItem("btc_user_done");
       localStorage.removeItem("registeredEmail");
       localStorage.removeItem("registeredName");
+
+      // (선택) 로그아웃 시 표시도 초기화
+      localStorage.removeItem("tg_activity_index");
     }catch(e){}
   }
 
@@ -108,26 +152,32 @@
         const m = maskedEmail();
         if (!m) { panel.style.display = "none"; return; }
 
+        loadActivity(); // 최신 activityIndex 반영
+
+
         const head = panel.firstElementChild;
         if (head){
-          // Metrics string (optional)
           const eqTxt = fmtMoney(_equity);
           const roiTxt = fmtPct(_roi);
-          const hasMetrics = !!(eqTxt || roiTxt);
 
-          const eqColor = "#ff8a00"; // orange: high contrast on dark bg
+          const actTxt = fmtAct(_activity);
+          const gradeTxt = gradeFromActivity(_activity);
+
+          const hasAny = !!(eqTxt || roiTxt || (_activity !== null));
+
+          const eqColor = "#ff8a00";
           const roiColor = (_roi === null) ? "#848e9c" : (_roi >= 0 ? "#02c076" : "#cf304a");
 
           head.innerHTML =
             `<span style="pointer-events:none;">🔓 트레이더 ${m} 님 </span>` +
             `<span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(인증 해제)</span>` +
-            (hasMetrics
+            (hasAny
               ? ` <span class="tg-stats" style="font-weight:900; display:block; margin-top:6px;">
                     <div style="color:${eqColor};">[총자산 ${eqTxt || "-"}]</div>
                     <div style="color:${roiColor};">[순이익률 ${roiTxt || "-"}]</div>
+                    <div style="color:#d1d4dc;">[활동지수 ${actTxt}점, ${gradeTxt}]</div>
                   </span>`
               : "");
-            
         }
         panel.style.display = "block";
       }catch(e){}
@@ -140,4 +190,5 @@
   window.TG_COMMON.maskedEmail = maskedEmail;
   window.TG_COMMON.attachAuthPanel = attachAuthPanel;
   window.TG_COMMON.setAuthMetrics = setAuthMetrics;
+  window.TG_COMMON.setAuthActivity = setAuthActivity; // ✅ 추가
 })();

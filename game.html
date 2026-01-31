@@ -418,6 +418,10 @@ if (saved && saved.cash !== undefined && saved.cash !== null && saved.cash !== 3
 
     const rb = Number(data && data.recentBalance);
     if (!isFinite(rb)) return;
+    const ai = Number(data && data.activityIndex);
+if (window.TG_COMMON && typeof window.TG_COMMON.setAuthActivity === "function" && isFinite(ai)) {
+  window.TG_COMMON.setAuthActivity(ai);
+}
 
     cash = rb;
     save();

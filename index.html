@@ -1025,6 +1025,12 @@ async function tgInitCashFromSheetIfNeeded(){
       const res = await fetch(`${WEB_APP_URL}?action=getUser&email=${encodeURIComponent(email)}`);
       const data = await res.json();
      
+      const ai = Number(data && data.activityIndex);
+if (isFinite(ai) && window.TG_COMMON && typeof window.TG_COMMON.setAuthActivity === "function") {
+  window.TG_COMMON.setAuthActivity(ai);
+}
+
+
       const raw = (data && data.recentBalance);
 const rb = parseFloat(String(raw).replace(/[^0-9.-]/g, "")); // 콤마, $ 제거
 
