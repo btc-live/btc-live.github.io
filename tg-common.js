@@ -62,19 +62,20 @@
 
 
   function gradeFromActivity(v){
-    if (typeof v !== "number" || !isFinite(v) || v < 1) return "-";
-    if (v < 11) return "Beginner";
-    if (v < 51) return "Rookie";
-    if (v < 101) return "Settled";
-    if (v < 201) return "Active";
-    if (v < 501) return "Heavy";
-    if (v < 1001) return "Elite";
-    if (v < 2001) return "Master";
-    if (v < 5001) return "Grandmaster";
-    if (v < 10001) return "Legend";
-    if (v < 50001) return "🌍 World Class";
-     return "👑 God";
+    if (typeof v !== "number" || !isFinite(v) || v < 0) return "-";
+  
+    if (v <= 10)  return "Beginner 🐣";
+    if (v <= 20)  return "Rookie 🌱";
+    if (v <= 35)  return "Learner 📘";
+    if (v <= 60)  return "Skilled 🛠️";
+    if (v <= 100) return "Pro 🔥";
+    if (v <= 160) return "Expert 🎯";
+    if (v <= 260) return "Elite 💎";
+    if (v <= 500) return "Master 🧠";
+    if (v <= 1000) return "World Class 🌍";
+    return "God 👑";
   }
+  
   
 
   function setAuthMetrics(equity, roi){

@@ -286,7 +286,6 @@
       <h2 style="margin:0 0 8px 0; font-size:22px;">🎮 게임 참여 인증</h2>
       <p style="color:#848e9c; font-size:13px; margin-bottom:18px;">이메일을 한 번만 등록하시면<br><b>[비트코인 게임]</b>과 <b>[가격 예측 확인]</b>을<br>모두 이용할 수 있습니다.</p>
 
-      <input type="text" id="db-name" placeholder="성함" style="margin-bottom:10px;">
       <input type="email" id="db-email" placeholder="이메일 주소" style="margin-bottom:16px;">
 
       <button onclick="submitToSheet()" id="db-btn" style="padding:14px; width:100%; background:#f3ba2f; border:none; border-radius:10px; color:#000; font-weight:900; cursor:pointer; font-size:16px;">인증하고 배팅하기</button>
@@ -349,12 +348,12 @@
       };
 
       window.submitToSheet = async function() {
-        const name = document.getElementById('db-name').value.trim();
         const email = document.getElementById('db-email').value.trim();
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
+        const name = (localStorage.getItem('registeredName') || '익명').trim();
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
 
-        if (!name || !email.includes('@')) {
-          alert("정보를 올바르게 입력해주세요.");
+        if (!email || !email.includes('@')) {
+          alert('이메일을 올바르게 입력해주세요.');
           return;
         }
 
@@ -372,10 +371,20 @@
           await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: formData });
 
           localStorage.setItem('btc_user_done', 'true');
-          localStorage.setItem('registeredName', name);
-          localStorage.setItem('registeredEmail', email);
-          
-          window.tgInitCashFromSheetIfNeeded();
+          localStorage.setItem('registeredName', name || '익명');
+          const __e = (email || '').trim().toLowerCase();
+          localStorage.setItem('registeredEmail', __e);
+          // ✅ 새 이메일이면 게임 자산을 30,000으로 새로 시작
+          try{
+            const prev = (localStorage.getItem('tg_active_email') || '').trim().toLowerCase();
+            if (!prev || prev !== __e) {
+              localStorage.removeItem('bull_vs_bear_arena_v15_pro');
+              // ✅ 새 이메일이면 즉시 $30,000으로 초기화(리프레시 없이)
+              window.tgHardResetTo30000?.();
+            }
+            localStorage.setItem('tg_active_email', __e);
+          }catch(_e){}
+window.tgInitCashFromSheetIfNeeded();
 
           closeGate();
           alert("인증 완료! 이제 게임/예측을 자유롭게 이용할 수 있습니다.");
@@ -396,6 +405,15 @@
     /* 게임 JS (네 기존 로직 유지) */
     (function() {
       const STORAGE_KEY = 'bull_vs_bear_arena_v15_pro';
+      // ✅ 이메일이 바뀌었으면 새 계정처럼 $30,000부터 시작
+      try{
+        const activeEmail = (localStorage.getItem('registeredEmail') || '').trim().toLowerCase();
+        const prevEmail = (localStorage.getItem('tg_active_email') || '').trim().toLowerCase();
+        if (activeEmail && prevEmail && activeEmail !== prevEmail) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        if (activeEmail) localStorage.setItem('tg_active_email', activeEmail);
+      }catch(_e){}
       let saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
 
       let cash = Number(saved.cash !== undefined ? saved.cash : 30000);
@@ -455,6 +473,17 @@ tgInitCashFromSheetIfNeeded();
       });
 
       function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
+    // ✅ 외부 인증 스크립트에서 호출할 수 있는 강제 초기화
+    window.tgHardResetTo30000 = function(){
+      try{
+        cash = 30000;
+        pos = null;
+        orders = [];
+        save();
+        try{ updateLines(); updateOrderLines(); }catch(e){}
+        try{ render(); }catch(e){}
+      }catch(e){}
+    };
 
       // 리사이즈 시 차트만 안전하게 리사이즈(무한루프 없음)
       let raf = 0;
@@ -855,5 +884,3 @@ try{
 
 </body>
 </html>
-
-

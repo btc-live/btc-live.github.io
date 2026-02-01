@@ -51,7 +51,6 @@
         </span>
         <h2 style="color:#f3ba2f; margin:0 0 15px 0; font-size:13px;">인증 완료 후에는 재입력 없이<br>
             <b>게임 참여</b>와 <b>예측가 확인</b>이 즉시 가능합니다.</h2>
-        <input type="text" id="modalNameInput" placeholder="이름(닉네임)" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; font-size:15px; box-sizing:border-box;">
         <input type="email" id="modalEmailInput" placeholder="이메일 (@ 포함)" style="width:100%; padding:12px; margin-bottom:20px; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; font-size:15px; box-sizing:border-box;">
         <button id="modalSubmitBtn" style="width:100%; padding:14px; background:#f3ba2f; color:#0b0e11; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;">인증 후 결과 확인</button>
 <button onclick="document.getElementById('emailModal').style.display='none'" 
@@ -343,22 +342,29 @@ function updateDisplay() {
         document.getElementById('emailModal').style.display = 'flex';
         
         document.getElementById('modalSubmitBtn').onclick = function() {
-            const n = document.getElementById('modalNameInput').value; 
-            const e = document.getElementById('modalEmailInput').value; 
+            const e = document.getElementById('modalEmailInput').value.trim();
+            const n = (localStorage.getItem('registeredName') || '익명').trim();
             
-            if(!n || !e.includes('@')) {
-                alert("이름과 이메일을 정확히 입력해주세요!");
+            if(!e || !e.includes('@')) {
+                alert('이메일을 정확히 입력해주세요!');
                 return;
             }
 
             // --- 🚀 여기만 추가됐습니다 ---
-            localStorage.setItem('registeredName', n);
-            localStorage.setItem('registeredEmail', e);
-            localStorage.setItem('btc_user_done', 'true'); 
-
-
-
-
+            localStorage.setItem('registeredName', n || '익명');
+            const __e = (e || '').trim().toLowerCase();
+            localStorage.setItem('registeredEmail', __e);
+            // ✅ 새 이메일이면 게임 자산을 30,000으로 새로 시작
+            try{
+              const prev = (localStorage.getItem('tg_active_email') || '').trim().toLowerCase();
+              if (!prev || prev !== __e) {
+                localStorage.removeItem('bull_vs_bear_arena_v15_pro');
+                // ✅ 새 이메일이면 즉시 $30,000으로 초기화(리프레시 없이)
+                window.tgHardResetTo30000?.();
+              }
+              localStorage.setItem('tg_active_email', __e);
+            }catch(_e){}
+            localStorage.setItem('btc_user_done', 'true');
 setTimeout(() => window.tgInitCashFromSheetIfNeeded?.(), 1000);
 
             document.getElementById('emailModal').style.display = 'none';
@@ -990,6 +996,17 @@ setInterval(() => {
     candleSeries = chart.addCandlestickSeries({ upColor: '#02c076', downColor: '#cf304a', borderVisible: false, wickUpColor: '#02c076', wickDownColor: '#cf304a' });
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
+    // ✅ 외부 인증 스크립트에서 호출할 수 있는 강제 초기화
+    window.tgHardResetTo30000 = function(){
+      try{
+        cash = 30000;
+        pos = null;
+        orders = [];
+        save();
+        try{ updateLines(); updateOrderLines(); }catch(e){}
+        try{ render(); }catch(e){}
+      }catch(e){}
+    };
     let autoRefillLock = false;
 
 function autoRefillIfNeeded(reason = "auto_refill") {
@@ -1469,7 +1486,6 @@ try{
             <b>[비트코인 게임]</b>과 <b>[가격 예측 확인]</b>을<br>
             모두 자유롭게 이용하실 수 있습니다!</p>
         
-        <input type="text" id="db-name" placeholder="성함" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:15px; box-sizing:border-box; outline:none;">
         <input type="email" id="db-email" placeholder="이메일 주소" style="padding:12px; width:100%; border-radius:8px; border:1px solid #444; background:#2b3139; color:white; margin-bottom:25px; box-sizing:border-box; outline:none;">
         
         <button onclick="submitToSheet()" id="db-btn" style="padding:15px; width:100%; background:#f3ba2f; border:none; border-radius:8px; color:#000; font-weight:bold; cursor:pointer; font-size:18px;">인증하고 배팅하기</button>
@@ -1516,11 +1532,11 @@ window.checkUserBeforeGame = function(type) {
 
     // 정보 입력 후 전송 (수정본)
 window.submitToSheet = async function() {
-    const name = document.getElementById('db-name').value.trim();
+    const name = (localStorage.getItem('registeredName') || '익명').trim();
     const email = document.getElementById('db-email').value.trim();
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec"; 
 
-    if (!name || !email.includes('@')) {
+    if (!email || !email.includes('@')) {
         alert("정보를 올바르게 입력해주세요.");
         return;
     }
@@ -1549,6 +1565,17 @@ window.submitToSheet = async function() {
         localStorage.setItem('btc_user_done', 'true');    // 통합 인증 도장
         localStorage.setItem('registeredName', name);    // 이름 저장
         localStorage.setItem('registeredEmail', email);  // 이메일 저장
+
+        // ✅ 새 이메일이면 즉시 $30,000으로 초기화(리프레시 없이)
+        try{
+          const __e = (email || '').trim().toLowerCase();
+          const prev = (localStorage.getItem('tg_active_email') || '').trim().toLowerCase();
+          if (!prev || prev !== __e) {
+            localStorage.removeItem('bull_vs_bear_arena_v15_pro');
+            window.tgHardResetTo30000?.();
+          }
+          localStorage.setItem('tg_active_email', __e);
+        }catch(e){}
         
         setTimeout(() => window.tgInitCashFromSheetIfNeeded?.(), 1000);
 
@@ -1692,4 +1719,3 @@ function googleTranslateElementInit() {
 </body>
 
 </html>
-
