@@ -2,6 +2,9 @@
    - Auth panel UI + logout flow (with position-close warning)
    - Email masking
    - Activity index + grade display
+   - Info box collapse/expand (default expanded)
+   - Emergency reset link (always visible inside info box)
+   - IMPORTANT: Avoids re-render jitter by building DOM once and updating text only
 */
 (function(){
   "use strict";
@@ -12,8 +15,6 @@
 
   // ===== Activity / Grade =====
   let _activity = null; // number
-
-  
 
   function fmtMoney(v){
     if (typeof v !== "number" || !isFinite(v)) return "";
@@ -30,14 +31,11 @@
 
   function fmtAct(v){
     if (typeof v !== "number" || !isFinite(v)) return "-";
-  
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
     if (v >= 10_000)    return Math.round(v / 1000) + "K";
     if (v >= 1000)      return (v / 1000).toFixed(1) + "K";
-  
     return (v % 1 === 0) ? String(v) : v.toFixed(1);
   }
-  
 
   function loadMetrics(){
     try{
@@ -51,19 +49,14 @@
   function loadActivity(){
     try{
       const raw = localStorage.getItem("tg_activity_index");
-      if (raw === null || raw === "") {
-        _activity = null;   // 값이 없으면 0으로 만들지 않음
-        return;
-      }
+      if (raw === null || raw === "") { _activity = null; return; }
       const a = Number(raw);
       _activity = isFinite(a) ? a : null;
     }catch(e){}
   }
 
-
   function gradeFromActivity(v){
     if (typeof v !== "number" || !isFinite(v) || v < 0) return "-";
-  
     if (v <= 10)  return "Beginner 🐣";
     if (v <= 20)  return "Rookie 🌱";
     if (v <= 35)  return "Learner 📘";
@@ -75,8 +68,6 @@
     if (v <= 1000) return "World Class 🌍";
     return "God 👑";
   }
-  
-  
 
   function setAuthMetrics(equity, roi){
     try{
@@ -87,16 +78,13 @@
     }catch(e){}
   }
 
-  // ✅ 활동지수 저장 함수 (index/game에서 불러서 넣을 것)
   function setAuthActivity(activityIndex){
     try{
       _activity = (typeof activityIndex === "number" && isFinite(activityIndex)) ? activityIndex : null;
       if (_activity !== null) localStorage.setItem("tg_activity_index", String(_activity));
-    
       if (window.TG_COMMON && typeof window.TG_COMMON._updateAuthPanel === "function") {
         window.TG_COMMON._updateAuthPanel(true);
       }
-     
     }catch(e){}
   }
 
@@ -116,8 +104,6 @@
       localStorage.removeItem("btc_user_done");
       localStorage.removeItem("registeredEmail");
       localStorage.removeItem("registeredName");
-
-      // (선택) 로그아웃 시 표시도 초기화
       localStorage.removeItem("tg_activity_index");
     }catch(e){}
   }
@@ -139,7 +125,6 @@
         if (!opts.getAuthed || opts.getAuthed() !== true) return;
 
         const hasPos = !!(opts.getHasPos && opts.getHasPos());
-
         if (hasPos){
           const msg =
 `인증 해제 전에 포지션 정리해야 기록 반영
@@ -148,7 +133,6 @@
 열려 있는 포지션은 기록되지 않습니다.`;
 
           if (!confirm(msg + "\n\n[확인] 포지션 정리하고 인증 해제\n[취소] 유지")) return;
-
           try{ opts.onExitPos && opts.onExitPos(); }catch(e){}
           setTimeout(doLogout, 350);
           return;
@@ -163,6 +147,95 @@
       panel.addEventListener("click", function(){ requestLogout(); });
     }
 
+    // Cache DOM refs to avoid rebuilding and jitter
+    let dom = null;
+
+    function ensureDom(head, m){
+      // If not built yet or user changed, build once
+      if (dom && dom.user === m) return dom;
+
+      const collapsed = (localStorage.getItem("tg_info_collapsed") === "1");
+
+      head.innerHTML = `
+        <span style="pointer-events:none;">🔓<span data-tg="mask"></span>님</span>
+        <span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(Log out)</span>
+        <span data-tg="toggle"
+              style="
+                margin-left:2px;
+                padding:2px 8px;
+                font-size:10px;
+                font-weight:700;
+                border:1px solid #3a3f4b;
+                border-radius:999px;
+                background:#1b1f2a;
+                color:#d1d4dc;
+                cursor:pointer;
+                user-select:none;
+              "
+              title="Show/Hide info">${collapsed ? "▸ Info" : "▾ Info"}</span>
+
+        <span class="tg-stats" style="font-weight:900; display:block; margin-top:6px;">
+          <span data-tg="box"
+                style="
+                  display:block;
+                  overflow:hidden;
+                  max-height:${collapsed ? "0px" : "999px"};
+                  transition:max-height 0.18s ease;
+                ">
+            <div data-tg="eq" style="color:#ff8a00;">[Equity -]</div>
+            <div data-tg="roi" style="color:#848e9c;">[ROI -]</div>
+            <div data-tg="act" style="color:#848e9c;">[Activity evaluating…]</div>
+
+            <div style="margin-top:6px; font-size:10px; color:#848e9c; line-height:1.4;">
+              If data looks delayed or incorrect,<br>
+              <a href="javascript:(function(){localStorage.clear();location.reload();})();"
+                 style="color:#f3ba2f; text-decoration:underline;"
+                 onclick="event.stopPropagation();">
+                click here to reset and reload
+              </a>.<br>
+              It will clear all locally saved data<br>in your browser.
+            </div>
+          </span>
+        </span>
+      `;
+
+      const q = (sel) => head.querySelector(sel);
+
+      dom = {
+        user: m,
+        mask: q('[data-tg="mask"]'),
+        toggle: q('[data-tg="toggle"]'),
+        box: q('[data-tg="box"]'),
+        eq: q('[data-tg="eq"]'),
+        roi: q('[data-tg="roi"]'),
+        act: q('[data-tg="act"]'),
+      };
+
+      if (dom.mask) dom.mask.textContent = m;
+
+      // Bind toggle once
+      if (dom.toggle && !dom.toggle.dataset.bound){
+        dom.toggle.dataset.bound = "1";
+        dom.toggle.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const isCollapsed = (localStorage.getItem("tg_info_collapsed") === "1");
+          const next = !isCollapsed;
+
+          localStorage.setItem("tg_info_collapsed", next ? "1" : "0");
+
+          // Apply immediately (no flicker / no jitter)
+          if (dom.box){
+            dom.box.style.maxHeight = next ? "0px" : "999px";
+          }
+          dom.toggle.textContent = next ? "▸ Info" : "▾ Info";
+        });
+      }
+
+      return dom;
+    }
+
     function update(authed){
       try{
         if (!authed) { panel.style.display = "none"; return; }
@@ -170,59 +243,38 @@
         const m = maskedEmail();
         if (!m) { panel.style.display = "none"; return; }
 
-        loadActivity(); // 최신 activityIndex 반영
-
+        loadActivity();
 
         const head = panel.firstElementChild;
-        if (head){
-          const eqTxt = fmtMoney(_equity);
-          const roiTxt = fmtPct(_roi);
+        if (!head) { panel.style.display = "none"; return; }
 
-          const hasAct = (typeof _activity === "number" && isFinite(_activity));
+        const D = ensureDom(head, m);
+        if (D.mask) D.mask.textContent = m;
 
-          // ✅ Update 버튼 표시 조건: evaluating 상태 OR Activity가 0일 때
-          const actTxt = fmtAct(_activity);
-          const gradeTxt = gradeFromActivity(_activity);
+        // Update values WITHOUT rebuilding HTML (prevents shaking)
+        const eqTxt = fmtMoney(_equity) || "-";
+        const roiTxt = fmtPct(_roi) || "-";
+        const roiColor = (_roi === null) ? "#848e9c" : (_roi >= 0 ? "#02c076" : "#cf304a");
 
-          const hasAny = true; // 항상 stats 블록 보여주기
-
-
-          const eqColor = "#ff8a00";
-          const roiColor = (_roi === null) ? "#848e9c" : (_roi >= 0 ? "#02c076" : "#cf304a");
-
-
-
-
-          head.innerHTML =
-  `<span style="pointer-events:none;">🔓 Trader ${m} 님 </span>` +
-  `<span style="text-decoration:underline; color:#f3ba2f; font-weight:900;">(Log out)</span>` +
-  (hasAny
-    ? ` <span class="tg-stats" style="font-weight:900; display:block; margin-top:6px;">
-          <div style="color:${eqColor};">[Equity ${eqTxt || "-"}]</div>
-          <div style="color:${roiColor};">[ROI ${roiTxt || "-"}]</div>
-          ${hasAct 
-            ? `<div style="color:#d1d4dc;">[Activity ${actTxt}p, ${gradeTxt}]</div>`
-                : `<div style="color:#848e9c;">[Activity evaluating…]</div>`
-              }
-              
-              <div style="margin-top:6px; font-size:7px; color:#848e9c; line-height:1.4;">
-  If data looks delayed or incorrect,<br>
-  (It will clear all locally saved data<br>in your browser.)<br>
-  <a href="javascript:(function(){localStorage.clear();location.reload();})();"
-     style="color:#f3ba2f; text-decoration:underline;"
-     onclick="event.stopPropagation();">
-     click here to reset and reload
-  </a>.
- </div>
-
-               
-  
-        </span>`
-    : "");
-
-
-
+        if (D.eq)  D.eq.textContent  = `[Equity ${eqTxt}]`;
+        if (D.roi){
+          D.roi.textContent = `[ROI ${roiTxt}]`;
+          D.roi.style.color = roiColor;
         }
+
+        const hasAct = (typeof _activity === "number" && isFinite(_activity));
+        if (D.act){
+          if (hasAct){
+            const actTxt = fmtAct(_activity);
+            const gradeTxt = gradeFromActivity(_activity);
+            D.act.textContent = `[Activity ${actTxt}p, ${gradeTxt}]`;
+            D.act.style.color = "#d1d4dc";
+          }else{
+            D.act.textContent = `[Activity evaluating…]`;
+            D.act.style.color = "#848e9c";
+          }
+        }
+
         panel.style.display = "block";
       }catch(e){}
     }
@@ -234,5 +286,5 @@
   window.TG_COMMON.maskedEmail = maskedEmail;
   window.TG_COMMON.attachAuthPanel = attachAuthPanel;
   window.TG_COMMON.setAuthMetrics = setAuthMetrics;
-  window.TG_COMMON.setAuthActivity = setAuthActivity; // ✅ 추가
+  window.TG_COMMON.setAuthActivity = setAuthActivity;
 })();
