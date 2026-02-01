@@ -180,6 +180,7 @@
 
           const hasAct = (typeof _activity === "number" && isFinite(_activity));
 
+          // ✅ Update 버튼 표시 조건: evaluating 상태 OR Activity가 0일 때
           const actTxt = fmtAct(_activity);
           const gradeTxt = gradeFromActivity(_activity);
 
@@ -203,6 +204,19 @@
             ? `<div style="color:#d1d4dc;">[Activity ${actTxt}p, ${gradeTxt}]</div>`
                 : `<div style="color:#848e9c;">[Activity evaluating…]</div>`
               }
+              
+              <div style="margin-top:6px; font-size:7px; color:#848e9c; line-height:1.4;">
+  If data looks delayed or incorrect,<br>
+  (It will clear all locally saved data<br>in your browser.)<br>
+  <a href="javascript:(function(){localStorage.clear();location.reload();})();"
+     style="color:#f3ba2f; text-decoration:underline;"
+     onclick="event.stopPropagation();">
+     click here to reset and reload
+  </a>.
+ </div>
+
+               
+  
         </span>`
     : "");
 
