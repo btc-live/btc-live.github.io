@@ -183,15 +183,17 @@
           
           <span style="color: #f3ba2f; font-weight: bold;">[게임 규칙]</span>
           시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> |
-          <span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
+          잔액 $100 이하 시 자동으로 $30,000 리필 (청산 후 재접속 시 적용) 
+          <br><span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
           
           <div style="margin-top:6px; color:#9aa4b2; font-size:11px; font-weight:700;">
-            Rules: $30,000 start • Limit if price set, otherwise Market • Liquidated on LIQ line.
+            Rules: $30,000 start • Limit if price set, otherwise Market • Liquidated on LIQ line. 
+            <br>Balance ≤ $100 → Auto refill to $30,000 (Applies after liquidation upon revisit)
           </div>
           
           <div style="margin-top:4px; color:#848e9c; font-size:10.5px;">
-            ※ 브라우저/쿠키 변경 시 데이터 초기화<br>
-            Data resets if browser or cookies are changed.
+            ※ 브라우저/쿠키 변경 시 데이터(포지션, 주문 예약) 초기화<br>
+            Data(position, limit order) resets if browser or cookies are changed.
           </div>
       </div>
     </div>
