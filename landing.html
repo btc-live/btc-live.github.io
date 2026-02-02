@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bull vs Bear : 1회 체험</title>
+  <!-- mini charts libs -->
+  <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <style>
     :root{
       --bg:#0b0e11; --panel:#181a20; --panel2:#131722; --line:#2b3139;
@@ -41,6 +44,13 @@
     .warn{color:#d1d4dc; font-size:12px}
     .center{text-align:center}
     .hide{display:none !important}
+  
+    /* mini charts (landing) */
+    .mini-charts{margin-bottom:12px;}
+    .mini-box{background:#0b0e11; border:1px solid rgba(209,212,220,0.12); border-radius:14px; overflow:hidden;}
+    #tv-mini{height:150px;}
+    #lc-mini{height:120px;}
+
   </style>
 </head>
 <body>
@@ -65,7 +75,15 @@
       </div>
 
       <div class="grid">
+        
         <div class="panel">
+          <!-- mini charts (top-left) -->
+          <div class="mini-charts">
+            <div class="mini-box" id="tv-mini"></div>
+            <div style="height:10px;"></div>
+            <div class="mini-box" id="lc-mini"></div>
+          </div>
+
           <div class="row" style="justify-content:space-between;">
             <div>
               <div class="k">BTCUSDT 실시간 가격</div>
@@ -163,12 +181,41 @@
           <div style="font-weight:950; font-size:16px;">본 게임에서 가능한 것</div>
           <div class="sep"></div>
           <div class="warn">
-            🏆 랭킹/기록 저장<br/>
+            🏆 수익 수익률/기록 저장<br/>
             📌 활동지수/등급 반영<br/>
-            🔐 이메일 인증(한 번) 후 이용
+            🔐 이메일 등록 후 이용
           </div>
 
           <div class="sep"></div>
+
+          <div class="warn">
+            이 게임은 가상 투자 시뮬레이션이지만,<br/>
+            <b>수익 · 수익률 · 활동 기록</b>을 계속 저장하기 위해<br/>
+            이메일이 필요합니다.<br/><br/>
+          
+            이메일 없이 이용할 경우<br/>
+            👉 기록이 저장되지 않으며, <br>
+            접속할 때마다 처음부터 시작되는 단점이 있어 <br>
+            부득이 이메일을 받기로 결정했습니다.
+           
+
+          </div>
+          
+          <div class="sep"></div>
+          
+          <div class="muted">
+            • 이메일은 <b>게임 기록 저장 및 계정 식별용</b>으로만 사용됩니다<br/>
+            • <b>대량 광고·스팸 메일은 발송하지 않습니다</b><br/>
+            • 다만, 서비스 업데이트 또는 중요한 변경 사항 안내 메일이<br/>
+              <b>드물게 발송될 수 있습니다</b><br/>
+            • 외부 공개 ❌ / 제3자 제공 ❌<br/><br/>
+          
+            ⚠️ 이메일은 <b>나의 가상 투자 기록을 지키는 열쇠</b>이므로<br/>
+            반드시 기억해 주세요.
+          </div>
+          
+          <div class="sep"></div>
+
 
           <div class="center">
             <button class="btn btn-dark" style="width:100%;" onclick="goGame()">본 게임 시작</button>
@@ -245,6 +292,86 @@
     roeEl.style.color = (roe >= 0) ? "var(--green)" : "var(--red)";
   }
 
+
+  // ===== mini charts init (TradingView + lightweight-charts) =====
+  let __miniInited = false;
+  let __lcChart = null;
+  let __lcSeries = null;
+  let __lcLastTime = 0;
+
+  function initMiniCharts(){
+    if (__miniInited) return;
+    __miniInited = true;
+
+    // TradingView mini widget
+    try{
+      if (window.TradingView && document.getElementById("tv-mini")){
+        new TradingView.widget({
+          autosize: true,
+          symbol: "BYBIT:BTCUSDT.P",
+          interval: "5",
+          timezone: "Etc/UTC",
+          theme: "dark",
+          style: "1",
+          locale: "kr",
+          hide_top_toolbar: true,
+          hide_legend: true,
+          allow_symbol_change: false,
+          save_image: false,
+          container_id: "tv-mini"
+        });
+      }
+    }catch(e){}
+
+    // lightweight-charts mini line
+    try{
+      const el = document.getElementById("lc-mini");
+      if (!el || !window.LightweightCharts) return;
+
+      __lcChart = LightweightCharts.createChart(el, {
+        layout: { backgroundColor: "#0b0e11", textColor: "#9aa4b2" },
+        grid: { vertLines: { color: "rgba(43,49,57,0.4)" }, horzLines: { color: "rgba(43,49,57,0.4)" } },
+        rightPriceScale: { borderColor: "rgba(43,49,57,0.6)" },
+        timeScale: { borderColor: "rgba(43,49,57,0.6)", timeVisible: true, secondsVisible: false },
+        crosshair: { mode: 0 }
+      });
+
+      __lcSeries = __lcChart.addLineSeries({ lineWidth: 2 });
+
+      // initial size fix
+      setTimeout(() => {
+        try{
+          const r = el.getBoundingClientRect();
+          __lcChart.resize(Math.floor(r.width), Math.floor(r.height));
+        }catch(e){}
+      }, 50);
+
+      // resize on window
+      window.addEventListener("resize", () => {
+        try{
+          const r = el.getBoundingClientRect();
+          __lcChart.resize(Math.floor(r.width), Math.floor(r.height));
+        }catch(e){}
+      }, { passive:true });
+
+    }catch(e){}
+  }
+
+  function pushMiniPrice(price){
+    try{
+      if (!__miniInited) initMiniCharts();
+      if (!__lcSeries || !isFinite(price)) return;
+
+      const t = Math.floor(Date.now() / 1000);
+      if (t === __lcLastTime) return;
+      __lcLastTime = t;
+
+      __lcSeries.update({ time: t, value: price });
+    }catch(e){}
+  }
+  // ============================================================
+
+
   // Bybit public WS
   try{
     const ws = new WebSocket("wss://stream.bybit.com/v5/public/linear");
@@ -258,6 +385,7 @@
         if (d && d.data && d.data.lastPrice){
           btc = parseFloat(d.data.lastPrice);
           paint();
+          pushMiniPrice(btc);
         }
       }catch(err){}
     };
