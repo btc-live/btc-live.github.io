@@ -411,7 +411,14 @@ canvas{display:block; background:#000;}
 
   // ✅ Fullscreen helper (mobile stability)
   (function(){
-    const isMobile = () => (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) || (window.innerWidth <= 900);
+const isMobile = () => (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) || (window.innerWidth <= 900);
+
+    function isStandalone(){
+      // iOS Safari A2HS: navigator.standalone === true
+      // PWA: display-mode standalone
+      return (window.navigator && window.navigator.standalone === true) ||
+             (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    }
     const overlay = document.getElementById("fsOverlay");
     const btnEnter = document.getElementById("btnEnterFS");
     const btnExit  = document.getElementById("btnExitFS");
@@ -431,6 +438,17 @@ canvas{display:block; background:#000;}
       }catch(_){}
       syncFSUI();
     }
+    function goExit(){
+      // ✅ '나가기' 동작: 가능한 경우 뒤로가기, 아니면 index.html로 이동
+      try{
+        if (history.length > 1) { history.back(); return; }
+      }catch(_){}
+      try{
+        if (document.referrer && document.referrer.length > 0) { location.href = document.referrer; return; }
+      }catch(_){}
+      location.href = "index.html";
+    }
+
     async function exitFS(){
       try{
         const ex = document.exitFullscreen || document.webkitExitFullscreen;
@@ -444,15 +462,25 @@ canvas{display:block; background:#000;}
     function syncFSUI(){
       const mobile = isMobile();
       const fs = inFullscreen();
+      const standalone = isStandalone();
+
       if (!overlay || !btnExit) return;
-      // show overlay only on mobile and not yet fullscreen
+
+      // ✅ 홈화면 앱(A2HS/standalone)에서는 Fullscreen 버튼이 동작하지 않는 게 정상
+      //    -> Enter Fullscreen 안내는 숨기고, ⤫ 나가기만 항상 노출
+      if (mobile && standalone){
+        overlay.style.display = "none";
+        btnExit.style.display = "block";
+        return;
+      }
+
+      // 일반 모바일 브라우저 탭: fullscreen 진입 전엔 안내, 진입 후엔 exit만
       overlay.style.display = (mobile && !fs) ? "flex" : "none";
-      // exit button only when fullscreen
       btnExit.style.display = (mobile && fs) ? "block" : "none";
     }
 
     if (btnEnter) btnEnter.addEventListener("click", (e)=>{ e.preventDefault(); enterFS(); }, {passive:false});
-    if (btnExit)  btnExit.addEventListener("click", (e)=>{ e.preventDefault(); exitFS(); }, {passive:false});
+    if (btnExit)  btnExit.addEventListener("click", (e)=>{ e.preventDefault(); if (inFullscreen()) exitFS(); else goExit(); }, {passive:false});
 
     document.addEventListener("fullscreenchange", syncFSUI);
     document.addEventListener("webkitfullscreenchange", syncFSUI);
@@ -461,7 +489,6 @@ canvas{display:block; background:#000;}
     // initial
     setTimeout(syncFSUI, 50);
   })();
-
 ;
 
 (() => {
