@@ -148,6 +148,11 @@ canvas{display:block; background:#000;}
       box-shadow: 0 14px 34px rgba(0,0,0,0.28);
     }
 
+    /* ✅ D-pad 스와이프용 히트박스 확대(앱게임 느낌) */
+    #mobileControls .mc-left{
+      padding: 8px 10px;
+      border-radius: 16px;
+    }
     /* 방향키(오른쪽 끝): 점프 위 + 좌/우 아래 */
     #mobileControls .mc-dpad{
       display:flex;
@@ -345,7 +350,7 @@ canvas{display:block; background:#000;}
 
 <div id="mobileControls" aria-label="mobile controls">
   <!-- LEFT: 이동 -->
-  <div class="mc-dpad mc-left">
+  <div class="mc-dpad mc-left" id="dpadZone">
     <div class="mc-lr">
       <button id="btnLeft"  type="button" aria-label="left">◀</button>
       <button id="btnRight" type="button" aria-label="right">▶</button>
@@ -1127,9 +1132,65 @@ const btnAtkUp = document.getElementById("btnAtkUp");
     }, { passive:true });
   });
 
-  // 좌/우 홀드
-  bindHold(btnLeft,  ()=>{ keys["ArrowLeft"]  = true;  keys["ArrowRight"] = false; }, ()=>{ keys["ArrowLeft"]  = false; });
-  bindHold(btnRight, ()=>{ keys["ArrowRight"] = true;  keys["ArrowLeft"]  = false; }, ()=>{ keys["ArrowRight"] = false; });
+  // ✅ 앱게임 느낌: D-pad 전체 영역에서 손가락 위치로 좌/우 결정 (스와이프 전환)
+  //    - setPointerCapture로 "누른 채로 좌↔우 이동"이 끊기지 않음
+  (function bindDpadSwipe(){
+    const zone = document.getElementById("dpadZone");
+    if (!zone) return;
+
+    let activePointerId = null;
+
+    function setDirFromEvent(e){
+      const r = zone.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const half = r.width / 2;
+
+      if (x < half){
+        keys["ArrowLeft"] = true;
+        keys["ArrowRight"] = false;
+      }else{
+        keys["ArrowRight"] = true;
+        keys["ArrowLeft"] = false;
+      }
+    }
+
+    function clearDir(){
+      keys["ArrowLeft"] = false;
+      keys["ArrowRight"] = false;
+    }
+
+    zone.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      activePointerId = e.pointerId;
+      try{ zone.setPointerCapture(activePointerId); }catch(_){}
+      setDirFromEvent(e);
+    }, { passive:false });
+
+    zone.addEventListener("pointermove", (e)=>{
+      if (activePointerId === null) return;
+      if (e.pointerId !== activePointerId) return;
+      setDirFromEvent(e);
+    }, { passive:true });
+
+    zone.addEventListener("pointerup", (e)=>{
+      if (e.pointerId !== activePointerId) return;
+      activePointerId = null;
+      clearDir();
+    }, { passive:true });
+
+    zone.addEventListener("pointercancel", (e)=>{
+      if (e.pointerId !== activePointerId) return;
+      activePointerId = null;
+      clearDir();
+    }, { passive:true });
+
+    // 혹시 캡처가 안 되는 환경 대비(안전망)
+    zone.addEventListener("lostpointercapture", ()=>{
+      activePointerId = null;
+      clearDir();
+    }, { passive:true });
+  })();
+
 
   // 점프/공격 탭
   if (btnJump){
