@@ -5,7 +5,8 @@
   <title>Game2 – Office Hero Run (Q 서류 / Space 점프)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <style>
-    html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#87ceeb;}
+    html{background:#000;}
+    html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#000;}
     canvas{display:block; background:#000;}
 
     /* ✅ 모바일에서 화면 잘림 방지 + 안전영역(safe-area) 대응 */
@@ -39,6 +40,17 @@
       box-shadow:0 10px 30px rgba(0,0,0,0.18);
     }
     .btn-restart:active{transform:translateY(1px);}
+
+    .btn-pause{
+      position:fixed; top:60px; right:12px; z-index:10;
+      background:rgba(0,0,0,0.55); color:#fff;
+      border:1px solid rgba(255,255,255,0.22);
+      border-radius:14px; padding:10px 12px;
+      font-weight:950; cursor:pointer;
+      backdrop-filter: blur(6px);
+      box-shadow:0 10px 30px rgba(0,0,0,0.18);
+    }
+    .btn-pause:active{transform:translateY(1px);}
   
     .season-overlay{
       position:fixed; inset:0; z-index:50;
@@ -74,8 +86,8 @@
        ============================= */
     #mobileControls{
       position: fixed;
-      left: calc(env(safe-area-inset-left) + 16px);
-      right: calc(env(safe-area-inset-right) + 16px);
+      left: calc(env(safe-area-inset-left) + 32px);
+      right: calc(env(safe-area-inset-right) + 32px);
       bottom: calc(env(safe-area-inset-bottom) + 10px);
       z-index: 30;
       display: none;
@@ -87,14 +99,14 @@
       pointer-events: auto;
     }
     #mobileControls button{
-      width: 38px;             /* ✅ 45% 정도 축소 */
-      height: 38px;
-      border-radius: 9px;
+      width: 49px;             /* ✅ 45% 정도 축소 */
+      height: 49px;
+      border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.22);
       background: rgba(0,0,0,0.42);
       color: #fff;
       font-weight: 950;
-      font-size: 13px;
+      font-size: 17px;
       backdrop-filter: blur(6px);
       box-shadow: 0 10px 26px rgba(0,0,0,0.22);
       padding: 0;
@@ -103,10 +115,10 @@
 
     /* 공격 버튼(서류) - 왼쪽 끝 */
     #mobileControls .mc-atk{
-      width: 44px;
-      height: 44px;
-      font-size: 15px;
-      border-radius: 10px;
+      width: 57px;
+      height: 57px;
+      font-size: 20px;
+      border-radius: 13px;
       border-color: rgba(243,186,47,0.55);
       box-shadow: 0 14px 34px rgba(0,0,0,0.28);
     }
@@ -116,16 +128,16 @@
       display:flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     #mobileControls .mc-lr{
       display:flex;
-      gap: 6px;
+      gap: 8px;
     }
     #mobileControls .mc-up{
-      width: 38px;
-      height: 38px;
-      border-radius: 9px;
+      width: 49px;
+      height: 49px;
+      border-radius: 12px;
     }
 
     /* 세로(포트레이트) 안내 오버레이 */
@@ -160,8 +172,10 @@
        ============================= */
     #helpBtn{
       position: fixed;
-      top: calc(env(safe-area-inset-top) + 8px);
-      right: calc(env(safe-area-inset-right) + 10px);
+      /* ✅ Restart(우측)와 겹치지 않게: 왼쪽 + HUD 아래로 이동 */
+      top: calc(env(safe-area-inset-top) + 78px);
+      left: calc(env(safe-area-inset-left) + 12px);
+      right: auto;
       z-index: 40;
       width: 28px;
       height: 28px;
@@ -184,9 +198,10 @@
     }
     #helpPanel{
       position: fixed;
-      top: calc(env(safe-area-inset-top) + 44px);
-      left: 50%;
-      transform: translateX(-50%);
+      /* ✅ helpBtn 바로 아래(왼쪽)에 뜨게 */
+      top: calc(env(safe-area-inset-top) + 110px);
+      left: calc(env(safe-area-inset-left) + 12px);
+      transform: none;
       z-index: 40;
       width: min(360px, 86vw);
       background: rgba(24,26,32,0.92);
@@ -220,18 +235,24 @@
 <canvas id="game"></canvas>
 
 <!-- 📱 Mobile Controls: 키보드 없어도 플레이 가능 -->
-<div id="mobileControls" aria-label="mobile controls">
-  <!-- order: (서류) (왼쪽) (점프: 방향키 위) (오른쪽) -->
-  <button id="btnAtk" type="button" class="mc-atk" aria-label="attack">📄</button>
 
-  <div class="mc-dpad" aria-label="dpad">
-    <button id="btnJump" type="button" class="mc-up" aria-label="jump">⬆</button>
+<div id="mobileControls" aria-label="mobile controls">
+  <!-- LEFT: 이동 -->
+  <div class="mc-dpad mc-left">
     <div class="mc-lr">
       <button id="btnLeft"  type="button" aria-label="left">◀</button>
       <button id="btnRight" type="button" aria-label="right">▶</button>
     </div>
   </div>
+
+  <!-- RIGHT: 점프 + 공격 -->
+  <div class="mc-actions mc-right">
+    <button id="btnJump" type="button" class="mc-up" aria-label="jump">⬆</button>
+    <button id="btnAtkUp" type="button" class="mc-atk" aria-label="attack-up">⬆📄</button>
+    <button id="btnAtk"  type="button" class="mc-atk" aria-label="attack">📄</button>
+  </div>
 </div>
+
 
 <!-- 📱 Portrait(세로)일 때 가로 전환 안내 -->
 <div id="rotateOverlay" class="rotate-overlay">
@@ -264,6 +285,8 @@
 
 <button class="btn-restart" onclick="location.reload()">🔄 Restart</button>
 
+
+<button class="btn-pause" id="pauseBtn" type="button">⏸ Pause</button>
 <script>
 (() => {
   // =============================
@@ -271,6 +294,38 @@
   // =============================
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
+
+  // =============================
+  // ⏸️ Pause / Resume (사용자 버튼)
+  // =============================
+  let userPaused = false;
+  function setPause(paused){
+    userPaused = !!paused;
+    const btn = document.getElementById("pauseBtn");
+    if (btn){
+      btn.textContent = userPaused ? "▶ Resume" : "⏸ Pause";
+    }
+  }
+  function togglePause(){
+    // 시즌 완료 오버레이가 떠있으면 굳이 토글하지 않게
+    if (typeof seasonComplete === 'boolean' && seasonComplete) return;
+    setPause(!userPaused);
+  }
+  window.togglePause = togglePause;
+
+  // =============================
+  // 📱 모바일 잘림 방지: '가상 화면(논리 해상도)'로 렌더링해서 자동 줌아웃
+  //  - 게임 좌표계는 VIEW_W x VIEW_H
+  //  - 실제 화면(canvas)은 기기 크기
+  //  - draw()에서 ctx 변환(스케일/오프셋)으로 전체가 보이게 출력
+  // =============================
+  const VIEW_W = 1280;
+  const VIEW_H = 720;
+  let viewScale = 1;
+  let viewOffX = 0;
+  let viewOffY = 0;
+  function CW(){ return VIEW_W; }
+  function CH(){ return VIEW_H; }
 
   // roundRect 폴리필(구형 브라우저)
   if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -291,6 +346,12 @@
   function resize(){
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+
+    const sx = canvas.width  / VIEW_W;
+    const sy = canvas.height / VIEW_H;
+    viewScale = Math.min(sx, sy);
+    viewOffX = Math.round((canvas.width  - VIEW_W * viewScale) / 2);
+    viewOffY = Math.round((canvas.height - VIEW_H * viewScale) / 2);
   }
   window.addEventListener("resize", resize);
   resize();
@@ -329,7 +390,7 @@
   window.addEventListener("pointerdown", tryLockLandscape, { once:true, passive:true });
 
   const groundH = 90;
-  function groundY(){ return canvas.height - groundH; }
+  function groundY(){ return CH() - groundH; }
 
   // =============================
   // 이미지 로드
@@ -343,6 +404,10 @@
     im.src = src;
     return im;
   });
+
+  // ✅ 드론(공중 이벤트 적) 이미지
+  const droneImg = new Image();
+  droneImg.src = "drone.png";
 
   
   // =============================
@@ -411,16 +476,16 @@ function drawParallaxBackground(stage, tSec){
     topA=[6,10,22]; botA=[25,30,50];
   }
 
-  const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  const g = ctx.createLinearGradient(0, 0, 0, CH());
   g.addColorStop(0, rgb(topA));
   g.addColorStop(1, rgb(botA));
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, CW(), CH());
 
   // --- 2) 태양/달 ---
   if (stage === "city"){
-    const x = canvas.width*0.78;
-    const y = canvas.height*0.18;
+    const x = CW()*0.78;
+    const y = CH()*0.18;
     if (cycle < 0.78){
       // 해
       ctx.globalAlpha = 0.55;
@@ -442,7 +507,7 @@ function drawParallaxBackground(stage, tSec){
   // --- 3) 구름(가장 느리게) ---
   if (stage !== "space"){
     const cloudSpeed = scrollSpeed * 0.12;
-    const off = -((t * cloudSpeed) % (canvas.width + 260));
+    const off = -((t * cloudSpeed) % (CW() + 260));
     for (let i=0;i<6;i++){
       const cx = off + i*260 + 120;
       const cy = 70 + (i%3)*28;
@@ -458,7 +523,7 @@ function drawParallaxBackground(stage, tSec){
   }
 
   // --- 4) 먼 배경(스카이라인/산) : 아주 느리게 ---
-  const farY = stage==="space" ? canvas.height*0.55 : canvas.height*0.58;
+  const farY = stage==="space" ? CH()*0.55 : CH()*0.58;
   const farSpeed = scrollSpeed * 0.18;
   const segW1 = 70;
 
@@ -470,7 +535,7 @@ function drawParallaxBackground(stage, tSec){
   const start1 = Math.floor(((t*farSpeed) / segW1));
   const offset1 = -((t*farSpeed) % segW1);
 
-  for (let i=-2;i<Math.ceil(canvas.width/segW1)+4;i++){
+  for (let i=-2;i<Math.ceil(CW()/segW1)+4;i++){
     const k = start1 + i;
     const r = hash01(k*3.1 + (stage==="rural"?10: (stage==="space"?20:0)));
     const h = 40 + r*90;
@@ -479,7 +544,7 @@ function drawParallaxBackground(stage, tSec){
   }
 
   // --- 5) 중간 배경(건물/나무) : 조금 빠르게(입체감) ---
-  const midY = stage==="space" ? canvas.height*0.66 : canvas.height*0.72;
+  const midY = stage==="space" ? CH()*0.66 : CH()*0.72;
   const midSpeed = scrollSpeed * 0.35;
   const segW2 = 56;
 
@@ -495,7 +560,7 @@ function drawParallaxBackground(stage, tSec){
   const start2 = Math.floor(((t*midSpeed) / segW2));
   const offset2 = -((t*midSpeed) % segW2);
 
-  for (let i=-2;i<Math.ceil(canvas.width/segW2)+4;i++){
+  for (let i=-2;i<Math.ceil(CW()/segW2)+4;i++){
     const k = start2 + i;
     const r = hash01(k*7.7 + (stage==="rural"?30:(stage==="space"?40:0)));
     const h = 70 + r*140;
@@ -540,7 +605,7 @@ function drawRoadAndSidewalk(stage){
 
   // 보도(타일)
   ctx.fillStyle = "rgba(200,205,210,0.92)";
-  ctx.fillRect(0, gy, canvas.width, sidewalkH);
+  ctx.fillRect(0, gy, CW(), sidewalkH);
 
   // 보도 타일 라인
   ctx.strokeStyle = "rgba(0,0,0,0.18)";
@@ -549,10 +614,10 @@ function drawRoadAndSidewalk(stage){
   for (let y=gy; y<gy+sidewalkH; y+=tileH){
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
+    ctx.lineTo(CW(), y);
     ctx.stroke();
   }
-  for (let x=0; x<canvas.width; x+=tileW){
+  for (let x=0; x<CW(); x+=tileW){
     ctx.beginPath();
     ctx.moveTo(x, gy);
     ctx.lineTo(x, gy+sidewalkH);
@@ -561,17 +626,17 @@ function drawRoadAndSidewalk(stage){
 
   // 연석(경계선)
   ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.fillRect(0, gy+sidewalkH-2, canvas.width, 2);
+  ctx.fillRect(0, gy+sidewalkH-2, CW(), 2);
 
   // 도로(아스팔트)
   ctx.fillStyle = (stage==="space") ? "#1c1f28" : "#2a2f33";
-  ctx.fillRect(0, gy+sidewalkH, canvas.width, roadH);
+  ctx.fillRect(0, gy+sidewalkH, CW(), roadH);
 
   // 도로 텍스처(알갱이 느낌)
   ctx.globalAlpha = 0.08;
   ctx.fillStyle = "#fff";
   for (let i=0;i<220;i++){
-    const x = (hash01(i*9.1 + t)*canvas.width) | 0;
+    const x = (hash01(i*9.1 + t)*CW()) | 0;
     const y = (gy+sidewalkH + hash01(i*3.3 + t*2)*roadH) | 0;
     ctx.fillRect(x, y, 2, 1);
   }
@@ -584,14 +649,14 @@ function drawRoadAndSidewalk(stage){
   const offset = -((t*speed) % (dashW+gap));
 
   ctx.fillStyle = "rgba(243,186,47,0.9)";
-  for (let x = offset; x < canvas.width + dashW; x += (dashW+gap)){
+  for (let x = offset; x < CW() + dashW; x += (dashW+gap)){
     ctx.fillRect(x, laneY, dashW, 4);
   }
 
   // 가장자리 라인
   ctx.fillStyle = "rgba(255,255,255,0.22)";
-  ctx.fillRect(0, gy+sidewalkH+8, canvas.width, 2);
-  ctx.fillRect(0, gy+sidewalkH+roadH-10, canvas.width, 2);
+  ctx.fillRect(0, gy+sidewalkH+8, CW(), 2);
+  ctx.fillRect(0, gy+sidewalkH+roadH-10, CW(), 2);
 }
 
 
@@ -707,13 +772,20 @@ function getEnemyShotSpeed(){
   };
   player.y = groundY() - player.h;
 
-  const papers = []; // {x,y,w,h,vx,life}
+  const papers = []; // {x,y,w,h,vx,vy?,life}
   const enemies = []; // {x,y,w,h,img,hp,nextShotAt}
   const enemyShots = []; // {x,y,w,h,vx,life}
   const coins = []; // {x,y,r,vy,life}
   const energyDrops = []; // {x,y,r,vy,life}
   const deathFx = []; // {x,y,w,h,img,vy,rot,vr,alpha,life,mode}
   const particles = []; // {x,y,vx,vy,r,life,alpha}
+  const drones = [];     // 공중 드론(처치 불가)
+  const droneBombs = []; // 드론 소음탄(💥) 낙하
+
+  // 드론 빈도 제어(공격 기준 20% 미만 + 쿨타임)
+  let totalAttacks = 0;
+  let droneAttacks = 0;
+  let lastDroneSpawnAt = 0;
 
   // 입력: Space 점프, Q 서류
   const keys = {};
@@ -737,6 +809,7 @@ function getEnemyShotSpeed(){
   const btnRight = document.getElementById("btnRight");
   const btnJump  = document.getElementById("btnJump");
   const btnAtk   = document.getElementById("btnAtk");
+const btnAtkUp = document.getElementById("btnAtkUp");
 
   // =============================
   // ⓘ Help 토글 (DOM 로드 후 바인딩)
@@ -744,6 +817,7 @@ function getEnemyShotSpeed(){
   window.addEventListener("DOMContentLoaded", () => {
     const helpBtn = document.getElementById("helpBtn");
     const helpPanel = document.getElementById("helpPanel");
+    const pauseBtn = document.getElementById("pauseBtn");
     let helpOpen = false;
 
     function setHelp(open){
@@ -757,6 +831,13 @@ function getEnemyShotSpeed(){
       helpBtn.addEventListener("pointerdown", (e)=>{
         try{ e.preventDefault(); }catch(_){}
         setHelp(!helpOpen);
+      });
+    }
+
+    if (pauseBtn){
+      pauseBtn.addEventListener("pointerdown", (e)=>{
+        try{ e.preventDefault(); }catch(_){}
+        togglePause();
       });
     }
 
@@ -782,6 +863,11 @@ function getEnemyShotSpeed(){
     btnAtk.addEventListener("pointerdown", (e)=>{ try{ e.preventDefault(); }catch(_){} tryThrowPaper(); });
   }
 
+  if (btnAtkUp){
+    btnAtkUp.addEventListener("pointerdown", (e)=>{ try{ e.preventDefault(); }catch(_){} tryThrowPaperUp(); });
+  }
+
+
   window.addEventListener("keydown", (e) => {
     keys[e.code] = true;
 
@@ -791,8 +877,15 @@ function getEnemyShotSpeed(){
     // 점프: Space
     if (e.code === "Space") tryJump();
 
-    // 서류: KeyQ
+    // 서류: KeyQ(앞) / KeyW(위)
     if (e.code === "KeyQ") tryThrowPaper();
+    if (e.code === "KeyW") tryThrowPaperUp();
+
+    // ⏸ Pause/Resume: P
+    if (e.code === "KeyP"){
+      e.preventDefault();
+      togglePause();
+    }
   }, { passive:false });
 
   window.addEventListener("keyup", (e) => {
@@ -830,6 +923,24 @@ function getEnemyShotSpeed(){
     papers.push({ x, y, w, h, vx: 12 * dir, life: 90 });
   }
 
+
+// W: 위로 서류 던지기(드론 공격용)
+function tryThrowPaperUp(){
+  if (!alive()) return;
+  const now = performance.now();
+  if (now - lastThrowAt < THROW_COOLDOWN) return;
+  lastThrowAt = now;
+
+  const w = 20, h = 28;
+
+  // 약간 앞쪽에서 위로 올라가게(너무 수직이면 재미가 덜함)
+  const dir = (player.face === -1 ? -1 : 1);
+  const x = player.x + player.w*0.5 - w/2 + dir*10;
+  const y = player.y + player.h*0.05; // ✅ 더 위에서 시작(드론까지 닿게)
+
+  papers.push({ x, y, w, h, vx: 1.8 * dir, vy: -22.0, life: 140 });
+}
+
   function alive(){ return energy > 0; }
 
   // =============================
@@ -852,7 +963,7 @@ function getEnemyShotSpeed(){
     const side = (Math.random() < 0.5) ? 1 : -1;
 
     const spawnX = (side === 1)
-      ? (canvas.width + 80 + Math.random() * 220)
+      ? (CW() + 80 + Math.random() * 220)
       : (-80 - Math.random() * 220);
 
     enemies.push({
@@ -866,10 +977,178 @@ function getEnemyShotSpeed(){
       vy: 0,
       onGround: true,
 
+      warnUntil: 0, // ✅ 💥 경고(발사 직전)
+
       nextShotAt: performance.now() + (() => { const g = getShotGap(); return g.min + Math.random()*(g.max-g.min); })(),
       nextJumpAt: performance.now() + (900 + Math.random()*1400)
     });
   }
+  // =============================
+  // ✈️ 드론(공중 이벤트 적) + 소음탄(💥) 낙하
+  //  - 처치 불가 / 피하기만
+  //  - 맞으면 지상 적과 동일하게 에너지 -1
+  //  - 전체 공격 중 20% 미만 + 드론 연속 등장 방지(쿨타임)
+  // =============================
+  const DRONE_MAX_RATIO = 0.42;      // ✅ 드론 비율 상한(약 40%대)
+  const DRONE_SPAWN_CD  = 3800;      // ✅ 드론 최소 등장 간격(ms)
+  const DRONE_WARN_MS   = 420;       // 떨어뜨리기 전 💥 예고(ms)
+
+  function canSpawnDrone(now){
+    // 공격 비율이 18%를 넘으면 스폰 금지
+    const ratio = droneAttacks / Math.max(1, totalAttacks);
+    if (ratio > DRONE_MAX_RATIO) return false;
+
+    // 너무 자주 등장 방지
+    if (now - lastDroneSpawnAt < DRONE_SPAWN_CD) return false;
+
+    return true;
+  }
+
+  function spawnDrone(now){
+    // 드론은 화면 상단, 좌우 랜덤 위치에 잠깐 등장
+    const w = 110, h = 58;
+    const x = 180 + Math.random() * (CW() - 360);
+    const y = 78 + Math.random() * 70;
+
+    drones.push({
+      x, y, w, h,
+      vx: (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random()*0.6), // 살짝 좌우 떠다님
+      attacksLeft: 2 + Math.floor(Math.random()*2), // 2~3회 투하
+      nextDropAt: now + (900 + Math.random()*900),   // 첫 투하까지 딜레이
+      dropAt: 0,              // 실제 투하 시각(예고 포함)
+      leaving: false
+    });
+
+    lastDroneSpawnAt = now;
+  }
+
+  function maybeSpawnDrone(now){
+    // 스폰 조건 + 확률(체감상 "가끔"만)
+    if (!canSpawnDrone(now)) return;
+    if (Math.random() > 0.65) return; // ✅ 조건 만족해도 65%만 스폰(비율/쿨타임과 함께 40%대 체감)
+    spawnDrone(now);
+  }
+
+  function updateDrones(now){
+    for (let i = drones.length - 1; i >= 0; i--){
+      const d = drones[i];
+
+      // 좌우 부유 이동
+      d.x += d.vx;
+      if (d.x < 60){ d.x = 60; d.vx = Math.abs(d.vx); }
+      if (d.x + d.w > CW() - 60){ d.x = CW() - 60 - d.w; d.vx = -Math.abs(d.vx); }
+
+      // 퇴장 처리(투하 끝나면 위로 사라짐)
+      if (d.leaving){
+        d.y -= 1.8;
+        if (d.y + d.h < -40) drones.splice(i,1);
+        continue;
+      }
+
+      // 투하 타이밍 설정(예고 포함)
+      if (!d.dropAt && now > d.nextDropAt){
+        d.dropAt = now + DRONE_WARN_MS; // 예고 후 실제 투하
+      }
+
+      // 실제 투하
+      if (d.dropAt && now >= d.dropAt){
+        // 소음탄(💥) 생성
+        const bw = 22, bh = 22;
+        droneBombs.push({
+          x: d.x + d.w*0.5 - bw/2,
+          y: d.y + d.h - 6,
+          w: bw, h: bh,
+          vy: 10 + levelT()*4,  // 후반일수록 조금 빠르게
+          life: 240
+        });
+
+        // 공격 카운트(비율 제어용)
+        droneAttacks++;
+        totalAttacks++;
+
+        d.attacksLeft--;
+        d.dropAt = 0;
+        d.nextDropAt = now + (900 + Math.random()*900);
+
+        // 다 떨어뜨렸으면 퇴장
+        if (d.attacksLeft <= 0){
+          d.leaving = true;
+        }
+      }
+    }
+  }
+
+  function updateDroneBombs(){
+    for (let i = droneBombs.length - 1; i >= 0; i--){
+      const b = droneBombs[i];
+      b.y += b.vy;
+      b.life--;
+
+      // 바닥에 닿으면 사라짐
+      if (b.y + b.h >= groundY()){
+        droneBombs.splice(i,1);
+        continue;
+      }
+
+      // 플레이어 맞음 -> 에너지 -1 (지상 적과 동일)
+      if (alive() && player.invuln === 0 && aabb(player, b)){
+        energy = Math.max(0, energy - 1);
+        player.invuln = 70; // 약 1초 무적
+        player.vy = -10;
+        player.onGround = false;
+        droneBombs.splice(i,1);
+        continue;
+      }
+
+      if (b.life <= 0) droneBombs.splice(i,1);
+    }
+  }
+
+  function drawDrones(now){
+    for (const d of drones){
+      // 드론 그림자(바닥에 약하게)
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.ellipse(d.x + d.w/2, groundY()+8, 28, 9, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // 드론 이미지
+      ctx.drawImage(droneImg, d.x, d.y, d.w, d.h);
+
+      // 💥 예고(투하 직전)
+      if (d.dropAt){
+        const dt = d.dropAt - now;
+        if (dt > 0 && dt <= DRONE_WARN_MS){
+          if (Math.floor(now / 110) % 2 === 1){
+            ctx.save();
+            ctx.font = "900 22px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "rgba(255,90,90,0.95)";
+            ctx.shadowColor = "rgba(0,0,0,0.65)";
+            ctx.shadowBlur = 10;
+            ctx.fillText("💥", d.x + d.w*0.5, d.y - 14);
+            ctx.restore();
+          }
+        }
+      }
+    }
+  }
+
+  function drawDroneBombs(){
+    ctx.save();
+    ctx.font = "900 20px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const b of droneBombs){
+      // 소음탄은 💥 이모지로 표현
+      ctx.fillText("💥", b.x + b.w/2, b.y + b.h/2);
+    }
+    ctx.restore();
+  }
+
 
   // =============================
   // 충돌(AABB)
@@ -935,6 +1214,33 @@ function getEnemyShotSpeed(){
            a.y + a.h > b.y;
   }
 
+
+  // =============================
+  // 💥 발사 예고(소음 표시) : 적 머리 위에 💥가 깜빡임
+  // =============================
+  const WARN_MS = 320; // 발사 몇 ms 전에 보여줄지
+
+  function drawEnemyWarning(e, now){
+    if (!e || !e.warnUntil) return;
+
+    // warnUntil에는 "실제 발사 예정 시각"이 들어있음
+    const dt = e.warnUntil - now;
+    if (dt <= 0 || dt > WARN_MS) return;
+
+    // 깜빡임(100ms 주기)
+    if (Math.floor(now / 100) % 2 === 0) return;
+
+    ctx.save();
+    ctx.font = "900 22px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(255,90,90,0.95)";
+    ctx.shadowColor = "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = 10;
+
+    ctx.fillText("💥", e.x + e.w * 0.5, e.y - 14);
+    ctx.restore();
+  }
   // =============================
   // 업데이트
   // =============================
@@ -945,7 +1251,7 @@ function getEnemyShotSpeed(){
     if (!updateRotateOverlay()) return;
 
     // 시즌 클리어면 더 이상 진행/스폰 없음
-    if (seasonComplete) return;
+    if (typeof seasonComplete === 'boolean' && seasonComplete) return;
 
     // ✅ 단계 시작 연출: 2초 동안 게임을 잠깐 멈춤
     if (now < levelPauseUntil) return;
@@ -1010,7 +1316,7 @@ function getEnemyShotSpeed(){
     }
     player.x += player.vx;
     // 화면 밖으로 못 나가게
-    player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+    player.x = Math.max(0, Math.min(CW() - player.w, player.x));
 
     // 중력
     player.vy += 0.85;
@@ -1026,17 +1332,24 @@ function getEnemyShotSpeed(){
 
     if (player.invuln > 0) player.invuln--;
 
-    // 서류 이동
-    for (let i = papers.length - 1; i >= 0; i--){
-      const p = papers[i];
-      p.x += p.vx;
-      p.life--;
+    // 서류 이동 (Q: 앞 / W: 위)
+for (let i = papers.length - 1; i >= 0; i--){
+  const p = papers[i];
+  p.x += p.vx;
+  if (typeof p.vy === "number") {
+    p.y += p.vy;
+    // 위로 던진 서류는 살짝 중력 적용
+    p.vy += 0.35;
+  }
+  p.life--;
 
-      // 화면 밖 / 수명 끝 (좌/우 모두 대응)
-      if (p.x > canvas.width + 200 || (p.x + p.w) < -200 || p.life <= 0){
-        papers.splice(i,1);
-      }
-    }
+  // 화면 밖 / 수명 끝
+  const outX = (p.x > CW() + 200) || ((p.x + p.w) < -200);
+  const outY = (p.y + p.h < -220) || (p.y > CH() + 220);
+  if (outX || outY || p.life <= 0){
+    papers.splice(i,1);
+  }
+}
 
     
     // 적 투사체(총알/돌) 이동
@@ -1057,14 +1370,44 @@ function getEnemyShotSpeed(){
       }
 
       // 화면 밖 / 수명 끝
-      if ((s.vx < 0 && (s.x + s.w) < -160) || (s.vx > 0 && s.x > canvas.width + 160) || s.life <= 0){
+      if ((s.vx < 0 && (s.x + s.w) < -160) || (s.vx > 0 && s.x > CW() + 160) || s.life <= 0){
         enemyShots.splice(i,1);
       }
     }
+    // =============================
+    // 드론(공중) + 소음탄(💥)
+    // =============================
+    updateDrones(now);
+    updateDroneBombs();
+
+
+// ✅ 드론을 서류로 공격 가능(W로 위로 던져 맞추기)
+for (let di = drones.length - 1; di >= 0; di--){
+  const d = drones[di];
+  for (let pj = papers.length - 1; pj >= 0; pj--){
+    const p = papers[pj];
+    if (aabb(p, d)){
+      // 드론 제거 + 보상(사토시 1)
+      drones.splice(di, 1);
+      papers.splice(pj, 1);
+
+      coins.push({
+        x: d.x + d.w * 0.5,
+        y: d.y + d.h * 0.5,
+        r: 12,
+        vy: -6,
+        life: 600
+      });
+      break;
+    }
+  }
+}
+
 
 // 적 스폰 타이밍 (단계가 올라갈수록 더 자주)
     if (performance.now() > nextSpawn && alive()){
       spawnEnemy();
+      maybeSpawnDrone(performance.now());
       const g = getSpawnGap();
       nextSpawn = performance.now() + (g.min + Math.random() * (g.max - g.min));
     }
@@ -1102,7 +1445,13 @@ function getEnemyShotSpeed(){
 
       // 적이 일정 간격으로 한 발씩 던짐(투사체)
       const nowT2 = performance.now();
-      if (alive() && nowT2 > e.nextShotAt && e.x < canvas.width - 120 && e.x > -40){
+
+      // ✅ 발사 직전 💥 경고(소음 표시)
+      if (alive() && e.warnUntil === 0 && nowT2 > (e.nextShotAt - WARN_MS) && nowT2 <= e.nextShotAt && e.x < CW() - 120 && e.x > -40){
+        e.warnUntil = e.nextShotAt; // "발사 예정 시각" 저장
+      }
+
+      if (alive() && nowT2 > e.nextShotAt && e.x < CW() - 120 && e.x > -40){
         const bw = 18, bh = 10;
         const bx = (e.side === 1) ? (e.x - 8) : (e.x + e.w - 10);
         const by = e.y + e.h * 0.55;
@@ -1111,6 +1460,8 @@ function getEnemyShotSpeed(){
           vx: -(scrollSpeed + getEnemyShotSpeed()) * e.side,
           life: 240
         });
+        totalAttacks++; // ✅ 전체 공격 카운트(드론 20% 제어용)
+        e.warnUntil = 0; // ✅ 경고 해제
         const g = getShotGap();
         e.nextShotAt = nowT2 + (g.min + Math.random()*(g.max-g.min));
       }
@@ -1161,7 +1512,7 @@ function getEnemyShotSpeed(){
       if (killed) continue;
 
       // 화면 밖(방향별 제거)
-      if ((e.side === 1 && (e.x + e.w) < -120) || (e.side === -1 && e.x > canvas.width + 120)){
+      if ((e.side === 1 && (e.x + e.w) < -120) || (e.side === -1 && e.x > CW() + 120)){
         enemies.splice(i,1);
       }
     }
@@ -1237,9 +1588,19 @@ function getEnemyShotSpeed(){
   // =============================
   let t = 0;
   function draw(){
+    // ✅ 실제 화면 전체 클리어(픽셀 좌표)
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // =============================
+    // ✅ 데스크탑에서 남는 영역(레터박스)이 '그림자'처럼 보이지 않게 검정으로 채움
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // ✅ 가상 화면을 화면에 맞게 축소/중앙정렬(줌아웃)
+    ctx.setTransform(viewScale,0,0,viewScale,viewOffX,viewOffY);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,CW(),CH());
+// =============================
 // 배경(입체감 패럴랙스) + 도로/보도
 // =============================
 const stage = (score >= 50) ? "space" : (score >= 20 ? "rural" : "city");
@@ -1250,6 +1611,13 @@ drawParallaxBackground(stage, tSec);
 
 // (2) 도로/보도: 직접 그려서 '게임 완성 느낌'
 drawRoadAndSidewalk(stage);
+
+    // =============================
+    // 드론(공중) + 소음탄(💥)
+    // =============================
+    const now = performance.now(); // ✅ draw()에서 공통으로 사용할 현재 시간(버그 방지)
+    drawDrones(now);
+    drawDroneBombs();
 
     // 플레이어 그림자
     ctx.globalAlpha = 0.25;
@@ -1262,7 +1630,7 @@ drawRoadAndSidewalk(stage);
     // 플레이어 (피격 시 깜빡) + 살아움직임(숨쉬기/런바운스/점프 스쿼시)
     const blink = (player.invuln > 0) && ((player.invuln % 10) < 5);
 
-    const now = performance.now();
+    // (위에서 const now 정의됨)
     const breathe = Math.sin(now * 0.005) * 2.5; // 가만히 있어도 숨쉬는 느낌
     const runBob  = (player.onGround && player.vx !== 0) ? Math.sin(now * 0.02) * 4 : 0;
 
@@ -1336,6 +1704,7 @@ drawRoadAndSidewalk(stage);
 
       // 이미지
       ctx.drawImage(e.img, e.x, e.y, e.w, e.h);
+      drawEnemyWarning(e, now);
     }
 
 
@@ -1406,18 +1775,30 @@ drawRoadAndSidewalk(stage);
     }
 
     
-    // 단계 시작 멘트(잠깐 표시)
+    // 단계 시작 멘트 + '잠깐 멈춤' 표시(체감되게)
     const _nowLv = performance.now();
-    if (!seasonComplete && alive() && _nowLv < showLevelTextUntil){
+    const inPause = (!seasonComplete && alive() && _nowLv < levelPauseUntil);
+
+    if (inPause){
+      const showIntro = (_nowLv < showLevelTextUntil);
+
       ctx.save();
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      // 화면 살짝 어둡게(멈춤 체감)
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(0,0,CW(),CH());
 
       ctx.fillStyle = "#fff";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+
+      // 큰 글씨
       ctx.font = "900 44px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
-      ctx.fillText(`${level}단계 시작`, canvas.width/2, canvas.height/2);
+      ctx.fillText(showIntro ? `${level}단계 시작` : "잠깐 멈춤...", CW()/2, CH()/2);
+
+      // 작은 안내
+      ctx.globalAlpha = 0.92;
+      ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+      ctx.fillText("Ready!", CW()/2, CH()/2 + 46);
 
       ctx.restore();
     }
@@ -1426,18 +1807,61 @@ drawRoadAndSidewalk(stage);
     if (!alive()){
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillRect(0,0,CW(),CH());
 
       ctx.fillStyle = "#fff";
       ctx.font = "900 44px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 20);
+      ctx.fillText("GAME OVER", CW()/2, CH()/2 - 20);
 
       ctx.font = "900 18px system-ui, sans-serif";
-      ctx.fillText("사토시: " + score + "  |  Restart 버튼을 누르세요", canvas.width/2, canvas.height/2 + 28);
+      ctx.fillText("사토시: " + score + "  |  Restart 버튼을 누르세요", CW()/2, CH()/2 + 28);
       ctx.restore();
     }
+
+    // =============================
+    // POST-DRAW BLACK BAR MASK
+    //  - 스케일 경계의 안티앨리어싱(희미한 '그림자')를 완전히 덮어씌움
+    // =============================
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = "#000";
+    const drawW = VIEW_W * viewScale;
+    const drawH = VIEW_H * viewScale;
+
+    // left bar
+    if (viewOffX > 0) ctx.fillRect(0, 0, viewOffX + 1, canvas.height);
+    // right bar
+    const rightX = viewOffX + drawW;
+    if (rightX < canvas.width) ctx.fillRect(rightX - 1, 0, canvas.width - rightX + 1, canvas.height);
+
+    // top bar
+    if (viewOffY > 0) ctx.fillRect(0, 0, canvas.width, viewOffY + 1);
+    // bottom bar
+    const bottomY = viewOffY + drawH;
+    if (bottomY < canvas.height) ctx.fillRect(0, bottomY - 1, canvas.width, canvas.height - bottomY + 1);
+
+
+    // =============================
+    // ⏸️ PAUSED overlay
+    // =============================
+    if (userPaused){
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.font = "950 34px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("PAUSED", canvas.width/2, canvas.height/2 - 10);
+      ctx.font = "900 14px system-ui";
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillText("Press P or tap Resume", canvas.width/2, canvas.height/2 + 26);
+      ctx.restore();
+    }
+
+    // 다시 게임 좌표계(가상 화면)로 돌아갈 필요는 없음(다음 프레임에서 다시 설정함)
   }
 
   // =============================
@@ -1445,7 +1869,7 @@ drawRoadAndSidewalk(stage);
   // =============================
   function loop(){
     t += 1;
-    if (alive()) update(); // 게임오버면 멈춤(그리기는 계속)
+    if (alive() && !userPaused) update(); // 게임오버면 멈춤(그리기는 계속)
     draw();
     requestAnimationFrame(loop);
   }
@@ -1463,9 +1887,10 @@ drawRoadAndSidewalk(stage);
 <div id="helpPanel" role="dialog" aria-label="help panel" aria-hidden="true">
   <div class="hp-title">Quick Help</div>
   <div class="hp-body">
-    <div><b>PC</b> : ← → 이동 · Space 점프 · Q 서류</div>
-    <div style="margin-top:4px;"><b>Mobile</b> : 📄 서류 · ◀ 이동 · ⬆ 점프 · ▶ 이동</div>
-    <div style="margin-top:6px; opacity:0.9;">Tip: 적을 서류로 잡으면 🪙 사토시 드랍 (10% ♥ 에너지)</div>
+    <div><b>PC</b> : ← → 이동 · Space 점프 · Q 서류 · <b>W 위공격(드론)</b></div>
+    <div style="margin-top:4px;"><b>Mobile</b> : 📄 서류(Q) · ⬆📄 <b>위공격(W)</b> · ◀ 이동 · ⬆ 점프 · ▶ 이동</div>
+    <div style="margin-top:6px; opacity:0.9;">Tip: 드론은 위공격(W)으로만 처치 가능 · 맞으면 ❤️ -1</div>
+    <div style="margin-top:4px; opacity:0.9;">Tip: 적을 서류로 잡으면 🪙 사토시 드랍 (10% ♥ 에너지)</div>
   </div>
 </div>
 
