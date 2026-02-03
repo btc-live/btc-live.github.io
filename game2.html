@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Game2 – Office Hero Run (Q 서류 / Space 점프)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <style>
     html{background:#000;}
     html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#000;}
@@ -257,9 +257,73 @@ canvas{display:block; background:#000;}
       canvas { height: calc(var(--vh) * 100); }
     }
 
+
+    /* ✅ Fullscreen overlay + exit button */
+    #fsOverlay{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.75);
+      z-index:9999;
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
+    }
+    #fsOverlay .fs-card{
+      width:min(420px, 92vw);
+      background:#111;
+      border:1px solid rgba(255,255,255,0.15);
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.45);
+      color:#fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      text-align:center;
+    }
+    #fsOverlay .fs-title{ font-weight:900; font-size:18px; margin-bottom:6px; }
+    #fsOverlay .fs-desc{ opacity:0.9; font-size:13px; margin-bottom:12px; line-height:1.35; }
+    #fsOverlay .fs-hint{ opacity:0.75; font-size:11px; margin-top:10px; line-height:1.35; }
+    #btnEnterFS{
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:#f3ba2f;
+      color:#111;
+      font-weight:900;
+      font-size:14px;
+      cursor:pointer;
+    }
+    #btnExitFS{
+      position:fixed;
+      top: calc(env(safe-area-inset-top) + 10px);
+      right: calc(env(safe-area-inset-right) + 10px);
+      z-index:9998;
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(0,0,0,0.55);
+      color:#fff;
+      font-size:20px;
+      display:none; /* only shown in fullscreen on mobile */
+      -webkit-tap-highlight-color: transparent;
+      touch-action:none;
+    }
+
 </style>
 </head>
 <body>
+
+  <!-- ✅ Mobile Fullscreen UI -->
+  <div id="fsOverlay" style="display:none;">
+    <div class="fs-card">
+      <div class="fs-title">Mobile Fullscreen</div>
+      <div class="fs-desc">Tap below to hide the address bar and play more stably.</div>
+      <button id="btnEnterFS" type="button">Enter Fullscreen</button>
+      <div class="fs-hint">Tip: On iPhone Safari, fullscreen may be limited. For best results, use “Add to Home Screen”.</div>
+    </div>
+  </div>
+
+  <button id="btnExitFS" type="button" title="Exit">⤫</button>
+
 
 <canvas id="game"></canvas>
 
@@ -344,6 +408,61 @@ canvas{display:block; background:#000;}
       window.visualViewport.addEventListener("scroll", ()=>schedule(false), {passive:true});
     }
   })();
+
+  // ✅ Fullscreen helper (mobile stability)
+  (function(){
+    const isMobile = () => (window.matchMedia && window.matchMedia("(max-width: 900px)").matches) || (window.innerWidth <= 900);
+    const overlay = document.getElementById("fsOverlay");
+    const btnEnter = document.getElementById("btnEnterFS");
+    const btnExit  = document.getElementById("btnExitFS");
+
+    function inFullscreen(){
+      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    }
+    async function enterFS(){
+      try{
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (req) await req.call(el);
+        // Try to lock orientation (may fail silently)
+        try{
+          if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("landscape");
+        }catch(_){}
+      }catch(_){}
+      syncFSUI();
+    }
+    async function exitFS(){
+      try{
+        const ex = document.exitFullscreen || document.webkitExitFullscreen;
+        if (ex) await ex.call(document);
+      }catch(_){}
+      // Unlock orientation best-effort
+      try{ if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(_){}
+      syncFSUI();
+    }
+
+    function syncFSUI(){
+      const mobile = isMobile();
+      const fs = inFullscreen();
+      if (!overlay || !btnExit) return;
+      // show overlay only on mobile and not yet fullscreen
+      overlay.style.display = (mobile && !fs) ? "flex" : "none";
+      // exit button only when fullscreen
+      btnExit.style.display = (mobile && fs) ? "block" : "none";
+    }
+
+    if (btnEnter) btnEnter.addEventListener("click", (e)=>{ e.preventDefault(); enterFS(); }, {passive:false});
+    if (btnExit)  btnExit.addEventListener("click", (e)=>{ e.preventDefault(); exitFS(); }, {passive:false});
+
+    document.addEventListener("fullscreenchange", syncFSUI);
+    document.addEventListener("webkitfullscreenchange", syncFSUI);
+    window.addEventListener("resize", syncFSUI, {passive:true});
+
+    // initial
+    setTimeout(syncFSUI, 50);
+  })();
+
+;
 
 (() => {
   // =============================
