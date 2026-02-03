@@ -292,6 +292,8 @@ canvas{display:block; background:#000;}
       cursor:pointer;
     }
     #btnExitFS{
+      pointer-events:auto;
+
       position:fixed;
       top: calc(env(safe-area-inset-top) + 10px);
       right: calc(env(safe-area-inset-right) + 10px);
@@ -479,10 +481,22 @@ const isMobile = () => (window.matchMedia && window.matchMedia("(max-width: 900p
       btnExit.style.display = (mobile && fs) ? "block" : "none";
     }
 
-    if (btnEnter) btnEnter.addEventListener("click", (e)=>{ e.preventDefault(); enterFS(); }, {passive:false});
-    if (btnExit)  btnExit.addEventListener("click", (e)=>{ e.preventDefault(); if (inFullscreen()) exitFS(); else goExit(); }, {passive:false});
-
-    document.addEventListener("fullscreenchange", syncFSUI);
+    if (btnEnter){
+      const _enter = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){} enterFS(); };
+      btnEnter.addEventListener("click", _enter, {passive:false});
+      btnEnter.addEventListener("pointerdown", _enter, {passive:false});
+      btnEnter.addEventListener("touchstart", _enter, {passive:false});
+    }
+    if (btnExit){
+      const _exit = (e)=>{ 
+        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+        if (inFullscreen()) exitFS(); else goExit();
+      };
+      btnExit.addEventListener("click", _exit, {passive:false});
+      btnExit.addEventListener("pointerdown", _exit, {passive:false});
+      btnExit.addEventListener("touchstart", _exit, {passive:false});
+    }
+document.addEventListener("fullscreenchange", syncFSUI);
     document.addEventListener("webkitfullscreenchange", syncFSUI);
     window.addEventListener("resize", syncFSUI, {passive:true});
 
