@@ -54,7 +54,19 @@ canvas{display:block; background:#000;}
     }
     .btn-restart:active{transform:translateY(1px);}
 
-    .btn-pause{
+    
+
+
+.btn-exit{
+  position:fixed; top:108px; right:12px; z-index:10;
+  background:rgba(255,255,255,0.92); color:#000;
+  border:none; border-radius:14px; padding:10px 12px;
+  font-weight:950; cursor:pointer;
+  box-shadow:0 10px 30px rgba(0,0,0,0.18);
+}
+.btn-exit:active{transform:translateY(1px);}
+
+.btn-pause{
       position:fixed; top:60px; right:12px; z-index:10;
       background:rgba(0,0,0,0.55); color:#fff;
       border:1px solid rgba(255,255,255,0.22);
@@ -380,6 +392,8 @@ canvas{display:block; background:#000;}
 
 <button class="btn-restart" onclick="location.reload()">🔄 Restart</button>
 
+<button class="btn-exit" id="btnExitMain" type="button">🏠 메인으로</button>
+
 
 <button class="btn-pause" id="pauseBtn" type="button">⏸ Pause</button>
 <script>
@@ -504,6 +518,26 @@ document.addEventListener("fullscreenchange", syncFSUI);
     setTimeout(syncFSUI, 50);
   })();
 ;
+
+
+// ✅ Exit to main (iOS Add to Home Screen safe)
+function exitGame(){
+  // iOS standalone에서는 window.close/history.back이 거의 막혀있어서
+  // 가장 안전한 방법 = 명시적인 페이지 이동
+  location.href = "index.html";
+}
+(function(){
+  const btn = document.getElementById("btnExitMain");
+  if (!btn) return;
+  const handler = (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+    exitGame();
+  };
+  btn.addEventListener("click", handler, {passive:false});
+  btn.addEventListener("pointerdown", handler, {passive:false});
+  btn.addEventListener("touchstart", handler, {passive:false});
+})();
+
 
 (() => {
   // =============================
