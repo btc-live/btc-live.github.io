@@ -241,6 +241,22 @@ canvas{display:block; background:#000;}
       opacity: 0.92;
     }
 
+
+    /* ✅ Viewport height stability (mobile only) */
+    :root{ --vh: 1vh; }
+
+    /* Desktop: keep classic behavior */
+    @media (min-width: 901px){
+      body, html { height: 100vh; }
+      canvas { height: 100vh; }
+    }
+
+    /* Mobile: use stable vh variable (prevents address-bar resize jumps) */
+    @media (max-width: 900px){
+      body, html { height: calc(var(--vh) * 100); }
+      canvas { height: calc(var(--vh) * 100); }
+    }
+
 </style>
 </head>
 <body>
@@ -301,6 +317,34 @@ canvas{display:block; background:#000;}
 
 <button class="btn-pause" id="pauseBtn" type="button">⏸ Pause</button>
 <script>
+
+  // ✅ Mobile viewport-height stabilizer (prevents "zoom/crop" when touching address bar)
+  (function(){
+    const mq = window.matchMedia ? window.matchMedia("(max-width: 900px)") : null;
+    function setVH(force){
+      const isMobile = mq ? mq.matches : (window.innerWidth <= 900);
+      if (!isMobile) return; // desktop untouched
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      const vh = (h * 0.01);
+      // ignore tiny jitter unless forced
+      const prev = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--vh")) || 0;
+      if (!force && prev && Math.abs(vh - prev) < 0.5) return;
+      document.documentElement.style.setProperty("--vh", vh + "px");
+    }
+    let t = null;
+    function schedule(force=false){
+      clearTimeout(t);
+      t = setTimeout(()=> setVH(force), 120);
+    }
+    // initial
+    setVH(true);
+    window.addEventListener("resize", ()=>schedule(false), {passive:true});
+    if (window.visualViewport){
+      window.visualViewport.addEventListener("resize", ()=>schedule(false), {passive:true});
+      window.visualViewport.addEventListener("scroll", ()=>schedule(false), {passive:true});
+    }
+  })();
+
 (() => {
   // =============================
   // 캔버스
