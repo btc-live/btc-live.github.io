@@ -7,7 +7,20 @@
   <style>
     html{background:#000;}
     html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#000;}
-    canvas{display:block; background:#000;}
+    
+    /* ✅ Mobile stability: prevent scroll/zoom/back-swipe and text selection */
+    html, body{
+      overscroll-behavior: none;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #mobileControls, #mobileControls *{
+      touch-action: none;
+    }
+
+canvas{display:block; background:#000;}
 
     /* ✅ 모바일에서 화면 잘림 방지 + 안전영역(safe-area) 대응 */
     body{
@@ -343,9 +356,14 @@
   }
 
   
+  
+  function getVW(){ return (window.visualViewport && window.visualViewport.width) ? window.visualViewport.width : window.innerWidth; }
+  function getVH(){ return (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight; }
+
   function resize(){
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // 모바일 주소창/툴바 변화로 innerHeight가 흔들리는 문제 완화
+    canvas.width = Math.round(getVW());
+    canvas.height = Math.round(getVH());
 
     const sx = canvas.width  / VIEW_W;
     const sy = canvas.height / VIEW_H;
@@ -353,8 +371,21 @@
     viewOffX = Math.round((canvas.width  - VIEW_W * viewScale) / 2);
     viewOffY = Math.round((canvas.height - VIEW_H * viewScale) / 2);
   }
-  window.addEventListener("resize", resize);
+
+  // ✅ resize 디바운스(연속 호출로 흔들림/렉 방지)
+  let _rzTimer = null;
+  function requestResize(){
+    clearTimeout(_rzTimer);
+    _rzTimer = setTimeout(resize, 150);
+  }
+
+  window.addEventListener("resize", requestResize, { passive:true });
+  if (window.visualViewport){
+    window.visualViewport.addEventListener("resize", requestResize, { passive:true });
+    window.visualViewport.addEventListener("scroll", requestResize, { passive:true });
+  }
   resize();
+
 
   // =============================
   // 📱 모바일은 가로(landscape) 권장/강제 흐름
@@ -797,12 +828,19 @@ function getEnemyShotSpeed(){
   // =============================
   function bindHold(btn, downFn, upFn){
     if (!btn) return;
-    const down = (e)=>{ try{ e.preventDefault(); }catch(_){} downFn && downFn(); };
-    const up   = (e)=>{ try{ e.preventDefault(); }catch(_){} upFn && upFn(); };
-    btn.addEventListener("pointerdown", down);
-    btn.addEventListener("pointerup", up);
-    btn.addEventListener("pointercancel", up);
-    btn.addEventListener("pointerleave", up);
+    const down = (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      downFn && downFn();
+    };
+    const up   = (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      upFn && upFn();
+    };
+    // ✅ passive:false 로 preventDefault가 확실히 동작하게
+    btn.addEventListener("pointerdown", down, {passive:false});
+    btn.addEventListener("pointerup", up, {passive:false});
+    btn.addEventListener("pointercancel", up, {passive:false});
+    btn.addEventListener("pointerleave", up, {passive:false});
   }
 
   const btnLeft  = document.getElementById("btnLeft");
@@ -1867,17 +1905,32 @@ drawRoadAndSidewalk(stage);
   // =============================
   // 루프
   // =============================
-  function loop(){
+  
+  // =============================
+  // 루프 (모바일 프레임 드랍 안정화: dt clamp)
+  // =============================
+  let _lastT = performance.now();
+  function loop(now){
     t += 1;
-    if (alive() && !userPaused) update(); // 게임오버면 멈춤(그리기는 계속)
+
+    // dt(60fps 기준), 너무 큰 값은 잘라서 물리 튐/충돌 누락 방지
+    let dt = (now - _lastT) / 16.666;
+    _lastT = now;
+    if (!isFinite(dt) || dt < 0) dt = 1;
+    if (dt > 2.0) dt = 2.0;
+
+    // update 내부는 now를 사용하므로, here: 큰 프레임 점프 시에도 안정적으로 진행
+    if (alive() && !userPaused) update();
     draw();
+
     requestAnimationFrame(loop);
   }
+
 
     // 시작: 1단계
   startLevel(1);
 
-  loop();
+  requestAnimationFrame(loop);
 })();
 </script>
 
