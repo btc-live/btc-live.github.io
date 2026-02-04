@@ -454,26 +454,26 @@ canvas{display:block; background:#000;}
 <!-- =============================
      🔊 Audio (BGM + SFX)
      ============================= -->
-<audio id="aud-bgm" loop playsinline preload="metadata">
-  <source src="bgm.mp3" type="audio/mpeg">
+<audio id="aud-bgm" preload="metadata" loop playsinline>
+  <source src="bgm.m4a" type="audio/mp4">
 </audio>
-<audio id="aud-coin-recieved" playsinline preload="none">
-  <source src="coin-recieved.mp3" type="audio/mpeg">
+<audio id="aud-coin-recieved" preload="none" playsinline>
+  <source src="coin-recieved.m4a" type="audio/mp4">
 </audio>
-<audio id="aud-dropping-a-coin" playsinline preload="none">
-  <source src="dropping-a-coin.mp3" type="audio/mpeg">
+<audio id="aud-dropping-a-coin" preload="none" playsinline>
+  <source src="dropping-a-coin.m4a" type="audio/mp4">
 </audio>
-<audio id="aud-hurt-character" playsinline preload="none">
-  <source src="hurt%20-%20character.mp3" type="audio/mpeg">
+<audio id="aud-hurt-character" preload="none" playsinline>
+  <source src="hurt%20-%20character.mp3" type="audio/mp4">
 </audio>
-<audio id="aud-hurt-enermy" playsinline preload="none">
-  <source src="hurt-enermy.mp3" type="audio/mpeg">
+<audio id="aud-hurt-enermy" preload="none" playsinline>
+  <source src="hurt-enermy.m4a" type="audio/mp4">
 </audio>
-<audio id="aud-jump" playsinline preload="none">
-  <source src="jump.mp3" type="audio/mpeg">
+<audio id="aud-jump" preload="none" playsinline>
+  <source src="jump.m4a" type="audio/mp4">
 </audio>
-<audio id="aud-shoot" playsinline preload="none">
-  <source src="shoot.mp3" type="audio/mpeg">
+<audio id="aud-shoot" preload="none" playsinline>
+  <source src="shoot.m4a" type="audio/mp4">
 </audio>
 
 <button id="btnSound"
@@ -670,7 +670,7 @@ function exitGame(){
     let unlocked = false;
     let muted = false;
 
-    // ✅ 기본 볼륨
+    // ✅ 기본 볼륨(원하면 여기만 바꾸면 됨)
     const vol = {
       bgm: 0.22,
       coinRecieved: 0.85,
@@ -681,10 +681,10 @@ function exitGame(){
       shoot: 0.55,
     };
 
-    // ✅ iOS 끊김 방지: 같은 효과음 연타 제한(단위 ms)
+    // 같은 소리가 너무 연속으로 울릴 때 찢어지는 걸 방지(간단 쿨다운)
     const lastAt = Object.create(null);
     function canPlay(key, ms){
-      const now = (performance && performance.now) ? performance.now() : Date.now();
+      const now = performance.now();
       const prev = lastAt[key] || 0;
       if (now - prev < ms) return false;
       lastAt[key] = now;
@@ -698,12 +698,32 @@ function exitGame(){
       }
     }
 
-    // ✅ iOS 친화 재생: 잦은 currentTime seek(0) 회피
     function safePlay(a){
       if (!a) return;
       try{
-        // 이미 재생 중이면 그냥 두기(겹침 방지 + seek 비용 감소)
-        if (!a.paused) return;
+        // ✅ 간단한 SFX 스로틀(너무 연속으로 울리면 모바일에서 끊김)
+        const now = performance.now ? performance.now() : Date.now();
+        const last = a._tg_lastPlayTs || 0;
+        if (now - last < 60) return; // 60ms 이내 중복 재생 방지
+        a._tg_lastPlayTs = now;
+
+        // preload="none"일 수 있으니 필요 시 로드
+        if (a.readyState === 0) {
+          try{ a.load(); }catch(_){}
+        }
+
+        // readyState가 낮을 때는 되감기(seek)가 오히려 부담 -> 그냥 play 시도
+        if (a.readyState < 2){
+          const p0 = a.play();
+          if (p0 && typeof p0.catch === "function") p0.catch(()=>{});
+          return;
+        }
+
+        // 재생 중이면 pause 후 리셋
+        if (!a.paused) {
+          a.pause();
+        }
+        a.currentTime = 0;
 
         const p = a.play();
         if (p && typeof p.catch === "function") p.catch(()=>{});
@@ -720,27 +740,27 @@ function exitGame(){
       try{ el.bgm && el.bgm.pause(); }catch(_){}
     }
 
-    // ✅ 첫 제스처에서만 unlock
+    // ✅ iOS/모바일 정책 해제: 첫 제스처 때 unlock
     function unlock(){
       if (unlocked) return;
       unlocked = true;
 
-      applyVolumes();
-
-      // iOS 정책 해제용: BGM을 무음으로 아주 짧게 play 시도 후 정지
+      // ✅ 모바일(특히 iOS)에서 여러 오디오를 한꺼번에 play/pause 하면 순간 렉이 생길 수 있음
+      // => BGM 1개만 정책 해제용으로 한번 건드리기
       try{
         const a = el.bgm;
         if (a){
-          const v = a.volume;
+          const prevVol = a.volume;
           a.volume = 0;
           const p = a.play();
           if (p && typeof p.catch === "function") p.catch(()=>{});
           a.pause();
           a.currentTime = 0;
-          a.volume = v;
+          a.volume = prevVol;
         }
       }catch(_){}
 
+      applyVolumes();
       startBgm();
     }
 
@@ -749,6 +769,7 @@ function exitGame(){
       const a = el[name];
       if (!a) return;
 
+      // 기본 쿨다운(ms)
       const cd = opt.cooldownMs ?? (
         name === "shoot" ? 90 :
         name === "jump" ? 110 :
@@ -760,29 +781,31 @@ function exitGame(){
       );
       if (!canPlay(name, cd)) return;
 
-      // ✅ seek 비용 줄이기: readyState 충분할 때만 0으로 리셋
-      try{
-        if (a.readyState >= 2) a.currentTime = 0;
-      }catch(_){}
-
-      try{
-        const prev = a.volume;
-        if (typeof opt.volume === "number"){
-          a.volume = muted ? 0 : Math.max(0, Math.min(1, opt.volume));
-        }
-        const p = a.play();
-        if (p && typeof p.catch === "function") p.catch(()=>{});
-        if (typeof opt.volume === "number") a.volume = prev;
-      }catch(_){}
+      const prev = a.volume;
+      if (typeof opt.volume === "number"){
+        a.volume = muted ? 0 : Math.max(0, Math.min(1, opt.volume));
+      }
+      safePlay(a);
+      if (typeof opt.volume === "number") a.volume = prev;
     }
 
     function setMuted(v){
       muted = !!v;
       applyVolumes();
+
       if (muted){
+        // ✅ 완전 음소거: BGM 정지 + 모든 효과음도 정지/리셋
         pauseBgm();
-        // 효과음은 굳이 강제 pause/seek 하지 않음(오히려 iOS에서 끊길 수 있음)
+        try{
+          Object.values(el).forEach(a=>{
+            if (!a) return;
+            a.pause();
+            a.currentTime = 0;
+          });
+        }catch(_){}
       }else{
+        // ✅ 음소거 해제: 볼륨 복구 + (unlock 된 상태면) BGM 재개
+        applyVolumes();
         if (unlocked) startBgm();
       }
     }
@@ -800,7 +823,9 @@ function exitGame(){
 
     return { sfx, toggle, unlock, startBgm, pauseBgm, isMuted: ()=>muted };
   })();
-// 🔊 Sound button (once) — ✅ 모바일에서 'touch+pointer+click' 중복 토글 방지
+
+
+  // 🔊 Sound button (once) — ✅ 모바일에서 'touch+pointer+click' 중복 토글 방지
   (function(){
     const b = document.getElementById("btnSound");
     if (!b) return;
