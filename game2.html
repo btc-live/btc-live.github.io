@@ -426,25 +426,25 @@ canvas{display:block; background:#000;}
 <!-- =============================
      🔊 Audio (BGM + SFX)
      ============================= -->
-<audio id="aud-bgm" preload="auto" loop playsinline>
+<audio id="aud-bgm" preload="metadata" loop playsinline>
   <source src="bgm.mp3" type="audio/mpeg">
 </audio>
-<audio id="aud-coin-recieved" preload="auto" playsinline>
+<audio id="aud-coin-recieved" preload="none" playsinline>
   <source src="coin-recieved.mp3" type="audio/mpeg">
 </audio>
-<audio id="aud-dropping-a-coin" preload="auto" playsinline>
+<audio id="aud-dropping-a-coin" preload="none" playsinline>
   <source src="dropping-a-coin.mp3" type="audio/mpeg">
 </audio>
-<audio id="aud-hurt-character" preload="auto" playsinline>
+<audio id="aud-hurt-character" preload="none" playsinline>
   <source src="hurt%20-%20character.mp3" type="audio/mpeg">
 </audio>
-<audio id="aud-hurt-enermy" preload="auto" playsinline>
+<audio id="aud-hurt-enermy" preload="none" playsinline>
   <source src="hurt-enermy.mp3" type="audio/mpeg">
 </audio>
-<audio id="aud-jump" preload="auto" playsinline>
+<audio id="aud-jump" preload="none" playsinline>
   <source src="jump.mp3" type="audio/mpeg">
 </audio>
-<audio id="aud-shoot" preload="auto" playsinline>
+<audio id="aud-shoot" preload="none" playsinline>
   <source src="shoot.mp3" type="audio/mpeg">
 </audio>
 
@@ -635,7 +635,7 @@ function exitGame(){
     };
 
     // 같은 소리가 너무 연속으로 울릴 때 찢어지는 걸 방지(간단 쿨다운)
-    const lastAt = {};
+    const lastAt = Object.create(null);
     function canPlay(key, ms){
       const now = performance.now();
       const prev = lastAt[key] || 0;
@@ -654,7 +654,30 @@ function exitGame(){
     function safePlay(a){
       if (!a) return;
       try{
+        // ✅ 간단한 SFX 스로틀(너무 연속으로 울리면 모바일에서 끊김)
+        const now = performance.now ? performance.now() : Date.now();
+        const last = a._tg_lastPlayTs || 0;
+        if (now - last < 60) return; // 60ms 이내 중복 재생 방지
+        a._tg_lastPlayTs = now;
+
+        // preload="none"일 수 있으니 필요 시 로드
+        if (a.readyState === 0) {
+          try{ a.load(); }catch(_){}
+        }
+
+        // readyState가 낮을 때는 되감기(seek)가 오히려 부담 -> 그냥 play 시도
+        if (a.readyState < 2){
+          const p0 = a.play();
+          if (p0 && typeof p0.catch === "function") p0.catch(()=>{});
+          return;
+        }
+
+        // 재생 중이면 pause 후 리셋
+        if (!a.paused) {
+          a.pause();
+        }
         a.currentTime = 0;
+
         const p = a.play();
         if (p && typeof p.catch === "function") p.catch(()=>{});
       }catch(_){}
@@ -675,19 +698,21 @@ function exitGame(){
       if (unlocked) return;
       unlocked = true;
 
-      // 0볼륨으로 한번 재생/정지(정책 해제용)
+      // ✅ 모바일(특히 iOS)에서 여러 오디오를 한꺼번에 play/pause 하면 순간 렉이 생길 수 있음
+      // => BGM 1개만 정책 해제용으로 한번 건드리기
       try{
-        Object.values(el).forEach(a=>{
-          if (!a) return;
+        const a = el.bgm;
+        if (a){
+          const prevVol = a.volume;
           a.volume = 0;
           const p = a.play();
           if (p && typeof p.catch === "function") p.catch(()=>{});
           a.pause();
           a.currentTime = 0;
-        });
+          a.volume = prevVol;
+        }
       }catch(_){}
 
-      // ✅ 여기서 볼륨을 다시 세팅해줘야 SFX가 0이 안 됨!
       applyVolumes();
       startBgm();
     }
