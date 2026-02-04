@@ -635,52 +635,6 @@ function exitGame(){
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
-  // ✅ iPad/Tablet smoothness: cache heavy static background parts (no quality loss)
-  let _tgRoadCache = null;
-  let _tgRoadCacheKey = '';
-  let _tgSidePattern = null;
-  let _tgAsphaltPattern = null;
-  function _tgMakePatterns(){
-    try{
-      // Sidewalk tile pattern (small, repeated)
-      const sw = document.createElement('canvas');
-      sw.width = 68; sw.height = 22;
-      const sctx = sw.getContext('2d');
-      sctx.fillStyle = 'rgba(200,205,210,0.92)';
-      sctx.fillRect(0,0,sw.width,sw.height);
-      sctx.strokeStyle = 'rgba(0,0,0,0.18)';
-      sctx.lineWidth = 1;
-      const tileW = 34, tileH = 11;
-      for (let y=0; y<=sw.height; y+=tileH){
-        sctx.beginPath(); sctx.moveTo(0,y); sctx.lineTo(sw.width,y); sctx.stroke();
-      }
-      for (let x=0; x<=sw.width; x+=tileW){
-        sctx.beginPath(); sctx.moveTo(x,0); sctx.lineTo(x,sw.height); sctx.stroke();
-      }
-      _tgSidePattern = ctx.createPattern(sw, 'repeat');
-
-      // Asphalt noise pattern (very light)
-      const aw = document.createElement('canvas');
-      aw.width = 128; aw.height = 128;
-      const actx = aw.getContext('2d');
-      actx.clearRect(0,0,aw.width,aw.height);
-      actx.globalAlpha = 0.08;
-      actx.fillStyle = '#fff';
-      const dots = LOW_POWER_STRICT ? 28 : 55;
-      for (let i=0;i<dots;i++){
-        const x = (Math.random()*aw.width)|0;
-        const y = (Math.random()*aw.height)|0;
-        actx.fillRect(x,y,2,1);
-      }
-      actx.globalAlpha = 1;
-      _tgAsphaltPattern = ctx.createPattern(aw, 'repeat');
-    }catch(_){
-      _tgSidePattern = null;
-      _tgAsphaltPattern = null;
-    }
-  }
-
-
   // ✅ Performance: low-power mode on mobile/touch devices
   const LOW_POWER = (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || (window.innerWidth <= 980);
   // ✅ iPad (including iPadOS Safari reporting as Mac) detection
@@ -697,9 +651,7 @@ function exitGame(){
 
   // ✅ Extra-smooth mode for iPad (slightly more aggressive than generic LOW_POWER)
   const LOW_POWER_STRICT = LOW_POWER || IS_IPAD;
-  
-  _tgMakePatterns();
-// reduce background/particles a bit more on very small screens
+  // reduce background/particles a bit more on very small screens
   const BG_SCALE = LOW_POWER_STRICT ? 0.50 : 1.0;
   // =============================
   // 🔊 Audio Engine
@@ -973,10 +925,8 @@ canvas.style.height = Math.round(getVH()) + "px";
     viewScale = Math.min(sx, sy);
     viewOffX = Math.round((canvas.width  - VIEW_W * viewScale) / 2);
     viewOffY = Math.round((canvas.height - VIEW_H * viewScale) / 2);
-
-    // ✅ cached road depends on view metrics
-    _tgRoadCacheKey = "";
   }
+
   // ✅ resize 디바운스(연속 호출로 흔들림/렉 방지)
   let _rzTimer = null;
   function requestResize(){
@@ -1238,76 +1188,51 @@ function drawParallaxBackground(stage, tSec){
 // =============================
 // 도로(아스팔트) + 보도블럭(그림으로 직접 그리기)
 // =============================
-
 function drawRoadAndSidewalk(stage){
-  // Cache only the heavy STATIC parts (sidewalk grid + asphalt base + edges).
-  // Dynamic parts (lane dashes offset) are drawn every frame.
   const gy = groundY();
   const sidewalkH = 22;
   const roadH = groundH - sidewalkH;
 
-  const key = `${stage}|${LOW_POWER_STRICT ? 1 : 0}|${CW()}|${CH()}`;
-  if (!_tgRoadCache || _tgRoadCacheKey !== key){
-    _tgRoadCacheKey = key;
-    _tgRoadCache = document.createElement('canvas');
-    _tgRoadCache.width = CW();
-    _tgRoadCache.height = CH();
-    const c = _tgRoadCache.getContext('2d');
+  // 보도(타일)
+  ctx.fillStyle = "rgba(200,205,210,0.92)";
+  ctx.fillRect(0, gy, CW(), sidewalkH);
 
-    // Sidewalk
-    if (_tgSidePattern){
-      c.fillStyle = _tgSidePattern;
-      c.fillRect(0, gy, CW(), sidewalkH);
-    }else{
-      c.fillStyle = "rgba(200,205,210,0.92)";
-      c.fillRect(0, gy, CW(), sidewalkH);
-
-      // fallback grid (cheaper than before)
-      c.strokeStyle = "rgba(0,0,0,0.18)";
-      c.lineWidth = 1;
-      const tileW = 34, tileH = 11;
-      for (let y=gy; y<gy+sidewalkH; y+=tileH){
-        c.beginPath(); c.moveTo(0,y); c.lineTo(CW(),y); c.stroke();
-      }
-      for (let x=0; x<CW(); x+=tileW){
-        c.beginPath(); c.moveTo(x,gy); c.lineTo(x,gy+sidewalkH); c.stroke();
-      }
-    }
-
-    // curb
-    c.fillStyle = "rgba(0,0,0,0.25)";
-    c.fillRect(0, gy+sidewalkH-2, CW(), 2);
-
-    // Road base
-    c.fillStyle = (stage==="space") ? "#1c1f28" : "#2a2f33";
-    c.fillRect(0, gy+sidewalkH, CW(), roadH);
-
-    // Asphalt light noise (cached)
-    if (_tgAsphaltPattern){
-      c.fillStyle = _tgAsphaltPattern;
-      c.fillRect(0, gy+sidewalkH, CW(), roadH);
-    }else{
-      c.globalAlpha = 0.08;
-      c.fillStyle = "#fff";
-      const dots = LOW_POWER_STRICT ? 50 : 120; // reduced vs original
-      for (let i=0;i<dots;i++){
-        const x = (Math.random()*CW())|0;
-        const y = (gy+sidewalkH + Math.random()*roadH)|0;
-        c.fillRect(x, y, 2, 1);
-      }
-      c.globalAlpha = 1;
-    }
-
-    // Edge lines
-    c.fillStyle = "rgba(255,255,255,0.22)";
-    c.fillRect(0, gy+sidewalkH+8, CW(), 2);
-    c.fillRect(0, gy+sidewalkH+roadH-10, CW(), 2);
+  // 보도 타일 라인
+  ctx.strokeStyle = "rgba(0,0,0,0.18)";
+  ctx.lineWidth = 1;
+  const tileW = 34, tileH = 11;
+  for (let y=gy; y<gy+sidewalkH; y+=(LOW_POWER?tileH*2:tileH)){
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(CW(), y);
+    ctx.stroke();
+  }
+  for (let x=0; x<CW(); x+=(LOW_POWER?tileW*2:tileW)){
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x, gy+sidewalkH);
+    ctx.stroke();
   }
 
-  // Draw cached static road/sidewalk
-  ctx.drawImage(_tgRoadCache, 0, 0);
+  // 연석(경계선)
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(0, gy+sidewalkH-2, CW(), 2);
 
-  // Dynamic lane dashes (move = running feeling)
+  // 도로(아스팔트)
+  ctx.fillStyle = (stage==="space") ? "#1c1f28" : "#2a2f33";
+  ctx.fillRect(0, gy+sidewalkH, CW(), roadH);
+
+  // 도로 텍스처(알갱이 느낌)
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = "#fff";
+  for (let i=0;i<(LOW_POWER?70:220);i++){
+    const x = (hash01(i*9.1 + t)*CW()) | 0;
+    const y = (gy+sidewalkH + hash01(i*3.3 + t*2)*roadH) | 0;
+    ctx.fillRect(x, y, 2, 1);
+  }
+  ctx.globalAlpha = 1;
+
+  // 차선(점선) — 시간이 지나면 움직여서 “달리는 느낌”
   const laneY = gy + sidewalkH + roadH*0.52;
   const dashW = 44, gap = 28;
   const speed = scrollSpeed * 1.0;
@@ -1317,6 +1242,11 @@ function drawRoadAndSidewalk(stage){
   for (let x = offset; x < CW() + dashW; x += (dashW+gap)){
     ctx.fillRect(x, laneY, dashW, 4);
   }
+
+  // 가장자리 라인
+  ctx.fillStyle = "rgba(255,255,255,0.22)";
+  ctx.fillRect(0, gy+sidewalkH+8, CW(), 2);
+  ctx.fillRect(0, gy+sidewalkH+roadH-10, CW(), 2);
 }
 
 
