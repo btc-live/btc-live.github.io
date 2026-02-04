@@ -606,6 +606,11 @@ function exitGame(){
   // =============================
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
+
+  // ✅ Performance: low-power mode on mobile/touch devices
+  const LOW_POWER = (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || (window.innerWidth <= 980);
+  // reduce background/particles a bit more on very small screens
+  const BG_SCALE = LOW_POWER ? 0.55 : 1.0;
   // =============================
   // 🔊 Audio Engine
   // =============================
@@ -862,8 +867,13 @@ function exitGame(){
 
   function resize(){
     // 모바일 주소창/툴바 변화로 innerHeight가 흔들리는 문제 완화
-    canvas.width = Math.round(getVW());
-    canvas.height = Math.round(getVH());
+    // ✅ Lower internal resolution on low-power mobile (keeps size but reduces pixel work)
+const dpr = window.devicePixelRatio || 1;
+const q = LOW_POWER ? 0.85 : 1.0;
+canvas.width = Math.round(getVW() * dpr * q);
+canvas.height = Math.round(getVH() * dpr * q);
+canvas.style.width = Math.round(getVW()) + "px";
+canvas.style.height = Math.round(getVH()) + "px";
 
     const sx = canvas.width  / VIEW_W;
     const sy = canvas.height / VIEW_H;
@@ -972,9 +982,13 @@ function rgb(c){ return `rgb(${c[0]},${c[1]},${c[2]})`; }
 
 // 간단 해시(항상 같은 랜덤 느낌)
 function hash01(n){
-  // 0~1
-  const x = Math.sin(n * 999.123 + 0.123) * 43758.5453;
-  return x - Math.floor(x);
+  // ✅ Faster deterministic hash (no Math.sin) for mobile performance
+  // returns 0~1
+  // n can be float; convert to int bucket
+  let x = (n * 1000) | 0;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  // unsigned to 0..1
+  return ((x >>> 0) / 4294967295);
 }
 
 function drawParallaxBackground(stage, tSec){
@@ -1039,7 +1053,7 @@ function drawParallaxBackground(stage, tSec){
   if (stage !== "space"){
     const cloudSpeed = scrollSpeed * 0.12;
     const off = -((t * cloudSpeed) % (CW() + 260));
-    for (let i=0;i<6;i++){
+    for (let i=0;i<(LOW_POWER?3:6);i++){
       const cx = off + i*260 + 120;
       const cy = 70 + (i%3)*28;
       ctx.globalAlpha = 0.18;
@@ -1056,7 +1070,7 @@ function drawParallaxBackground(stage, tSec){
   // --- 4) 먼 배경(스카이라인/산) : 아주 느리게 ---
   const farY = stage==="space" ? CH()*0.55 : CH()*0.58;
   const farSpeed = scrollSpeed * 0.18;
-  const segW1 = 70;
+  const segW1 = LOW_POWER ? 96 : 70;
 
   const farBase = (stage==="rural") ? "rgba(60,130,90,0.45)" :
                   (stage==="space") ? "rgba(120,140,180,0.18)" :
@@ -1077,7 +1091,7 @@ function drawParallaxBackground(stage, tSec){
   // --- 5) 중간 배경(건물/나무) : 조금 빠르게(입체감) ---
   const midY = stage==="space" ? CH()*0.66 : CH()*0.72;
   const midSpeed = scrollSpeed * 0.35;
-  const segW2 = 56;
+  const segW2 = LOW_POWER ? 86 : 56;
 
   let midCol;
   if (stage==="rural") midCol="rgba(40,105,70,0.65)";
@@ -1111,7 +1125,7 @@ function drawParallaxBackground(stage, tSec){
       // city/space: 건물
       ctx.fillRect(x, midY - h, segW2, h);
       // 창문(아주 약하게)
-      if (stage==="city" && cycle > 0.7){
+      if (!LOW_POWER && stage==="city" && cycle > 0.7){
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = "rgba(255,220,120,1)";
         for (let w=10; w<segW2-10; w+=12){
@@ -1142,13 +1156,13 @@ function drawRoadAndSidewalk(stage){
   ctx.strokeStyle = "rgba(0,0,0,0.18)";
   ctx.lineWidth = 1;
   const tileW = 34, tileH = 11;
-  for (let y=gy; y<gy+sidewalkH; y+=tileH){
+  for (let y=gy; y<gy+sidewalkH; y+=(LOW_POWER?tileH*2:tileH)){
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(CW(), y);
     ctx.stroke();
   }
-  for (let x=0; x<CW(); x+=tileW){
+  for (let x=0; x<CW(); x+=(LOW_POWER?tileW*2:tileW)){
     ctx.beginPath();
     ctx.moveTo(x, gy);
     ctx.lineTo(x, gy+sidewalkH);
@@ -1166,7 +1180,7 @@ function drawRoadAndSidewalk(stage){
   // 도로 텍스처(알갱이 느낌)
   ctx.globalAlpha = 0.08;
   ctx.fillStyle = "#fff";
-  for (let i=0;i<220;i++){
+  for (let i=0;i<(LOW_POWER?70:220);i++){
     const x = (hash01(i*9.1 + t)*CW()) | 0;
     const y = (gy+sidewalkH + hash01(i*3.3 + t*2)*roadH) | 0;
     ctx.fillRect(x, y, 2, 1);
@@ -1756,7 +1770,7 @@ function tryThrowPaperUp(){
   // =============================
   function spawnExplosion(cx, cy){
     // 작은 폭발 파티클 14~22개
-    const count = 14 + Math.floor(Math.random()*9);
+    const count = Math.round((14 + Math.floor(Math.random()*9)) * (LOW_POWER?0.65:1));
     for (let i=0;i<count;i++){
       const ang = Math.random()*Math.PI*2;
       const spd = 2.5 + Math.random()*5.2;
