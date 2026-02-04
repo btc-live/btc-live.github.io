@@ -464,7 +464,7 @@ canvas{display:block; background:#000;}
   <source src="dropping-a-coin.m4a" type="audio/mp4">
 </audio>
 <audio id="aud-hurt-character" preload="none" playsinline>
-  <source src="hurt%20-%20character.mp3" type="audio/mp4">
+  <source src="hurt%20-%20character.m4a" type="audio/mp4">
 </audio>
 <audio id="aud-hurt-enermy" preload="none" playsinline>
   <source src="hurt-enermy.m4a" type="audio/mp4">
@@ -1684,18 +1684,19 @@ function tryThrowPaperUp(){
     spawnDrone(now);
   }
 
-  function updateDrones(now){
+  function updateDrones(now, dtScale){
+    if (!dtScale) dtScale = 1;
     for (let i = drones.length - 1; i >= 0; i--){
       const d = drones[i];
 
       // 좌우 부유 이동
-      d.x += d.vx;
+      d.x += d.vx * dtScale;
       if (d.x < 60){ d.x = 60; d.vx = Math.abs(d.vx); }
       if (d.x + d.w > CW() - 60){ d.x = CW() - 60 - d.w; d.vx = -Math.abs(d.vx); }
 
       // 퇴장 처리(투하 끝나면 위로 사라짐)
       if (d.leaving){
-        d.y -= 1.8;
+        d.y -= 1.8 * dtScale;
         if (d.y + d.h < -40) drones.splice(i,1);
         continue;
       }
@@ -1733,11 +1734,12 @@ function tryThrowPaperUp(){
     }
   }
 
-  function updateDroneBombs(){
+  function updateDroneBombs(dtScale){
+    if (!dtScale) dtScale = 1;
     for (let i = droneBombs.length - 1; i >= 0; i--){
       const b = droneBombs[i];
-      b.y += b.vy;
-      b.life--;
+      b.y += b.vy * dtScale;
+      b.life -= dtScale;
 
       // 바닥에 닿으면 사라짐
       if (b.y + b.h >= groundY()){
@@ -1900,7 +1902,8 @@ function tryThrowPaperUp(){
   // =============================
   // 업데이트
   // =============================
-  function update(){
+  function update(dtScale){
+    if (!dtScale) dtScale = 1;
     const now = performance.now();
 
     // 모바일 세로 모드면 진행 중지(가로로 돌리면 자동 재개)
@@ -1930,23 +1933,23 @@ function tryThrowPaperUp(){
     // =============================
     for (let i = particles.length - 1; i >= 0; i--){
       const p = particles[i];
-      p.vy += 0.28;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life--;
+      p.vy += 0.28 * dtScale;
+      p.x += p.vx * dtScale;
+      p.y += p.vy * dtScale;
+      p.life -= dtScale;
       p.alpha = Math.max(0, p.life / 36);
       // 약간 감속
-      p.vx *= 0.96;
-      p.vy *= 0.98;
+      p.vx *= Math.pow(0.96, dtScale);
+      p.vy *= Math.pow(0.98, dtScale);
       if (p.life <= 0) particles.splice(i,1);
     }
 
     for (let i = deathFx.length - 1; i >= 0; i--){
       const d = deathFx[i];
-      d.vy += 0.30;
-      d.y += d.vy;
-      d.rot += d.vr;
-      d.life--;
+      d.vy += 0.30 * dtScale;
+      d.y += d.vy * dtScale;
+      d.rot += d.vr * dtScale;
+      d.life -= dtScale;
       d.alpha = Math.max(0, d.life / (d.mode === "fly" ? 46 : 28));
       if (d.life <= 0) deathFx.splice(i,1);
     }
@@ -1970,13 +1973,13 @@ function tryThrowPaperUp(){
     } else {
       player.vx = 0;
     }
-    player.x += player.vx;
+    player.x += player.vx * dtScale;
     // 화면 밖으로 못 나가게
     player.x = Math.max(0, Math.min(CW() - player.w, player.x));
 
     // 중력
-    player.vy += 0.85;
-    player.y += player.vy;
+    player.vy += 0.85 * dtScale;
+    player.y += player.vy * dtScale;
 
     // 바닥
     const gy = groundY();
@@ -1986,18 +1989,18 @@ function tryThrowPaperUp(){
       player.onGround = true;
     }
 
-    if (player.invuln > 0) player.invuln--;
+    if (player.invuln > 0) player.invuln = Math.max(0, player.invuln - dtScale);
 
     // 서류 이동 (Q: 앞 / W: 위)
 for (let i = papers.length - 1; i >= 0; i--){
   const p = papers[i];
-  p.x += p.vx;
+  p.x += p.vx * dtScale;
   if (typeof p.vy === "number") {
-    p.y += p.vy;
+    p.y += p.vy * dtScale;
     // 위로 던진 서류는 살짝 중력 적용
-    p.vy += 0.35;
+    p.vy += 0.35 * dtScale;
   }
-  p.life--;
+  p.life -= dtScale;
 
   // 화면 밖 / 수명 끝
   const outX = (p.x > CW() + 200) || ((p.x + p.w) < -200);
@@ -2011,8 +2014,8 @@ for (let i = papers.length - 1; i >= 0; i--){
     // 적 투사체(총알/돌) 이동
     for (let i = enemyShots.length - 1; i >= 0; i--){
       const s = enemyShots[i];
-      s.x += s.vx;
-      s.life--;
+      s.x += s.vx * dtScale;
+      s.life -= dtScale;
 
       // 플레이어와 충돌 -> 에너지 감소
       if (alive() && player.invuln === 0 && aabb(player, s)){
@@ -2034,8 +2037,8 @@ for (let i = papers.length - 1; i >= 0; i--){
     // =============================
     // 드론(공중) + 소음탄(💥)
     // =============================
-    updateDrones(now);
-    updateDroneBombs();
+    updateDrones(now, dtScale);
+    updateDroneBombs(dtScale);
 
 
 // ✅ 드론을 서류로 공격 가능(W로 위로 던져 맞추기)
@@ -2077,7 +2080,7 @@ for (let di = drones.length - 1; di >= 0; di--){
       // 좌/우 모두에서 이동
       // e.side = 1  -> 오른쪽에서 왼쪽으로(기존처럼)
       // e.side = -1 -> 왼쪽에서 오른쪽으로
-      e.x -= scrollSpeed * e.side;
+      e.x -= scrollSpeed * e.side * dtScale;
 
       // 랜덤 점프(정적 느낌 제거) - 단계가 올라갈수록 조금 더 자주
       const nowT = performance.now();
@@ -2090,8 +2093,8 @@ for (let di = drones.length - 1; di >= 0; di--){
       }
 
       // 중력
-      e.vy += 0.85;
-      e.y += e.vy;
+      e.vy += 0.85 * dtScale;
+      e.y += e.vy * dtScale;
 
       // 바닥 처리
       const gy2 = groundY();
@@ -2180,9 +2183,9 @@ for (let di = drones.length - 1; di >= 0; di--){
     // 코인 물리/획득
     for (let i = coins.length - 1; i >= 0; i--){
       const c = coins[i];
-      c.vy += 0.45;
-      c.y += c.vy;
-      c.life--;
+      c.vy += 0.45 * dtScale;
+      c.y += c.vy * dtScale;
+      c.life -= dtScale;
 
       // 바닥 튕김(한 번 느낌)
       const floor = groundY() - 10;
@@ -2210,9 +2213,9 @@ for (let di = drones.length - 1; di >= 0; di--){
     // 에너지 드랍 물리/획득 (10% 확률 드랍)
     for (let i = energyDrops.length - 1; i >= 0; i--){
       const h = energyDrops[i];
-      h.vy += 0.45;
-      h.y += h.vy;
-      h.life--;
+      h.vy += 0.45 * dtScale;
+      h.y += h.vy * dtScale;
+      h.life -= dtScale;
 
       // 바닥 튕김
       const floor = groundY() - 12;
@@ -2530,27 +2533,28 @@ drawRoadAndSidewalk(stage);
   // =============================
   
   // =============================
-  // 루프 (모바일 프레임 드랍 안정화: dt clamp)
+  // 루프 (기기별 FPS 차이에도 '속도'가 동일하게 보이도록: dtScale 적용)
+  //  - 60fps 기준으로 설계된 값들을 dtScale(= 현재프레임/16.666ms)로 보정
   // =============================
   let _lastT = performance.now();
   function loop(now){
-    t += 1;
-
-    // dt(60fps 기준), 너무 큰 값은 잘라서 물리 튐/충돌 누락 방지
-    let dt = (now - _lastT) / 16.666;
+    // dtScale: 60fps이면 1.0, 120fps이면 0.5, 30fps이면 2.0
+    let dtScale = (now - _lastT) / 16.666;
     _lastT = now;
-    if (!isFinite(dt) || dt < 0) dt = 1;
-    if (dt > 2.0) dt = 2.0;
 
-    // update 내부는 now를 사용하므로, here: 큰 프레임 점프 시에도 안정적으로 진행
-    if (alive() && !userPaused) update();
+    if (!isFinite(dtScale) || dtScale <= 0) dtScale = 1;
+    // 탭 전환/렉으로 dt가 너무 커지면 물리 튐 방지 (최대 2프레임치로 제한)
+    if (dtScale > 2.0) dtScale = 2.0;
+
+    // ✅ 시간 기반으로 '프레임 카운터' 누적 (기존 t=프레임 느낌 유지)
+    t += dtScale;
+
+    if (alive() && !userPaused) update(dtScale);
     draw();
 
     requestAnimationFrame(loop);
   }
-
-
-    // 시작: 1단계
+// 시작: 1단계
   startLevel(1);
 
   requestAnimationFrame(loop);
