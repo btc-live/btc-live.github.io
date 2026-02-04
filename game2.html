@@ -4,7 +4,16 @@
   <meta charset="UTF-8" />
   <title>Game2 – Office Hero Run (Q 서류 / Space 점프)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <style>
+  <script>
+  // ✅ Device hint for CSS targeting (Android only)
+  (function(){
+    try{
+      var ua = navigator.userAgent || "";
+      if (/Android/i.test(ua)) document.documentElement.classList.add("android");
+    }catch(_){ }
+  })();
+</script>
+<style>
     html{background:#000;}
     html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#000;}
     
@@ -328,7 +337,16 @@ canvas{display:block; background:#000;}
     }
 
 
+    
     /* =============================
+       🤖 Android/Galaxy fix: Exit (⤫) overlaps Restart in fullscreen
+       - Move ⤫ to top-left on Android so Restart stays tappable
+       ============================= */
+    html.android #btnExitFS{
+      left: calc(env(safe-area-inset-left) + 10px);
+      right: auto;
+    }
+/* =============================
        📱 Mobile: shrink right-side UI buttons (Restart / Pause / Main / Sound)
        ============================= */
     @media (max-width: 980px){
@@ -341,7 +359,17 @@ canvas{display:block; background:#000;}
       }
     }
 
-    /* =============================
+    
+
+    @media (max-width: 980px){
+      html.android .btn-restart{
+        top: 54px; /* below the Pause button cluster, avoids accidental overlap */
+      }
+      html.android .btn-pause{ top: 10px; }
+      html.android .btn-exit{ top: 98px; }
+      html.android #btnSound{ top: 146px; }
+    }
+/* =============================
        📱 iPad/Tablet: show on-screen controls (avoid disappearing on iPad)
        - Only for touch devices (pointer: coarse)
        ============================= */
@@ -609,8 +637,22 @@ function exitGame(){
 
   // ✅ Performance: low-power mode on mobile/touch devices
   const LOW_POWER = (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || (window.innerWidth <= 980);
+  // ✅ iPad (including iPadOS Safari reporting as Mac) detection
+  const IS_IPAD = (function(){
+    try{
+      const ua = navigator.userAgent || "";
+      const plat = navigator.platform || "";
+      // iPadOS 13+ sometimes reports as Mac; use touch points heuristic
+      const isIpadUa = /iPad/i.test(ua) || /iPad/i.test(plat);
+      const isIpadOs = (plat === "MacIntel" && navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+      return !!(isIpadUa || isIpadOs);
+    }catch(_){ return false; }
+  })();
+
+  // ✅ Extra-smooth mode for iPad (slightly more aggressive than generic LOW_POWER)
+  const LOW_POWER_STRICT = LOW_POWER || IS_IPAD;
   // reduce background/particles a bit more on very small screens
-  const BG_SCALE = LOW_POWER ? 0.55 : 1.0;
+  const BG_SCALE = LOW_POWER_STRICT ? 0.50 : 1.0;
   // =============================
   // 🔊 Audio Engine
   // =============================
@@ -868,8 +910,11 @@ function exitGame(){
   function resize(){
     // 모바일 주소창/툴바 변화로 innerHeight가 흔들리는 문제 완화
     // ✅ Lower internal resolution on low-power mobile (keeps size but reduces pixel work)
-const dpr = window.devicePixelRatio || 1;
-const q = LOW_POWER ? 0.85 : 1.0;
+const dprRaw = window.devicePixelRatio || 1;
+// ✅ cap DPR on iPad to reduce GPU/CPU pixel work (keeps CSS size the same)
+const dpr = Math.min(dprRaw, IS_IPAD ? 1.5 : 2.0);
+// ✅ lower internal resolution a bit more on iPad (tiny quality loss, big smoothness gain)
+const q = IS_IPAD ? 0.78 : (LOW_POWER ? 0.85 : 1.0);
 canvas.width = Math.round(getVW() * dpr * q);
 canvas.height = Math.round(getVH() * dpr * q);
 canvas.style.width = Math.round(getVW()) + "px";
@@ -1053,7 +1098,7 @@ function drawParallaxBackground(stage, tSec){
   if (stage !== "space"){
     const cloudSpeed = scrollSpeed * 0.12;
     const off = -((t * cloudSpeed) % (CW() + 260));
-    for (let i=0;i<(LOW_POWER?3:6);i++){
+    for (let i=0;i<(LOW_POWER_STRICT?3:6);i++){
       const cx = off + i*260 + 120;
       const cy = 70 + (i%3)*28;
       ctx.globalAlpha = 0.18;
@@ -1070,7 +1115,7 @@ function drawParallaxBackground(stage, tSec){
   // --- 4) 먼 배경(스카이라인/산) : 아주 느리게 ---
   const farY = stage==="space" ? CH()*0.55 : CH()*0.58;
   const farSpeed = scrollSpeed * 0.18;
-  const segW1 = LOW_POWER ? 96 : 70;
+  const segW1 = LOW_POWER_STRICT ? 110 : 70;
 
   const farBase = (stage==="rural") ? "rgba(60,130,90,0.45)" :
                   (stage==="space") ? "rgba(120,140,180,0.18)" :
@@ -1091,7 +1136,7 @@ function drawParallaxBackground(stage, tSec){
   // --- 5) 중간 배경(건물/나무) : 조금 빠르게(입체감) ---
   const midY = stage==="space" ? CH()*0.66 : CH()*0.72;
   const midSpeed = scrollSpeed * 0.35;
-  const segW2 = LOW_POWER ? 86 : 56;
+  const segW2 = LOW_POWER_STRICT ? 98 : 56;
 
   let midCol;
   if (stage==="rural") midCol="rgba(40,105,70,0.65)";
@@ -1770,7 +1815,7 @@ function tryThrowPaperUp(){
   // =============================
   function spawnExplosion(cx, cy){
     // 작은 폭발 파티클 14~22개
-    const count = Math.round((14 + Math.floor(Math.random()*9)) * (LOW_POWER?0.65:1));
+    const count = Math.round((14 + Math.floor(Math.random()*9)) * (LOW_POWER_STRICT?0.55:(LOW_POWER?0.65:1)));
     for (let i=0;i<count;i++){
       const ang = Math.random()*Math.PI*2;
       const spd = 2.5 + Math.random()*5.2;
