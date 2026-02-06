@@ -976,7 +976,8 @@ canvas.style.height = Math.round(getVH()) + "px";
   window.addEventListener("pointerdown", tryLockLandscape, { once:true, passive:true });
 
   const groundH = 90;
-  function groundY(){ return CH() - groundH; }
+  const SIDEWALK_H = 22; // ✅ sidewalk thickness used by physics + drawing
+  function groundY(){ return CH() - groundH + SIDEWALK_H; }
 
   // =============================
   // 이미지 로드
@@ -997,16 +998,82 @@ canvas.style.height = Math.round(getVH()) + "px";
 
   
   // =============================
-  // 배경 이미지(3스테이지)
+  // 배경 이미지(10장 랜덤)
+  //  - 단계(level) 시작할 때마다 10개 중 1개를 랜덤 선택
+  //  - 배경은 '스크롤'하지 않고, 플레이어/적 움직임에 맞춰 좌우로 살짝 흔들림
   // =============================
-  const bgImgs = {
-    city: new Image(),
-    rural: new Image(),
-    space: new Image(),
-  };
-  bgImgs.city.src  = "bg_city.png";
-  bgImgs.rural.src = "bg_rural.png";
-  bgImgs.space.src = "bg_space.png";
+  const BG_FILES = [
+    "city1-4k.png","city2-4k.png","city3-4k.png","city4-4k.png","city5-4k.png",
+    "rural1-4k.png","rural2-4k.png","rural3-4k.png","rural4-4k.png","rural5-4k.png",
+  ];
+
+  const BG_LIST = BG_FILES.map(src => {
+    const im = new Image();
+    im.src = src;
+    return im;
+  });
+
+  const bgState = { idx: 0, theme: "city" };
+
+  function pickRandomBg(){
+    const idx = Math.floor(Math.random() * BG_LIST.length);
+    bgState.idx = idx;
+    bgState.theme = BG_FILES[idx].startsWith("city") ? "city" : "rural";
+  }
+
+  // 캔버스 전체를 'cover' 방식으로 꽉 채우기(비율 유지)
+  function drawCoverImage(img, offsetX, offsetY){
+    // 캔버스가 '가상 좌표계(VIEW_W,VIEW_H)'로 스케일된 상태에서 호출됨
+    if (!img || !img.complete || !img.naturalWidth) return false;
+
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const sw = CW(), sh = CH();
+
+    // ✅ 흔들림 때문에 가장자리가 보이지 않도록 '오버스캔(여유분)'을 포함한 cover
+    const ox = Math.abs(offsetX || 0);
+    const oy = Math.abs(offsetY || 0);
+
+    // 화면에서 최대 흔들림 픽셀의 2배만큼 여유를 확보(양쪽 모두 커버)
+    // + 추가 안전 여유(최소 6%)
+    const extraX = (ox * 2) / Math.max(1, sw);
+    const extraY = (oy * 2) / Math.max(1, sh);
+    const extra = Math.max(0.06, extraX, extraY); // 최소 6% 확대
+
+    const scale = Math.max(sw / iw, sh / ih) * (1 + extra);
+    const dw = iw * scale;
+    const dh = ih * scale;
+
+    const dx = (sw - dw) / 2 + (offsetX || 0);
+    const dy = (sh - dh) / 2 + (offsetY || 0);
+
+    ctx.drawImage(img, dx, dy, dw, dh);
+    return true;
+  }
+
+  function drawRandomBackground(nowMs){
+    const t = nowMs * 0.001;
+
+    // 기본 '잔잔한 흔들림'
+    let sway = Math.sin(t * 1.25) * 10;
+
+    // 플레이어/적 움직임에 반응하는 흔들림(한쪽으로 계속 밀리지 않게 '작게'만)
+    const pvx = (player && typeof player.vx === "number") ? player.vx : 0;
+    sway += clamp(pvx * 1.4, -18, 18);
+
+    // ✅ 최종 흔들림 한계(검은 가장자리 방지)
+    sway = clamp(sway, -18, 18);
+
+if (LOW_POWER_STRICT) sway *= 0.55;
+
+    ctx.save();
+    const img = BG_LIST[bgState.idx];
+
+    // 이미지가 아직 로드 전이면, 기존 프로시저럴 배경으로 임시 표시(안전장치)
+    if (!drawCoverImage(img, sway, 0)){
+      drawParallaxBackground(bgState.theme, t);
+    }
+    ctx.restore();
+  }
 
 // =============================
 // 프로시저럴(그려지는) 배경 + 패럴랙스(입체감)
@@ -1188,66 +1255,112 @@ function drawParallaxBackground(stage, tSec){
 // =============================
 // 도로(아스팔트) + 보도블럭(그림으로 직접 그리기)
 // =============================
+
 function drawRoadAndSidewalk(stage){
-  const gy = groundY();
-  const sidewalkH = 22;
+  const gy = CH() - groundH; // ✅ sidewalk top (visual)
+
+  const sidewalkH = SIDEWALK_H;
   const roadH = groundH - sidewalkH;
 
-  // 보도(타일)
+  // -----------------------------
+  // 1) Sidewalk (tile)
+  // -----------------------------
   ctx.fillStyle = "rgba(200,205,210,0.92)";
   ctx.fillRect(0, gy, CW(), sidewalkH);
 
-  // 보도 타일 라인
+  // tile grid (cheap)
   ctx.strokeStyle = "rgba(0,0,0,0.18)";
   ctx.lineWidth = 1;
   const tileW = 34, tileH = 11;
-  for (let y=gy; y<gy+sidewalkH; y+=(LOW_POWER?tileH*2:tileH)){
+  const stepX = (LOW_POWER ? tileW*2 : tileW);
+  const stepY = (LOW_POWER ? tileH*2 : tileH);
+
+  for (let y=gy; y<gy+sidewalkH; y+=stepY){
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(CW(), y);
     ctx.stroke();
   }
-  for (let x=0; x<CW(); x+=(LOW_POWER?tileW*2:tileW)){
+  for (let x=0; x<CW(); x+=stepX){
     ctx.beginPath();
     ctx.moveTo(x, gy);
     ctx.lineTo(x, gy+sidewalkH);
     ctx.stroke();
   }
 
-  // 연석(경계선)
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  // curb
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.fillRect(0, gy+sidewalkH-2, CW(), 2);
 
-  // 도로(아스팔트)
-  ctx.fillStyle = (stage==="space") ? "#1c1f28" : "#2a2f33";
-  ctx.fillRect(0, gy+sidewalkH, CW(), roadH);
+  // -----------------------------
+  // 2) Asphalt road (static look)
+  // -----------------------------
+  const roadY = gy + sidewalkH;
+  ctx.fillStyle = (stage==="space") ? "#1c1f28" : "#262b2f";
+  ctx.fillRect(0, roadY, CW(), roadH);
 
-  // 도로 텍스처(알갱이 느낌)
-  ctx.globalAlpha = 0.08;
+  // asphalt grain (static-ish)
+  ctx.save();
+  ctx.globalAlpha = 0.10;
   ctx.fillStyle = "#fff";
-  for (let i=0;i<(LOW_POWER?70:220);i++){
-    const x = (hash01(i*9.1 + t)*CW()) | 0;
-    const y = (gy+sidewalkH + hash01(i*3.3 + t*2)*roadH) | 0;
+  const dots = LOW_POWER_STRICT ? 80 : 200;
+  for (let i=0;i<dots;i++){
+    // deterministic "random" based on i only -> no shimmering
+    const rx = hash01(i*9.1 + 123.4) * CW();
+    const ry = hash01(i*3.3 + 987.6) * roadH;
+    const x = rx | 0;
+    const y = (roadY + ry) | 0;
     ctx.fillRect(x, y, 2, 1);
   }
-  ctx.globalAlpha = 1;
+  ctx.restore();
 
-  // 차선(점선) — 시간이 지나면 움직여서 “달리는 느낌”
-  const laneY = gy + sidewalkH + roadH*0.52;
-  const dashW = 44, gap = 28;
-  const speed = scrollSpeed * 1.0;
-  const offset = -((t*speed) % (dashW+gap));
+  // -----------------------------
+  // 3) Lane lines (yellow stays, scroll only when running)
+  // -----------------------------
+  const isRunning = (player && player.onGround && Math.abs(player.vx) > 0.5);
+  // move dashes only when running; direction follows player.vx
+  const dir = (player && player.vx < 0) ? -1 : 1;
+  const dashMove = isRunning ? (t * 8.0 * (scrollSpeed/4) * dir) : 0;
 
-  ctx.fillStyle = "rgba(243,186,47,0.9)";
-  for (let x = offset; x < CW() + dashW; x += (dashW+gap)){
-    ctx.fillRect(x, laneY, dashW, 4);
+  // edge white lines
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, roadY + 10);
+  ctx.lineTo(CW(), roadY + 10);
+  ctx.moveTo(0, roadY + roadH - 10);
+  ctx.lineTo(CW(), roadY + roadH - 10);
+  ctx.stroke();
+
+  // center yellow dashed line
+  const cy = roadY + roadH * 0.5;
+  ctx.strokeStyle = "rgba(243,186,47,0.95)";
+  ctx.lineWidth = 4;
+  ctx.setLineDash([28, 22]);     // dash length, gap
+  ctx.lineDashOffset = -dashMove;
+  ctx.beginPath();
+  ctx.moveTo(-80, cy);
+  ctx.lineTo(CW()+80, cy);
+  ctx.stroke();
+
+  // subtle glow (only when running -> feels "alive", idle still looks like a road)
+  if (isRunning && !LOW_POWER_STRICT){
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 10;
+    ctx.setLineDash([28, 22]);
+    ctx.lineDashOffset = -dashMove;
+    ctx.beginPath();
+    ctx.moveTo(-80, cy);
+    ctx.lineTo(CW()+80, cy);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 
-  // 가장자리 라인
-  ctx.fillStyle = "rgba(255,255,255,0.22)";
-  ctx.fillRect(0, gy+sidewalkH+8, CW(), 2);
-  ctx.fillRect(0, gy+sidewalkH+roadH-10, CW(), 2);
+  ctx.setLineDash([]);
+  ctx.restore();
 }
+
 
 
 // =============================
@@ -1310,6 +1423,9 @@ function startLevel(lv){
   levelDurationSec = getLevelDurationSec(level);
   levelStartedAt = performance.now();
 
+  // ✅ 단계가 바뀔 때마다 배경을 10개 중 랜덤으로 선택
+  pickRandomBg();
+
   const now = performance.now();
   levelPauseUntil = now + 2000;     // 2초 멈춤
   showLevelTextUntil = now + 1600;  // 멘트는 1.6초 정도만
@@ -1349,11 +1465,13 @@ function getEnemyShotSpeed(){
   // 자동 러너 (플레이어는 거의 제자리, 월드가 움직이는 느낌)
   let scrollSpeed = 4;
 
+  const PLAYER_SPRITE_Y_OFFSET = 34; // 🔧 micro-adjust +4px (final touch) // 🔧 micro-adjust: final ground contact // 🔧 fine-tuned: feet touch ground // ✅ sprite has transparent padding; push drawing down
+
   const player = {
     x: 140,
     y: 0,
-    w: 72,
-    h: 108,
+    w: 118,
+    h: 177,
     vx: 0,
     vy: 0,
     onGround: false,
@@ -1369,6 +1487,8 @@ function getEnemyShotSpeed(){
   const energyDrops = []; // {x,y,r,vy,life}
   const deathFx = []; // {x,y,w,h,img,vy,rot,vr,alpha,life,mode}
   const particles = []; // {x,y,vx,vy,r,life,alpha}
+  const footDust = [];  // {x,y,vx,vy,r,life,alpha}  // ✅ 달릴 때 발밑 먼지
+  const speedLines = []; // {x1,y1,x2,y2,life,alpha}
   const drones = [];     // 공중 드론(처치 불가)
   const droneBombs = []; // 드론 소음탄(💥) 낙하
 
@@ -1629,6 +1749,7 @@ function tryThrowPaperUp(){
       hp: 1,
 
       side,
+      face: (-side), // ✅ facing direction (1=right, -1=left)
       vy: 0,
       onGround: true,
 
@@ -1636,7 +1757,14 @@ function tryThrowPaperUp(){
 
       nextShotAt: performance.now() + (() => { const g = getShotGap(); return g.min + Math.random()*(g.max-g.min); })(),
       nextJumpAt: performance.now() + (900 + Math.random()*1400)
-    });
+    ,
+
+      // ✅ 방향 전환(랜덤) : 가끔 오른쪽으로 가다 왼쪽으로 / 반대로도 전환
+      //  - 너무 자주 바뀌면 어지러우니 0.9~2.4초 간격으로만 가능
+      nextTurnAt: performance.now() + (900 + Math.random()*1500),
+      turnMinMs: 900,
+      turnMaxMs: 2400,
+      turnProb: 0.35});
   }
   // =============================
   // ✈️ 드론(공중 이벤트 적) + 소음탄(💥) 낙하
@@ -1944,6 +2072,32 @@ function tryThrowPaperUp(){
       if (p.life <= 0) particles.splice(i,1);
     }
 
+    
+    // ✅ 달릴 때 속도선(모션 블러 느낌) 업데이트
+    for (let i = speedLines.length - 1; i >= 0; i--){
+      const s = speedLines[i];
+      // 약간 뒤로 밀리며 사라짐
+      s.x1 += s.vx * dtScale;
+      s.x2 += s.vx * dtScale;
+      s.life -= dtScale;
+      s.alpha = Math.max(0, s.life / 14);
+      if (s.life <= 0) speedLines.splice(i,1);
+    }
+
+// ✅ 발밑 먼지(달릴 때) 업데이트
+    for (let i = footDust.length - 1; i >= 0; i--){
+      const d = footDust[i];
+      d.vy += 0.18 * dtScale;
+      d.x += d.vx * dtScale;
+      d.y += d.vy * dtScale;
+      d.life -= dtScale;
+      d.alpha = Math.max(0, d.life / 22);
+      d.vx *= Math.pow(0.92, dtScale);
+      d.vy *= Math.pow(0.98, dtScale);
+      if (d.life <= 0) footDust.splice(i,1);
+    }
+
+
     for (let i = deathFx.length - 1; i >= 0; i--){
       const d = deathFx[i];
       d.vy += 0.30 * dtScale;
@@ -1982,12 +2136,60 @@ function tryThrowPaperUp(){
     player.y += player.vy * dtScale;
 
     // 바닥
-    const gy = groundY();
+    const gy = groundY(); // ✅ physics ground aligns with road top
+
     if (player.y + player.h >= gy){
       player.y = gy - player.h;
       player.vy = 0;
       player.onGround = true;
     }
+
+    
+    // ✅ 달릴 때 속도선(모션 블러 느낌)
+    if (player.onGround && Math.abs(player.vx) > 0.5){
+      // 성능 고려: 낮은 확률로만 생성
+      const chance = (LOW_POWER_STRICT ? 0.26 : 0.38) * dtScale;
+      if (Math.random() < chance){
+        const dir = (player.vx < 0 ? -1 : 1); // -1: 왼쪽으로 달림, 1: 오른쪽으로 달림
+        const baseY = player.y + 28 + Math.random()*52; // 몸통~다리 근처
+        const len = 22 + Math.random()*28;              // 선 길이
+        const tilt = (Math.random()*10 - 5);            // 살짝 기울이기
+        const tail = (dir === 1) ? (player.x - 10 - Math.random()*28) : (player.x + player.w + 10 + Math.random()*28);
+        const head = tail - dir * len;
+
+        speedLines.push({
+          x1: tail,
+          y1: baseY,
+          x2: head,
+          y2: baseY + tilt,
+          vx: -dir * (2.2 + Math.random()*1.6), // 달리는 반대 방향으로 살짝 흐르기
+          life: 10 + Math.random()*6,
+          alpha: 1
+        });
+
+        // 너무 많아지면 제한(모바일 안정)
+        if (speedLines.length > (LOW_POWER_STRICT ? 18 : 30)) speedLines.shift();
+      }
+    }
+
+// ✅ 달릴 때 발밑 먼지 이펙트(노란 차선 대신 '속도감' 용)
+    if (player.onGround && Math.abs(player.vx) > 0.5){
+      // 기기 성능/프레임에 따라 자동 조절
+      const chance = (LOW_POWER_STRICT ? 0.18 : 0.28) * dtScale;
+      if (Math.random() < chance){
+        const dir = (player.vx < 0 ? -1 : 1);
+        footDust.push({
+          x: player.x + player.w*0.35 + Math.random()*18,
+          y: groundY() + 6 + Math.random()*6,
+          vx: (-2.2*dir) + (Math.random()*-1.2),
+          vy: -1.6 - Math.random()*1.4,
+          r: 2 + Math.random()*2.6,
+          life: 18 + Math.random()*8,
+          alpha: 1
+        });
+      }
+    }
+
 
     if (player.invuln > 0) player.invuln = Math.max(0, player.invuln - dtScale);
 
@@ -2082,7 +2284,38 @@ for (let di = drones.length - 1; di >= 0; di--){
       // e.side = -1 -> 왼쪽에서 오른쪽으로
       e.x -= scrollSpeed * e.side * dtScale;
 
-      // 랜덤 점프(정적 느낌 제거) - 단계가 올라갈수록 조금 더 자주
+      // ✅ (NEW) 적이 가끔 방향 전환하도록
+      // side 의미:
+      //   side =  1  -> 오른쪽에서 왼쪽으로(왼쪽 이동)
+      //   side = -1  -> 왼쪽에서 오른쪽으로(오른쪽 이동)
+      //
+      // 1) 화면 가장자리 근처면 자동으로 안쪽으로 돌리기(검은 화면/즉시 퇴장 방지)
+      const EDGE = 24;
+      if (e.x < EDGE) e.side = -1; // 너무 왼쪽이면 오른쪽으로
+      if (e.x + e.w > CW() - EDGE) e.side = 1; // 너무 오른쪽이면 왼쪽으로
+
+      // 2) 평소에는 '가끔' 랜덤으로 방향 전환
+      const nowTurn = performance.now();
+      if (e.onGround && nowTurn > (e.nextTurnAt || 0)){
+        // 플레이어가 가까우면(화면 안쪽) 방향 전환 확률을 조금 낮춰서 더 자연스럽게
+        const px = player.x + player.w/2;
+        const ex = e.x + e.w/2;
+        const dist = Math.abs(px - ex);
+
+        const baseProb = (typeof e.turnProb === "number") ? e.turnProb : 0.35;
+        const prob = (dist < 320) ? baseProb * 0.55 : baseProb; // 가까우면 덜 돌기
+
+        if (Math.random() < prob){
+          e.side *= -1;
+        }
+        const minMs = e.turnMinMs || 900;
+        const maxMs = e.turnMaxMs || 2400;
+        e.nextTurnAt = nowTurn + (minMs + Math.random() * (maxMs - minMs));
+      }
+
+      // ✅ face direction follows movement
+      e.face = (-e.side);
+// 랜덤 점프(정적 느낌 제거) - 단계가 올라갈수록 조금 더 자주
       const nowT = performance.now();
       const jt = levelT(); // 0~1
       const jumpChance = 0.10 + jt * 0.18; // 10% ~ 28%
@@ -2102,6 +2335,51 @@ for (let di = drones.length - 1; di >= 0; di--){
         e.y = gy2 - e.h;
         e.vy = 0;
         e.onGround = true;
+      }
+
+      // ✅ 적도 달릴 때 '다리 근처 이펙트'(주인공처럼 자연스럽게)
+      // - 다리 프레임이 없어서, 발밑 먼지 + 짧은 속도선만 추가
+      if (e.onGround){
+        const evx = -scrollSpeed * e.side; // 화면 기준 이동 방향
+        if (Math.abs(evx) > 0.5){
+          const dir = (evx < 0 ? -1 : 1);
+
+          // (1) 발밑 먼지(주인공보다 약하게)
+          const dustChance = (LOW_POWER_STRICT ? 0.10 : 0.16) * dtScale;
+          if (Math.random() < dustChance){
+            footDust.push({
+              x: e.x + e.w*0.35 + Math.random()*18,
+              y: groundY() + 6 + Math.random()*6,
+              vx: (-1.6*dir) + (Math.random()*-0.9),
+              vy: -1.2 - Math.random()*1.0,
+              r: 1.8 + Math.random()*2.0,
+              life: 14 + Math.random()*7,
+              alpha: 1
+            });
+          }
+
+          // (2) 짧은 속도선(주인공보다 적게)
+          const lineChance = (LOW_POWER_STRICT ? 0.12 : 0.18) * dtScale;
+          if (Math.random() < lineChance){
+            const baseY = e.y + 26 + Math.random()*44;
+            const len = 16 + Math.random()*18;
+            const tilt = (Math.random()*8 - 4);
+            const tail = (dir === 1) ? (e.x - 8 - Math.random()*20) : (e.x + e.w + 8 + Math.random()*20);
+            const head = tail - dir * len;
+
+            speedLines.push({
+              x1: tail,
+              y1: baseY,
+              x2: head,
+              y2: baseY + tilt,
+              vx: -dir * (1.6 + Math.random()*1.2),
+              life: 8 + Math.random()*5,
+              alpha: 1
+            });
+
+            if (speedLines.length > (LOW_POWER_STRICT ? 22 : 34)) speedLines.shift();
+          }
+        }
       }
 
       // 적이 일정 간격으로 한 발씩 던짐(투사체)
@@ -2175,7 +2453,7 @@ for (let di = drones.length - 1; di >= 0; di--){
       if (killed) continue;
 
       // 화면 밖(방향별 제거)
-      if ((e.side === 1 && (e.x + e.w) < -120) || (e.side === -1 && e.x > CW() + 120)){
+      if ((e.side === 1 && (e.x + e.w) < -180) || (e.side === -1 && e.x > CW() + 180)) {
         enemies.splice(i,1);
       }
     }
@@ -2267,21 +2545,45 @@ for (let di = drones.length - 1; di >= 0; di--){
 // =============================
 // 배경(입체감 패럴랙스) + 도로/보도
 // =============================
-const stage = (score >= 50) ? "space" : (score >= 20 ? "rural" : "city");
-const tSec = performance.now() / 1000;
-
-// (1) 배경: 직접 그려서 계속 변화/스크롤
-drawParallaxBackground(stage, tSec);
+// ✅ 배경: 단계(level)마다 10개 중 랜덤으로 선택(=startLevel에서 pickRandomBg)
+//    배경은 스크롤하지 않고, 플레이어/적 움직임에 맞춰 좌우로 살짝 흔들리게
+const now = performance.now();
+drawRandomBackground(now);
 
 // (2) 도로/보도: 직접 그려서 '게임 완성 느낌'
-drawRoadAndSidewalk(stage);
+drawRoadAndSidewalk(bgState.theme);
 
     // =============================
     // 드론(공중) + 소음탄(💥)
     // =============================
-    const now = performance.now(); // ✅ draw()에서 공통으로 사용할 현재 시간(버그 방지)
     drawDrones(now);
     drawDroneBombs();
+
+    
+    // ✅ 달릴 때 속도선(모션 블러 느낌) - 캐릭터 뒤에만 살짝
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 3;
+    for (const s of speedLines){
+      ctx.globalAlpha = Math.max(0, s.alpha) * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2, s.y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+// ✅ 발밑 먼지(속도감)
+    for (const d of footDust){
+      ctx.globalAlpha = Math.max(0, d.alpha) * 0.55;
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
 
     // 플레이어 그림자
     ctx.globalAlpha = 0.25;
@@ -2295,8 +2597,8 @@ drawRoadAndSidewalk(stage);
     const blink = (player.invuln > 0) && ((player.invuln % 10) < 5);
 
     // (위에서 const now 정의됨)
-    const breathe = Math.sin(now * 0.005) * 2.5; // 가만히 있어도 숨쉬는 느낌
-    const runBob  = (player.onGround && player.vx !== 0) ? Math.sin(now * 0.02) * 4 : 0;
+    const breathe = 0; // ✅ keep feet grounded (no vertical bob)
+    const runBob  = 0; // ✅ keep feet grounded (no vertical bob)
 
     // 점프 중이면 세로로 늘리고, 가로로 살짝 줄이기(스쿼시/스트레치)
     let scaleX = 1, scaleY = 1;
@@ -2314,7 +2616,7 @@ drawRoadAndSidewalk(stage);
     // 방향(좌/우)도 반영
     ctx.translate(cx, cy);
     ctx.scale(scaleX * player.face, scaleY);
-    ctx.drawImage(playerImg, -player.w/2, -player.h/2, player.w, player.h);
+    ctx.drawImage(playerImg, -player.w/2, -player.h/2 + PLAYER_SPRITE_Y_OFFSET, player.w, player.h);
     ctx.restore();
 
     ctx.globalAlpha = 1;
@@ -2366,10 +2668,17 @@ drawRoadAndSidewalk(stage);
       ctx.fill();
       ctx.globalAlpha = 1;
 
-      // 이미지
-      ctx.drawImage(e.img, e.x, e.y, e.w, e.h);
+      // 이미지 (좌/우 이동 방향에 따라 좌우 반전)
+      ctx.save();
+      const ex = e.x + e.w/2;
+      const ey = e.y + e.h/2;
+      ctx.translate(ex, ey);
+      ctx.scale((e.face || -1), 1);
+      ctx.drawImage(e.img, -e.w/2, -e.h/2, e.w, e.h);
+      ctx.restore();
+
       drawEnemyWarning(e, now);
-    }
+}
 
 
     // 💥 폭발 파티클
