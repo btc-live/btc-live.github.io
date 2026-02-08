@@ -560,158 +560,6 @@ setInterval(() => {
 </div>
 
 
-<div class="card" style="margin-top: 20px; border: 1px solid #333; padding: 20px; border-radius: 12px; background-color: #1e222d;">
-    
-    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 20px;">
-        <h2 style="color: #f3ba2f; margin: 0; font-size: 1.5rem; white-space: nowrap;">📰 실시간 뉴스 브리핑</h2>
-        
-        <button onclick="location.reload()" 
-                style="background: #1e2329; border: 1px solid #444; color: #848e9c; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s; white-space: nowrap;" 
-                onmouseover="this.style.borderColor='#f3ba2f'; this.style.color='#f3ba2f';" 
-                onmouseout="this.style.borderColor='#444'; this.style.color='#848e9c';">
-            <span>🔄</span> 업데이트 (실패시 클릭)
-        </button>
-    </div>
-
-    <div id="news-container">
-        </div>
-
-</div>
-
-    <p style="color: #848e9c; font-size: 12px; margin-top: 10px; text-align: right;">* 실시간 외신 및 마켓 데이터 연동 중</p>
-</div>
-
-<script>
-  // 📰 실시간 뉴스 불러오기 (Google News RSS) - 안정화 버전
-  // 기존 allorigins가 자주 실패해서, 여러 프록시를 순서대로 시도합니다.
-  // 성공하면 즉시 표시하고, 실패하면 다음 프록시로 넘어갑니다.
-  (function(){
-    const RSS_URL = 'https://news.google.com/rss/search?q=bitcoin+crypto+when:1d&hl=ko&gl=KR&ceid=KR:ko';
-
-    function fetchWithTimeout(url, ms=8000){
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), ms);
-      return fetch(url, { signal: ctrl.signal, cache: "no-store" })
-        .finally(() => clearTimeout(t));
-    }
-
-    function safeText(node, sel){
-      try { return (node.querySelector(sel)?.textContent || '').trim(); }
-      catch(e){ return ''; }
-    }
-
-    function parseRssToHtml(xmlText){
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-      const items = xmlDoc.querySelectorAll("item");
-      let html = '';
-
-      for (let i = 0; i < 20; i++){
-        const it = items[i];
-        if (!it) break;
-
-        const title = safeText(it, "title");
-        const link  = safeText(it, "link");
-        const pub   = safeText(it, "pubDate");
-
-        const timeTxt = pub
-          ? new Date(pub).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'})
-          : '';
-
-        html += `
-          <div style="padding:12px 5px; border-bottom:1px solid #2b3139; display:flex; justify-content:space-between; align-items:center;">
-            <a href="${link}" target="_blank" rel="noopener"
-               style="color:#ffffff; text-decoration:none; font-size:14px; flex:1; margin-right:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              • ${title}
-            </a>
-            <span style="color:#f3ba2f; font-size:11px; white-space:nowrap;">${timeTxt}</span>
-          </div>
-        `;
-      }
-
-      return html;
-    }
-
-    async function tryFetchRssRaw(){
-      // 1) r.jina.ai (가장 안정적)
-      //    - https 페이지에서 http RSS를 직접 fetch하면 막힐 수 있어서,
-      //      r.jina.ai가 중간에서 받아서 텍스트로 내려주는 방식 사용
-      const u1 = 'https://r.jina.ai/https://news.google.com/rss/search?q=bitcoin+crypto+when:1d&hl=ko&gl=KR&ceid=KR:ko';
-      try{
-        const r = await fetchWithTimeout(u1, 9000);
-        if (!r.ok) throw new Error("jina status " + r.status);
-        const t = await r.text();
-        // 가끔 에러 페이지가 오면 rss 태그가 없음
-        if (!t || t.indexOf("<rss") === -1) throw new Error("jina not rss");
-        return t;
-      }catch(e){ /* next */ }
-
-      // 2) corsproxy.io
-      const u2 = 'https://corsproxy.io/?' + encodeURIComponent(RSS_URL);
-      try{
-        const r = await fetchWithTimeout(u2, 9000);
-        if (!r.ok) throw new Error("corsproxy status " + r.status);
-        const t = await r.text();
-        if (!t || t.indexOf("<rss") === -1) throw new Error("corsproxy not rss");
-        return t;
-      }catch(e){ /* next */ }
-
-      // 3) allorigins (마지막 fallback)
-      const u3 = 'https://api.allorigins.win/get?url=' + encodeURIComponent(RSS_URL);
-      try{
-        const r = await fetchWithTimeout(u3, 9000);
-        if (!r.ok) throw new Error("allorigins status " + r.status);
-        const j = await r.json();
-        const t = (j && j.contents) ? j.contents : "";
-        if (!t || t.indexOf("<rss") === -1) throw new Error("allorigins not rss");
-        return t;
-      }catch(e){ /* give up */ }
-
-      throw new Error("all proxies failed");
-    }
-
-    async function fetchCryptoNews(){
-      const newsContainer = document.getElementById('news-container');
-      if (!newsContainer) return;
-
-      // 로딩 UI
-      newsContainer.innerHTML =
-        '<div style="color:#848e9c; text-align:center; padding:18px;">뉴스 불러오는 중...</div>';
-
-      try{
-        const xmlText = await tryFetchRssRaw();
-        const html = parseRssToHtml(xmlText);
-
-        if (!html){
-          newsContainer.innerHTML =
-            '<div style="color:#848e9c; text-align:center; padding:18px;">표시할 뉴스가 없습니다.</div>';
-          return;
-        }
-
-        // 상단에 "마지막 갱신" 한 줄을 추가 (사용자 신뢰용)
-        const stamp = new Date().toLocaleString('ko-KR', { hour12:false });
-        newsContainer.innerHTML =
-          `<div style="display:flex; justify-content:flex-end; color:#848e9c; font-size:11px; padding:6px 5px 10px 5px;">
-             마지막 갱신: <span style="color:#f3ba2f; margin-left:6px;">${stamp}</span>
-           </div>` + html;
-
-      }catch(err){
-        console.warn("news fetch failed", err);
-        newsContainer.innerHTML =
-          '<div style="color:#ff4444; text-align:center; padding:20px;">뉴스를 불러올 수 없습니다.<br><span style="color:#848e9c; font-size:12px;">(프록시 서버가 막혔을 수 있습니다. 위의 업데이트 버튼을 눌러 재시도해주세요)</span></div>';
-      }
-    }
-
-    // 전역으로도 노출 (원하면 버튼에서 직접 호출 가능)
-    window.fetchCryptoNews = fetchCryptoNews;
-
-    // 페이지 로드 시 실행 + 10분마다 갱신
-    fetchCryptoNews();
-    setInterval(fetchCryptoNews, 600000);
-  })();
-</script>
-
-
 
 <div style="max-width: 450px; margin: 20px auto; font-family: 'Malgun Gothic', sans-serif; color: #eaecef; background: #161a1e; padding: 20px; border-radius: 15px; border: 1px solid #2b3139; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
     
@@ -1508,6 +1356,45 @@ try{
 
 </body>
 </html>
+
+<!-- 🎮 Game2 설명 -->
+<div style="
+  max-width: 760px;
+  margin: 20px auto 12px;
+  padding: 16px 20px;
+  background: rgba(243,186,47,0.08);
+  border: 1px solid rgba(243,186,47,0.35);
+  border-radius: 12px;
+  text-align: center;
+">
+  <div style="font-size:15px; font-weight:800; color:#f3ba2f; margin-bottom:6px;">
+    🎮 사토시 런(Satoshi Run) : 사토시 수집 아케이드 게임
+  </div>
+  <div style="font-size:13px; line-height:1.6; color:#d1d4dc;">
+    트레이딩만 하기 지루하다면,<br>
+    <b>직접 움직이며 적을 물리치고 사토시를 모아보세요.</b><br>
+    가볍게 즐길 수 있는 미니 게임입니다.
+  </div>
+</div>
+
+<!-- 🎮 Game2 링크 버튼 -->
+<div style="text-align:center; margin: 0 auto 60px;">
+  <a href="game2.html"
+     style="
+       display:inline-block;
+       padding:18px 36px;
+       font-size:20px;
+       font-weight:900;
+       background:#f3ba2f;
+       color:#000;
+       border-radius:14px;
+       text-decoration:none;
+       box-shadow:0 10px 30px rgba(0,0,0,0.5);
+     ">
+     🎮 Game2 플레이하기
+  </a>
+</div>
+
 
 
 <div style="margin-top: 50px; text-align: left; padding: 30px; background: #1e2329; border-radius: 15px; color: #848e9c; line-height: 1.8; border: 1px solid #333;">
