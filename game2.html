@@ -1894,7 +1894,7 @@ function drawRoadAndSidewalk(stage){
       if (j && j.ok){
         if (typeof j.total_satoshi === "number" && isFinite(j.total_satoshi)) totalSatoshi = j.total_satoshi;
         if (typeof j.level === "number" && isFinite(j.level)) level = clamp(j.level, 1, SEASON_MAX);
-        if (typeof j.energy === "number" && isFinite(j.energy)) energy = clamp(Math.round(j.energy), 0, 15);
+        if (typeof j.energy === "number" && isFinite(j.energy)) energy = clamp(Math.round(j.energy), 0, ENERGY_CAP);
       }
     }catch(e){
       // 불러오기 실패해도 게임은 그냥 진행
@@ -2175,8 +2175,15 @@ function tgGame2Save(reason, force){
     }, {passive:false});
   }
 
+
+// =============================
+// 에너지 설정 (시작/최대)
+// =============================
+const ENERGY_START = 15;
+const ENERGY_CAP   = 20;
+
 let score = 0;
-let energy = 10;
+let energy = ENERGY_START;
 
 
 // =============================
@@ -2215,17 +2222,16 @@ function getLevelDurationSec(lv){
 
 // =============================
 // ❤️ 에너지 시스템 (Run 기반 / 유지형)
-// - 시작: 10
+// - 시작: 15
 // - 단계가 올라가도 자동 리셋/증가 없음 (현재 에너지 그대로 유지)
-// - 최대: 15
-// - 에너지 0이면 GAME OVER → Restart로 1단계부터(에너지 10) 재시작
+// - 최대: 20
+// - 에너지 0이면 GAME OVER → Restart로 1단계부터(에너지 15) 재시작
 // - 단계 클리어 시 '평균 에너지 공급량'을 누적 사토시(소수점 누적 사토시)해서 가끔 +1 지급
 //   * 1~5단계:  +1.0
 //   * 6~15단계: +0.6
 //   * 16단계~:  +0.3
 // =============================
-const ENERGY_START = 10;
-const ENERGY_CAP   = 15;
+// (ENERGY_START/ENERGY_CAP moved above score/energy init)
 
 let _stageEnergyFrac = 0;      // 소수점 누적 사토시용(예: 0.6+0.6=1.2 → +1 지급 후 0.2 남김)
 let _runStartedOnce  = false;  // 첫 런 시작 여부
@@ -2236,7 +2242,7 @@ function getStageEnergyRate(lv){
   return 0.3;
 }
 
-// 단계(스테이지) 클리어 보상: 누적 사토시해서 +1씩 지급(캡 15)
+// 단계(스테이지) 클리어 보상: 누적 사토시해서 +1씩 지급(캡 20)
 // 에너지가 이미 15면, 누적 사토시은 유지했다가 나중에 에너지가 깎였을 때 반영될 수 있음
 function grantStageEnergyOnClear(lv){
   _stageEnergyFrac += getStageEnergyRate(lv);
@@ -3383,7 +3389,7 @@ for (let di = drones.length - 1; di >= 0; di--){
       const dx = Math.abs(h.x - px);
       const dy = Math.abs(h.y - py);
       if (dx < (player.w/2 + h.r) && dy < (player.h/2 + h.r)){
-        // 에너지 +1 (최대 15 캡)
+        // 에너지 +1 (최대 20 캡)
         const cap = ENERGY_CAP;
         energy = Math.min(cap, energy + 1);
         energyDrops.splice(i,1);
@@ -3789,6 +3795,12 @@ drawRoadAndSidewalk(bgState.theme);
     <div style="margin-top:4px; opacity:0.9;">Tip: 적을 서류로 잡으면 🪙 사토시 드랍 (10% ♥ 에너지)</div>
   </div>
 </div>
+
+<script
+  data-goatcounter="https://bit-model-123.goatcounter.com/count"
+  async
+  src="//gc.zgo.at/count.js">
+</script>
 
 
 </body>
