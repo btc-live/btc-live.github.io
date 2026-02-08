@@ -636,7 +636,7 @@ setInterval(() => {
       // 1) r.jina.ai (가장 안정적)
       //    - https 페이지에서 http RSS를 직접 fetch하면 막힐 수 있어서,
       //      r.jina.ai가 중간에서 받아서 텍스트로 내려주는 방식 사용
-      const u1 = 'https://r.jina.ai/http://news.google.com/rss/search?q=bitcoin+crypto+when:1d&hl=ko&gl=KR&ceid=KR:ko';
+      const u1 = 'https://r.jina.ai/https://news.google.com/rss/search?q=bitcoin+crypto+when:1d&hl=ko&gl=KR&ceid=KR:ko';
       try{
         const r = await fetchWithTimeout(u1, 9000);
         if (!r.ok) throw new Error("jina status " + r.status);
