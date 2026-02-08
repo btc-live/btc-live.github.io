@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>Game2 – Office Hero Run (Q 서류 / Space 점프)</title>
+  <title>Satoshi Run</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <script>
 
@@ -23,6 +23,7 @@
     helpBtn.style.setProperty('top', top + 'px', 'important');
     helpPanel.style.setProperty('top', (top + 44) + 'px', 'important');
   }
+
   window.addEventListener("load", ()=>{ placeDesktop(); setTimeout(placeDesktop, 300); setTimeout(placeDesktop, 1200); });
   window.addEventListener("DOMContentLoaded", ()=>{ setTimeout(placeDesktop, 50); });
   window.addEventListener("resize", ()=>{ setTimeout(placeDesktop, 80); });
@@ -54,6 +55,129 @@
     }
 
 canvas{display:block; background:#000;}
+
+    /* ✅ Start Overlay (Title screen) */
+    #startOverlay{
+      position:fixed;
+      inset:0;
+      z-index:999998;
+      display:none;
+      align-items:center;
+      justify-content:center;
+
+      /* cinematic but light: dark glass + soft vignette */
+      background:
+        radial-gradient(1200px 700px at 50% 40%, rgba(255,200,80,0.10), rgba(0,0,0,0.72) 60%),
+        linear-gradient(180deg, rgba(0,0,0,0.62), rgba(0,0,0,0.78));
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+
+      padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      user-select:none;
+      touch-action:none;
+    }
+    #startOverlay .so-card{
+      width:min(720px, 92vw);
+      border-radius:24px;
+      padding:20px 18px 16px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+
+      /* glass card */
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+      border:1px solid rgba(255,255,255,0.18);
+      box-shadow:
+        0 24px 80px rgba(0,0,0,0.55),
+        0 2px 0 rgba(255,255,255,0.06) inset;
+    }
+    /* subtle glowing border */
+    #startOverlay .so-card::before{
+      content:"";
+      position:absolute; inset:-2px;
+      border-radius:26px;
+      background: conic-gradient(from 210deg,
+        rgba(243,186,47,0.0),
+        rgba(243,186,47,0.42),
+        rgba(255,229,154,0.22),
+        rgba(243,186,47,0.0));
+      filter: blur(10px);
+      opacity:0.65;
+      pointer-events:none;
+    }
+    #startOverlay .so-card::after{
+      content:"";
+      position:absolute; inset:0;
+      border-radius:24px;
+      background: radial-gradient(800px 220px at 50% 0%, rgba(255,255,255,0.10), rgba(255,255,255,0.0) 60%);
+      pointer-events:none;
+    }
+
+    #startOverlay .so-mark{
+      width:56px; height:56px;
+      margin:2px auto 10px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+      font-size:30px;
+      letter-spacing:-0.02em;
+
+      color:#1a1a1a;
+      background: linear-gradient(180deg, rgba(255,229,154,1), rgba(243,186,47,1));
+      box-shadow:
+        0 10px 30px rgba(243,186,47,0.30),
+        0 2px 0 rgba(255,255,255,0.22) inset;
+    }
+
+    #startOverlay .so-title{
+      font-weight:1000;
+      letter-spacing:0.08em;
+      font-size: clamp(30px, 6.4vw, 60px);
+      line-height:1.02;
+      margin:0 0 10px;
+
+      /* gold gradient text */
+      background: linear-gradient(90deg, #f3ba2f 0%, #ffe59a 45%, #f3ba2f 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color: transparent;
+
+      text-shadow:
+        0 10px 30px rgba(0,0,0,0.55),
+        0 1px 0 rgba(0,0,0,0.35);
+    }
+    #startOverlay .so-sub{
+      font-weight:850;
+      font-size: clamp(13px, 2.9vw, 18px);
+      line-height:1.25;
+      color:rgba(255,255,255,0.90);
+      margin:0;
+    }
+    #startOverlay .so-hint{
+      margin-top:14px;
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:850;
+      font-size:12px;
+      color:rgba(255,255,255,0.78);
+      background:rgba(0,0,0,0.28);
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.25);
+    }
+    #startOverlay .so-hint .dot{ opacity:0.55; }
+    #startOverlay.hide{
+      opacity:0;
+      transition: opacity 220ms ease;
+      pointer-events:none;
+    }
+
 
     /* ✅ 모바일에서 화면 잘림 방지 + 안전영역(safe-area) 대응 */
     body{
@@ -677,7 +801,19 @@ canvas{display:block; background:#000;}
   </div>
 
 
-  <!-- ✅ Mobile Fullscreen UI -->
+  
+
+  <!-- ✅ Start Overlay (Tap to start) -->
+  <div id="startOverlay" role="dialog" aria-label="start overlay">
+    <div class="so-card">
+      <div class="so-mark" aria-hidden="true">₿</div>
+      <div class="so-title">SATOSHI RUN</div>
+      <p class="so-sub">Collect sats and survive</p>
+      <div class="so-hint"><span>Tap to start</span><span class="dot">•</span><span>Auto-start in 2s</span></div>
+</div>
+    </div>
+  </div>
+<!-- ✅ Mobile Fullscreen UI -->
   <div id="fsOverlay" style="display:none;">
     <div class="fs-card">
       <div class="fs-title">Mobile Fullscreen</div>
@@ -744,9 +880,9 @@ canvas{display:block; background:#000;}
 <div id="emailGate" style="position:fixed; inset:0; z-index:10000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.72); backdrop-filter: blur(6px); padding:18px;">
   <div style="width:min(440px, 94vw); background:rgba(17,17,17,0.96); border:1px solid rgba(255,255,255,0.16); border-radius:18px; padding:16px; color:#fff; box-shadow:0 16px 60px rgba(0,0,0,0.55); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;">
     <div style="font-weight:950; font-size:18px; margin-bottom:6px;">📩 이메일 입력</div>
-    <div style="opacity:0.9; font-size:13px; line-height:1.45; margin-bottom:12px;">
-      누적 사토시 사토시를 저장/불러오기 위해 이메일이 필요합니다.<br/>
-      (스팸 발송용이 아닙니다. <b>이메일 = 유일한 ID</b>)
+    <div style="opacity:0.9; font-size:10px; line-height:1.45; margin-bottom:12px;">
+      기기 변경 시에도 누적 사토시를 유지하기 위해 이메일이 필요합니다.<br/>
+      (스팸 발송용이 아닙니다. 6단계부터는 이메일을 등록해야 게임을 계속할 수 있습니다.)
     </div>
     <input id="emailInput" type="email" inputmode="email" placeholder="example@email.com"
            style="width:100%; box-sizing:border-box; padding:12px 12px; border-radius:14px; border:1px solid rgba(255,255,255,0.18); background:#0c0c0c; color:#fff; font-weight:800; font-size:14px; outline:none;" />
@@ -1323,6 +1459,44 @@ window.addEventListener("beforeunload", (e)=>{
       btn.textContent = userPaused ? "▶ Resume" : "⏸ Pause";
     }
   }
+
+  // =============================
+  // ▶️ Start Overlay (2s auto-hide or tap)
+  // =============================
+  (function(){
+    function show(){
+      const ov = document.getElementById("startOverlay");
+      if (!ov) return;
+      ov.style.display = "flex";
+
+      // Pause game until overlay dismissed (if pause system exists)
+      try{ if (typeof setPause === "function") setPause(true); }catch(_){}
+
+      let done = false;
+      const dismiss = ()=>{
+        if (done) return;
+        done = true;
+        try{ ov.classList.add("hide"); }catch(_){}
+        setTimeout(()=>{
+          try{ ov.style.display = "none"; }catch(_){}
+          try{ if (typeof setPause === "function") setPause(false); }catch(_){}
+        }, 230);
+      };
+
+      // auto-hide after 2 seconds
+      setTimeout(dismiss, 2000);
+
+      // tap/click to start immediately
+      ov.addEventListener("click", (e)=>{ e.preventDefault(); dismiss(); }, {passive:false});
+      ov.addEventListener("touchstart", (e)=>{ e.preventDefault(); dismiss(); }, {passive:false});
+    }
+
+    window.addEventListener("DOMContentLoaded", ()=>{
+      // show on first paint
+      setTimeout(show, 0);
+    });
+  })();
+
   function togglePause(){
     // 시즌 완료 오버레이가 떠있으면 굳이 토글하지 않게
     if (typeof seasonComplete === 'boolean' && seasonComplete) return;
