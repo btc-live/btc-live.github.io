@@ -2218,6 +2218,7 @@ function tgGame2Save(reason, force){
       try{ localStorage.setItem(LS_GAME2_EMAIL, currentEmail); }catch(_){}
       if (hudEmailMask) hudEmailMask.textContent = maskEmail(currentEmail);
       try{ if (btnChangeEmail) btnChangeEmail.style.display = ""; }catch(_){ }
+      try{ syncEmailHudButtons(); }catch(_){ }
       if (gate) gate.style.display = "none";
 
       // ✅ 6단계 진입용 게이트에서 이메일을 받은 경우: 바로 다음 단계로 진행 + 즉시 저장
@@ -2488,7 +2489,10 @@ function getEnemyShotSpeed(){
   // 자동 러너 (플레이어는 거의 제자리, 월드가 움직이는 느낌)
   let scrollSpeed = 4;
 
-  const PLAYER_SPRITE_Y_OFFSET = 34; // 🔧 micro-adjust +4px (final touch) // 🔧 micro-adjust: final ground contact // 🔧 fine-tuned: feet touch ground // ✅ sprite has transparent padding; push drawing down
+  const PLAYER_SPRITE_Y_OFFSET = 34; 
+// ✅ 좌/우 반전 시 스프라이트 좌우 여백 때문에 몸이 튀는 현상 보정(필요하면 값만 조절)
+const PLAYER_SPRITE_X_FLIP_FIX = 10;
+// 🔧 micro-adjust +4px (final touch) // 🔧 micro-adjust: final ground contact // 🔧 fine-tuned: feet touch ground // ✅ sprite has transparent padding; push drawing down
 
   const player = {
     x: 140,
@@ -3683,12 +3687,16 @@ drawRoadAndSidewalk(bgState.theme);
 
     // 가운데 기준으로 스케일 적용
     ctx.save();
-    const cx = player.x + player.w/2;
+    // ✅ 스프라이트 기본 방향이 '왼쪽'을 보고 있어서, 이동 방향과 일치하도록 반대로 플립
+    const drawFace = -player.face; // 이동 오른쪽(1) => 스프라이트는 flip 필요(-1)
+
+    const spriteShift = (drawFace === -1) ? (PLAYER_SPRITE_X_FLIP_FIX) : (-PLAYER_SPRITE_X_FLIP_FIX);
+    const cx = player.x + player.w/2 + spriteShift;
     const cy = player.y + player.h/2 + breathe + runBob;
 
-    // 방향(좌/우)도 반영
+    // 방향(좌/우) 반영
     ctx.translate(cx, cy);
-    ctx.scale(scaleX * player.face, scaleY);
+    ctx.scale(scaleX * drawFace, scaleY);
     ctx.drawImage(playerImg, -player.w/2, -player.h/2 + PLAYER_SPRITE_Y_OFFSET, player.w, player.h);
     ctx.restore();
 
