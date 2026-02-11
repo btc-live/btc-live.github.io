@@ -1,8 +1,11 @@
 <!doctype html>
 <html lang="ko">
 <head>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
 <title>Office Arena – Player 8-way Shot</title>
 <style>
 html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui}
@@ -568,6 +571,26 @@ canvas{display:block;width:100vw;height:100vh}
 @media (max-width: 980px){
   #mobileControls{ display: flex; }
 }
+
+/* ===== Mobile Stability Lock (prevent edge-zoom/scroll) ===== */
+html, body{
+  width:100%;
+  height:100%;
+  overflow:hidden !important;
+  position:fixed; /* prevents Android overscroll + iOS bounce affecting layout */
+  inset:0;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+  touch-action: none;           /* stop browser gestures on touch */
+  -webkit-user-select: none;
+  user-select: none;
+}
+canvas, #uiLayer, #mobileControls{
+  touch-action: none !important;
+  -webkit-user-select:none;
+  user-select:none;
+}
+
 </style>
 </head>
 <body>
@@ -681,6 +704,32 @@ canvas{display:block;width:100vw;height:100vh}
 <script>
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
+
+// ===== Mobile Stability: prevent pinch/edge zoom (iOS/Android) =====
+(function(){
+  // iOS Safari gesture events
+  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
+    window.addEventListener(ev, function(e){ try{ e.preventDefault(); }catch(_){} }, { passive:false });
+  });
+
+  // Prevent multi-touch pinch from triggering zoom/scroll
+  document.addEventListener("touchstart", function(e){
+    if(e.touches && e.touches.length > 1){
+      try{ e.preventDefault(); }catch(_){}
+    }
+  }, { passive:false });
+
+  // Prevent double-tap zoom
+  let __lastTouchEnd = 0;
+  document.addEventListener("touchend", function(e){
+    const now = Date.now();
+    if(now - __lastTouchEnd <= 300){
+      try{ e.preventDefault(); }catch(_){}
+    }
+    __lastTouchEnd = now;
+  }, { passive:false });
+})();
+
 
 // ===== Input state (must exist before mobile controls bind) =====
 let keys = {}, pressed = {};
@@ -879,7 +928,8 @@ zone.addEventListener("pointerdown", (e)=>{
       if (activePointerId === null) return;
       if (e.pointerId !== activePointerId) return;
       setDirFromEvent(e);
-    }, { passive:true });
+    
+      try{ e.preventDefault(); }catch(_){}} , { passive:false });
 
     const end = (e)=>{
       if (activePointerId === null) return;
@@ -958,7 +1008,8 @@ zone.addEventListener("pointerdown", (e)=>{
         lastBtn = b;
         fire(b);
       }
-    }, { passive:true });
+    
+      try{ e.preventDefault(); }catch(_){}} , { passive:false });
 
     const end = (e)=>{
       if(activePointerId === null) return;
