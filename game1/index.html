@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bull vs Bear : Arena Pro V15 (Mobile)</title>
+
+  <!-- 라이브러리 -->
+  <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    html, body{
+      height: 100%;
+      margin: 0;
+      background:#0b0e11;
+      color:#fff;
+      font-family: sans-serif;
+      overscroll-behavior-y: none; /* Android/Chrome pull-to-refresh 완화 */
+    }
+
+    /* ✅ 스크롤은 이 컨테이너에서만 */
+    #page-scroll{
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: none;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    /* 상단 네비 */
+    .topbar{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .topbar a{
+      color:#f3ba2f;
+      text-decoration:none;
+      font-weight:900;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(243,186,47,0.35);
+      background: rgba(24,26,32,0.75);
+    }
+    .topbar .pill{
+      color:#d1d4dc;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(209,212,220,0.18);
+      background: rgba(24,26,32,0.55);
+    }
+
+    /* ===== 기존 게임 스타일(필요한 만큼 유지) ===== */
+    .game-header { text-align: center; margin-bottom: 10px; }
+    .game-header h1 { color: #f3ba2f; margin: 0; font-size: 26px; text-shadow: 2px 2px #cf304a; letter-spacing: 1px; }
+
+    .main-container {
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      background: #0b0e11;
+      border: 1px solid #f3ba2f;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    }
+
+    /* ✅ 모바일은 세로 스택 */
+    .chart-section{
+      display:flex;
+      flex-direction: column;
+      border-bottom: 2px solid #2b3139;
+    }
+
+    #tg-tv-main{
+      background:#131722;
+      border-bottom: 1px solid #2b3139;
+      height: 360px;
+    }
+    #tg-sub-chart{
+      background:#131722;
+      height: 260px;
+      position: relative;
+    }
+
+    .control-section{
+      display:flex;
+      flex-direction: column; /* 핵심 */
+      gap: 12px;
+      padding: 12px;
+      background:#181a20;
+    }
+
+    .box { background: #0b0e11; border-radius: 8px; border: 1px solid #2b3139; padding: 15px; }
+
+    /* ✅ 호가창(빨강/초록) */
+    .orderbook{
+      font-family: monospace;
+    }
+    .order-item { display: flex; justify-content: space-between; font-size: 11px; padding: 6px 5px; border-bottom: 1px solid #222; }
+    .cancel-btn { color: #848e9c; cursor: pointer; }
+
+    /* ✅ 트레이딩 입력/버튼 */
+    .trading { display: flex; flex-direction: column; gap: 12px; }
+    input{
+      background:#1e2329;
+      border:1px solid #333;
+      color:#fff;
+      padding: 12px;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+
+    button { cursor:pointer; border:none; border-radius: 6px; font-weight: 900; transition: 0.2s; }
+    button:hover { opacity: 0.9; }
+
+    .btn-long { background:#02c076; color:#fff; padding: 16px; font-size: 18px; }
+    .btn-short{ background:#cf304a; color:#fff; padding: 16px; font-size: 18px; }
+    .btn-exit { background:#fff; color:#000; padding: 14px; width: 100%; margin-top: 10px; font-size: 15px; }
+    .btn-refill { background: linear-gradient(180deg, #f3ba2f 0%, #d9a522 100%); color: #000; padding: 10px 14px; font-size: 12px; }
+
+    /* ✅ status(포지션/주문) */
+    .status{
+      background:#131722;
+      border: 1px solid #2b3139;
+      border-radius: 8px;
+      padding: 12px;
+      overflow: hidden;
+    }
+    .pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; border-top: 1px solid #2b3139; padding-top: 8px; }
+    .pos-label { font-size: 10px; color: #848e9c; margin-bottom: 2px; }
+    .pos-value { font-size: 13px; font-weight: 900; color: #eee; }
+
+    /* ✅ 핵심: 모바일에서 순서 = 호가창을 롱/숏 근처(=trading 위) */
+    .orderbook{ order: 1; } /* 호가창 */
+    .trading { order: 2; }  /* 입력/롱숏 */
+    .status  { order: 3; }  /* 포지션/주문 */
+
+    /* 인증 게이트 */
+    #entrance-gate{
+      display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(11, 14, 17, 0.98); z-index:10000;
+      flex-direction:column; align-items:center; justify-content:center; color:#f3ba2f;
+    }
+  </style>
+</head>
+
+<body>
+<div id="tg-auth-panel" style="display:none; position:fixed; top:12px; right:12px; z-index:9999; padding:10px 12px; border-radius:12px; background:rgba(24,26,32,0.72); border:1px solid rgba(243,186,47,0.28); box-shadow:0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(6px);">
+  <div style="font-size:12px; color:#d1d4dc; font-weight:800;"></div>
+</div>
+
+  <div id="page-scroll">
+    <div class="topbar">
+      <a href="index.html">← 돌아가기</a>
+      <div class="pill">모바일 전용 세로 레이아웃</div>
+    </div>
+
+    <div class="game-header" style="margin-bottom: 12px;">
+      <h1>
+        <span style="color:#f3ba2f;">BULL vs BEAR : ARENA</span><br>
+        <span style="font-size:25px; color:#d1d4dc; font-weight:700; margin-left:8px;">가상 트레이딩 게임</span>
+      </h1>
+
+      <div style="background: rgba(243, 186, 47, 0.1); border: 1px solid rgba(243, 186, 47, 0.3); padding: 12px; border-radius: 10px; text-align:left; font-size: 12px; color: #d1d4dc; line-height: 1.55;">
+        <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(243, 186, 47, 0.2); padding-bottom: 10px;">
+            <span style="color: #f3ba2f; font-weight: bold;">💡 제작 의도:</span>
+            실전 투자 전, 충분한 연습과 전략 검증을 위해 제작
+          
+            <div style="margin-top:6px; color:#9aa4b2; font-size:11px; font-weight:700;">
+             Our Mission: For practice and strategy testing before real trading.
+            </div>
+          </div>
+          
+          <span style="color: #f3ba2f; font-weight: bold;">[게임 규칙]</span>
+          시드 <b>$30,000</b> 제공 | 가격 입력 시 <b>지정가</b>, 비우면 <b>시장가</b> |
+          잔액 $100 이하 시 자동으로 $30,000 리필 (청산 후 재접속 시 적용) 
+          <br><span style="color: #cf304a;">빨간선(LIQ) 터치 시 즉시 청산</span><br>
+          
+          <div style="margin-top:6px; color:#9aa4b2; font-size:11px; font-weight:700;">
+            Rules: $30,000 start • Limit if price set, otherwise Market • Liquidated on LIQ line. 
+            <br>Balance ≤ $100 → Auto refill to $30,000 (Applies after liquidation upon revisit)
+          </div>
+          
+          <div style="margin-top:4px; color:#848e9c; font-size:10.5px;">
+            ※ 브라우저/쿠키 변경 시 데이터(포지션, 주문 예약) 초기화<br>
+            Data(position, limit order) resets if browser or cookies are changed.
+          </div>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="chart-section">
+        <div id="tg-tv-main"></div>
+        <div id="tg-sub-chart"></div>
+      </div>
+
+      <div class="control-section">
+
+        <!-- ✅ 1) 호가창(맨 위/롱숏 근처) -->
+        <div class="box orderbook">
+          <div id="tg-asks" style="color:#cf304a;"></div>
+          <div id="tg-mid-price" style="font-size: 22px; font-weight: 900; margin: 10px 0; color: #f3ba2f; text-align: center;">$0.00</div>
+          <div id="tg-bids" style="color:#02c076;"></div>
+        </div>
+
+        <!-- ✅ 2) 리필/입력/롱숏 -->
+        <div class="trading">
+          <div style="background: #1e2329; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+            <div>
+              <div style="font-size: 10px; color: #848e9c; font-weight:900;">AVAILABLE CREDITS</div>
+              <div id="tg-equity" style="font-size: 20px; font-weight: 900; color: #f3ba2f;">$30,000.00</div>
+            </div>
+            
+          </div>
+
+          <input type="number" id="tg-amt" placeholder="달러($) 입력">
+          <input type="number" id="tg-lev" placeholder="레버리지(x) 입력(1~∞)">
+          <input type="number" id="tg-limit" placeholder="LIMIT PRICE (MARKET IF EMPTY)">
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn-long" onclick="checkUserBeforeGame('long')">LONG(Add)</button>
+            <button class="btn-short" onclick="checkUserBeforeGame('short')">SHORT(Add)</button>
+          </div>
+        </div>
+
+        <!-- ✅ 3) 포지션/주문 -->
+        <div class="status">
+          <div id="tg-no-pos" style="text-align:center; padding: 12px 0; color:#3d4550; font-size: 12px; font-weight:900;">NO ACTIVE POSITION</div>
+
+          <div id="tg-pos-active" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span id="tg-side-badge" style="padding: 2px 8px; border-radius: 3px; font-weight:900; font-size: 12px; color:#fff;"></span>
+              <div style="text-align:right;">
+                <div class="pos-label">Unrealized P&L</div>
+                <div id="tg-pnl-val" style="font-size: 14px; font-weight: 900;"></div>
+              </div>
+            </div>
+
+            <div id="tg-roe" style="font-size: 18px; font-weight: 900; text-align:center; margin: 6px 0;">0.00%</div>
+
+            <div class="pos-grid">
+              <div>
+                <div class="pos-label">Qty (BTC)</div>
+                <div id="tg-pos-qty" class="pos-value">0.000</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="pos-label">Value (USDT)</div>
+                <div id="tg-pos-value" class="pos-value">$0.00</div>
+              </div>
+              <div>
+                <div class="pos-label">Avg. Entry</div>
+                <div id="tg-pos-entry" class="pos-value">$0.00</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="pos-label">Liq. Price</div>
+                <div id="tg-pos-liq" class="pos-value" style="color:#cf304a;">$0.00</div>
+              </div>
+            </div>
+
+            <button class="btn-exit" onclick="tgExit()">MARKET EXIT (Full)</button>
+          </div>
+
+          <div style="margin-top: 12px; border-top: 1px solid #2b3139; padding-top: 10px;">
+            <div style="font-size: 11px; color: #848e9c; font-weight: 900; margin-bottom: 6px;">PENDING ORDERS</div>
+            <div id="tg-order-list" style="max-height: 320px; overflow-y:auto; background:#050505; border:1px solid #1a1a1a;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ 인증 게이트 -->
+  <div id="entrance-gate">
+    <div style="background:#181a20; padding:34px; border-radius:20px; border:2px solid #f3ba2f; text-align:center; width:320px; box-shadow: 0 10px 50px rgba(0,0,0,0.8); position: relative;">
+      <span onclick="closeGate()" style="position:absolute; right:18px; top:12px; cursor:pointer; font-size:28px; color:#848e9c;">&times;</span>
+      <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png?v=025" style="width:46px; margin-bottom:12px;">
+      <h2 style="margin:0 0 8px 0; font-size:22px;">🎮 게임 참여 인증</h2>
+      <p style="color:#848e9c; font-size:13px; margin-bottom:18px;">이메일을 한 번만 등록하시면<br><b>[비트코인 게임]</b>과 <b>[가격 예측 확인]</b>을<br>모두 이용할 수 있습니다.</p>
+
+      <input type="email" id="db-email" placeholder="이메일 주소" style="margin-bottom:16px;">
+
+      <button onclick="submitToSheet()" id="db-btn" style="padding:14px; width:100%; background:#f3ba2f; border:none; border-radius:10px; color:#000; font-weight:900; cursor:pointer; font-size:16px;">인증하고 배팅하기</button>
+      <p onclick="closeGate()" style="margin-top:16px; text-decoration:underline; cursor:pointer; color:#848e9c; font-size:13px;">그냥 구경만 할래요 (취소)</p>
+    </div>
+  </div>
+
+  <script>
+    /* iOS까지 pull-to-refresh 완화 (컨테이너 맨 위에서 아래로 당길 때만 방지) */
+    (function blockPullToRefresh(){
+      const scroller = document.getElementById('page-scroll');
+      if (!scroller) return;
+      let startY = 0;
+
+      scroller.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+
+      scroller.addEventListener('touchmove', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        const y = e.touches[0].clientY;
+        const pullingDown = (y - startY) > 0;
+        if (scroller.scrollTop === 0 && pullingDown) e.preventDefault();
+      }, { passive: false });
+    })();
+  </script>
+
+  <script>
+    /* TradingView 위젯 */
+    new TradingView.widget({
+      autosize: true,
+      symbol: "BYBIT:BTCUSDT.P",
+      interval: "1",
+      theme: "dark",
+      container_id: "tg-tv-main",
+      locale: "kr"
+    });
+  </script>
+
+  <script>
+    /* 인증 게이트 로직 */
+    (function() {
+      let selectedType = "";
+
+      window.closeGate = function() {
+        const gate = document.getElementById('entrance-gate');
+        if (gate) gate.style.display = 'none';
+      };
+
+      window.checkUserBeforeGame = function(type) {
+        selectedType = type;
+
+        if (localStorage.getItem('btc_user_done')) {
+          if (typeof tgPlace === "function") tgPlace(type);
+        } else {
+          const gate = document.getElementById('entrance-gate');
+          if (gate) gate.style.display = 'flex';
+        }
+      };
+
+      window.submitToSheet = async function() {
+        const email = document.getElementById('db-email').value.trim();
+        const name = (localStorage.getItem('registeredName') || '익명').trim();
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
+
+        if (!email || !email.includes('@')) {
+          alert('이메일을 올바르게 입력해주세요.');
+          return;
+        }
+
+        const btn = document.getElementById('db-btn');
+        btn.disabled = true;
+        btn.innerText = "인증 중...";
+
+        try {
+          const formData = new URLSearchParams();
+          formData.append("name", name);
+          formData.append("email", email);
+          formData.append("status", "active");
+          formData.append("date", new Date().toLocaleString());
+
+          await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: formData });
+
+          localStorage.setItem('btc_user_done', 'true');
+          localStorage.setItem('registeredName', name || '익명');
+          const __e = (email || '').trim().toLowerCase();
+          localStorage.setItem('registeredEmail', __e);
+          // ✅ 새 이메일이면 게임 자산을 30,000으로 새로 시작
+          try{
+            const prev = (localStorage.getItem('tg_active_email') || '').trim().toLowerCase();
+            if (!prev || prev !== __e) {
+              localStorage.removeItem('bull_vs_bear_arena_v15_pro');
+              // ✅ 새 이메일이면 즉시 $30,000으로 초기화(리프레시 없이)
+              window.tgHardResetTo30000?.();
+            }
+            localStorage.setItem('tg_active_email', __e);
+          }catch(_e){}
+window.tgInitCashFromSheetIfNeeded();
+
+          closeGate();
+          alert("인증 완료! 이제 게임/예측을 자유롭게 이용할 수 있습니다.");
+
+          if (selectedType && typeof tgPlace === "function") tgPlace(selectedType);
+        } catch (e) {
+          console.error("인증 실패:", e);
+          closeGate();
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "인증하고 배팅하기";
+        }
+      };
+    })();
+  </script>
+
+  <script>
+    /* 게임 JS (네 기존 로직 유지) */
+    (function() {
+      const STORAGE_KEY = 'bull_vs_bear_arena_v15_pro';
+      // ✅ 이메일이 바뀌었으면 새 계정처럼 $30,000부터 시작
+      try{
+        const activeEmail = (localStorage.getItem('registeredEmail') || '').trim().toLowerCase();
+        const prevEmail = (localStorage.getItem('tg_active_email') || '').trim().toLowerCase();
+        if (activeEmail && prevEmail && activeEmail !== prevEmail) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        if (activeEmail) localStorage.setItem('tg_active_email', activeEmail);
+      }catch(_e){}
+      let saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+      let cash = Number(saved.cash !== undefined ? saved.cash : 30000);
+
+      async function tgInitCashFromSheetIfNeeded(){
+  try{
+    // 인증 안 했으면 그대로 30000
+    if (localStorage.getItem("btc_user_done") !== "true") return;
+
+    // 이미 로컬에 cash 있으면 덮어쓰지 않음
+// 🔥 인증 직후 첫 진입이면 시트값 우선 적용
+if (saved && saved.cash !== undefined && saved.cash !== null && saved.cash !== 30000) return;
+
+    const email = (localStorage.getItem("registeredEmail") || "").trim();
+    if (!email) return;
+
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
+    const res = await fetch(`${WEB_APP_URL}?action=getUser&email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+
+    const rb = Number(data && data.recentBalance);
+    if (!isFinite(rb)) return;
+    const ai = Number(data && data.activityIndex);
+if (window.TG_COMMON && typeof window.TG_COMMON.setAuthActivity === "function" && isFinite(ai)) {
+  window.TG_COMMON.setAuthActivity(ai);
+}
+
+    cash = rb;
+    save();
+    render();
+  }catch(e){}
+}
+window.tgInitCashFromSheetIfNeeded = tgInitCashFromSheetIfNeeded;
+
+// 페이지 로드 후 1회 실행
+tgInitCashFromSheetIfNeeded();
+
+
+      let pos = saved.pos || null;
+      let orders = saved.orders || [];
+      let btc = 0, candleSeries, lastCandle, entryLine, liqLine, orderLines = {};
+      let chart;
+
+      // Lightweight Charts
+      chart = LightweightCharts.createChart(document.getElementById('tg-sub-chart'), {
+        layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
+        grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } },
+        timeScale: { timeVisible: true, borderColor: '#2b3139' }
+      });
+
+      candleSeries = chart.addCandlestickSeries({
+        upColor: '#02c076',
+        downColor: '#cf304a',
+        borderVisible: false,
+        wickUpColor: '#02c076',
+        wickDownColor: '#cf304a'
+      });
+
+      function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ cash, pos, orders })); }
+    // ✅ 외부 인증 스크립트에서 호출할 수 있는 강제 초기화
+    window.tgHardResetTo30000 = function(){
+      try{
+        cash = 30000;
+        pos = null;
+        orders = [];
+        save();
+        try{ updateLines(); updateOrderLines(); }catch(e){}
+        try{ render(); }catch(e){}
+      }catch(e){}
+    };
+
+      // 리사이즈 시 차트만 안전하게 리사이즈(무한루프 없음)
+      let raf = 0;
+      function resizeSubChart(){
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          const el = document.getElementById('tg-sub-chart');
+          if (!el || !chart) return;
+          const r = el.getBoundingClientRect();
+          chart.resize(Math.floor(r.width), Math.floor(r.height));
+        });
+      }
+      window.addEventListener('resize', () => setTimeout(resizeSubChart, 50), { passive: true });
+      window.addEventListener('orientationchange', () => setTimeout(resizeSubChart, 120), { passive: true });
+      setTimeout(resizeSubChart, 500);
+
+    
+      const ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
+      ws.onopen = () => ws.send(JSON.stringify({ op: "subscribe", args: ["tickers.BTCUSDT"] }));
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.data && d.data.lastPrice) {
+          btc = parseFloat(d.data.lastPrice);
+          document.getElementById('tg-mid-price').innerText = "$" + btc.toLocaleString();
+
+          const min = Math.floor(Date.now() / 60000) * 60;
+          if (!lastCandle || lastCandle.time !== min) lastCandle = { time: min, open: btc, high: btc, low: btc, close: btc };
+          else {
+            lastCandle.high = Math.max(lastCandle.high, btc);
+            lastCandle.low = Math.min(lastCandle.low, btc);
+            lastCandle.close = btc;
+          }
+          candleSeries.update(lastCandle);
+
+          checkLiquidation(); checkOrders(); render(); updateOrderBook();
+        }
+      };
+
+      window.tgPlace = (side) => {
+        const marginAmt = Number(document.getElementById('tg-amt').value);
+        const lp = Number(document.getElementById('tg-limit').value);
+        const lev = Number(document.getElementById('tg-lev').value);
+
+        if (marginAmt <= 0) return alert("금액을 입력해주세요!");
+        if (lev <= 0) return alert("레버리지를 입력해주세요!");
+        if (cash < marginAmt && (!pos || pos.side !== side)) return alert("Not enough Available Credit!");
+
+        if (!lp) executeTrade(side, btc, marginAmt, lev);
+        else {
+          orders.push({ id: Date.now(), side, target: lp, amt: marginAmt, lev });
+          updateOrderLines(); save();
+        }
+        document.getElementById('tg-limit').value = "";
+      };
+
+      function executeTrade(side, price, marginAmt, lev) {
+        if (pos && pos.side !== side) tgExit();
+        if (cash >= marginAmt) {
+          cash -= marginAmt;
+          if (pos && pos.side === side) {
+            const currentQty = (pos.amt * pos.lev) / pos.entry;
+            const newQty = (marginAmt * lev) / price;
+            pos.entry = ((pos.entry * currentQty) + (price * newQty)) / (currentQty + newQty);
+            pos.amt += marginAmt;
+          } else pos = { side, entry: price, amt: marginAmt, lev };
+          updateLines(); render(); save();
+        }
+      }
+
+      function checkOrders() {
+        orders.forEach((o, i) => {
+          let hit = (o.side === 'long' && btc <= o.target) || (o.side === 'short' && btc >= o.target);
+          if (hit) {
+            if (pos && pos.side !== o.side) {
+              const closeAmt = Math.min(pos.amt, o.amt);
+              const diff = (o.target - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+              const pnl = closeAmt * diff * pos.lev;
+
+              cash += (closeAmt + pnl);
+              pos.amt -= closeAmt;
+
+              if (pos.amt < 1) pos = null;
+              alert(`Partial Close Filled at $${o.target.toLocaleString()}`);
+            } else executeTrade(o.side, o.target, o.amt, o.lev);
+
+            orders.splice(i, 1);
+            updateOrderLines(); updateLines(); render(); save();
+          }
+        });
+      }
+
+      window.tgCancel = (id) => { orders = orders.filter(o => o.id !== id); updateOrderLines(); save(); };
+
+/* ===== SAFE PROFIT SYNC (INDEX DESKTOP GAME) ===== */
+window.TG_PROFIT_SYNC = window.TG_PROFIT_SYNC || (function(){
+  const PROFIT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
+  const AUTO_SAVE_MS = 10 * 60 * 1000; // 10분
+  const THROTTLE_MS = 3000;
+
+  let lastSentAt = 0;
+  let lastIntervalProfit = null;
+
+  function getUser(){
+    if (localStorage.getItem("btc_user_done") !== "true") return null;
+    const email = (localStorage.getItem("registeredEmail") || "").trim();
+    const name  = (localStorage.getItem("registeredName") || "익명").trim();
+    if (!email || !email.includes("@")) return null;
+    return { email, name };
+  }
+
+  function send(reason, pnlOpt){
+    try{
+      // game scope guard
+      if (typeof cash !== "number") return;
+
+      const now = Date.now();
+      if (now - lastSentAt < THROTTLE_MS) return;
+      lastSentAt = now;
+
+      const user = getUser();
+      if (!user) return;
+
+      const profit = Number((cash - 30000).toFixed(2));
+
+      // ✅ 최근 잔액(현금 기준 balance)도 함께 기록
+const last_balance = Number(cash.toFixed(2));
+
+// (선택) 브라우저에도 저장해두면 UI에서도 안정적으로 표시 가능
+localStorage.setItem("tg_last_balance", String(last_balance));
+localStorage.setItem("tg_last_balance_at", String(Date.now()));
+
+      // ✅ Equity(총자산) = cash + pos.amt(증거금) + 평가손익(pnl)
+      let equity = cash;
+      try{
+        if (typeof pos === "object" && pos && typeof btc === "number") {
+          const diffEq = (btc - pos.entry) / pos.entry * (pos.side === "short" ? -1 : 1);
+          const pnlEq  = pos.amt * diffEq * pos.lev;
+          equity = cash + pos.amt + pnlEq;
+        }
+      }catch(e){}
+      equity = Number(equity.toFixed(2));
+
+      // interval은 같은 값이면 전송 생략
+      if (reason === "interval" && lastIntervalProfit !== null && Math.abs(lastIntervalProfit - profit) < 0.01) return;
+      if (reason === "interval") lastIntervalProfit = profit;
+
+      const body = new URLSearchParams();
+      body.append("email", user.email);
+      body.append("name", user.name);
+      body.append("profit", String(profit));
+      body.append("last_balance", String(last_balance)); // ✅ 추가
+      body.append("equity", String(equity)); // ✅ 추가
+      body.append("reason", reason);
+      
+
+      if (typeof pnlOpt === "number" && isFinite(pnlOpt)) {
+        body.append("pnl", pnlOpt.toFixed(2));
+      }
+
+      fetch(PROFIT_WEB_APP_URL, { method:"POST", mode:"no-cors", body });
+    }catch(e){
+      console.log("TG_PROFIT_SYNC error", e);
+    }
+  }
+
+  function start(){
+    setInterval(() => {
+      try{
+        if (typeof cash !== "number") return;
+       // ✅ 포지션 없어도 '최근 잔액'은 저장/전송되게
+        send("interval");
+      }catch(e){}
+    }, AUTO_SAVE_MS);
+  }
+
+  return { send, start };
+})();
+
+// 시작
+window.TG_PROFIT_SYNC.start();
+
+
+
+      window.tgExit = () => {
+        if (!pos) return;
+        const diff = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+        const pnl = pos.amt * diff * pos.lev;
+        cash += (pos.amt + pnl);
+        pos = null;
+        updateLines(); render(); save();
+
+        window.TG_PROFIT_SYNC.send("exit", pnl);
+      };
+
+      function checkLiquidation() {
+        if (!pos) return;
+        if ((pos.side === 'long' && btc <= pos.liqPrice) || (pos.side === 'short' && btc >= pos.liqPrice)) {
+          
+            const loss = -pos.amt;
+window.TG_PROFIT_SYNC.send("liquidation", loss);
+
+          
+          pos = null; cash = Math.max(0, cash); save(); updateLines(); render();
+          alert("LIQUIDATED - Margin Lost");
+        }
+      }
+
+      function updateLines() {
+        if (entryLine) candleSeries.removePriceLine(entryLine);
+        if (liqLine) candleSeries.removePriceLine(liqLine);
+        if (pos) {
+          const liq = pos.side === 'long' ? pos.entry * (1 - (0.95/pos.lev)) : pos.entry * (1 + (0.95/pos.lev));
+          pos.liqPrice = liq;
+          entryLine = candleSeries.createPriceLine({ price: pos.entry, color: '#02c076', lineWidth: 2, title: 'ENTRY' });
+          liqLine = candleSeries.createPriceLine({ price: liq, color: '#cf304a', lineWidth: 2, title: 'LIQ' });
+        }
+      }
+
+      function updateOrderLines() {
+        for (let id in orderLines) candleSeries.removePriceLine(orderLines[id]);
+        orderLines = {}; let html = '';
+        orders.sort((a,b) => b.target - a.target).forEach(o => {
+          orderLines[o.id] = candleSeries.createPriceLine({ price: o.target, color: '#f3ba2f', lineStyle: 2, title: 'LIMIT' });
+          html += `<div class="order-item"><span style="color:${o.side==='long'?'#02c076':'#cf304a'}">${o.side.toUpperCase()} $${o.target.toLocaleString()}</span><span>$${o.amt.toLocaleString()} <b class="cancel-btn" onclick="tgCancel(${o.id})">✖</b></span></div>`;
+        });
+        document.getElementById('tg-order-list').innerHTML = html || '<div style="color:#444;text-align:center;font-size:11px; padding:10px;">No pending orders</div>';
+      }
+
+      function updateOrderBook() {
+        let a = '', b = '';
+        for(let i=11; i>0; i--) a += `<div style="display:flex; justify-content:space-between; opacity:0.6; font-size:11px"><span>${(btc+i*1.2).toFixed(1)}</span><span>${(Math.random()*0.3).toFixed(2)}</span></div>`;
+        for(let i=1; i<=11; i++) b += `<div style="display:flex; justify-content:space-between; opacity:0.6; font-size:11px"><span>${(btc-i*1.2).toFixed(1)}</span><span>${(Math.random()*0.3).toFixed(2)}</span></div>`;
+        document.getElementById('tg-asks').innerHTML = a;
+        document.getElementById('tg-bids').innerHTML = b;
+      }
+
+
+/* 🔽🔽🔽 여기 딱 이 자리에 붙여넣기 🔽🔽🔽 */
+function autoRefillIfNeeded(){
+  try{
+    if (localStorage.getItem("btc_user_done") !== "true") return;
+    if (pos) return;
+
+    const THRESHOLD = 100;
+    if (Number(cash) > THRESHOLD) return;
+
+    const key = "tg_auto_refill_at";
+    const last = Number(localStorage.getItem(key) || 0);
+    if (Date.now() - last < 5 * 60 * 1000) return;
+
+    cash = 30000;
+    orders = [];
+    save();
+    render();
+
+    localStorage.setItem(key, String(Date.now()));
+    window.TG_PROFIT_SYNC?.send?.("auto_refill");
+  }catch(e){}
+}
+/* 🔼🔼🔼 여기까지 🔼🔼🔼 */
+
+
+      function render() {
+
+        const authed = (localStorage.getItem("btc_user_done") === "true");
+
+        // ✅ auth-panel 표시 업데이트용 (기존 기능 영향 없음)
+        try{ window.__TG_HAS_POS = !!pos; window.__TG_AUTH_UPDATE && window.__TG_AUTH_UPDATE(authed); }catch(e){}
+
+const displayCash = authed ? cash : 0;
+
+document.getElementById('tg-equity').innerText =
+  "$" + Math.max(0, displayCash).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+// ✅ 인증 유저: 총자산/순이익률(인증패널 표시용) 갱신 (게임 로직 영향 없음)
+try{
+  if (authed) {
+    let equityNow = cash;
+    if (pos && typeof btc === "number") {
+      const diffEq = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+      const pnlEq  = pos.amt * diffEq * pos.lev;
+      equityNow = cash + pos.amt + pnlEq;
+    }
+    equityNow = Number(equityNow.toFixed(2));
+    const roiNow = Number((((equityNow - 30000) / 30000) * 100).toFixed(2)); // %값
+    window.TG_COMMON?.setAuthMetrics?.(equityNow, roiNow);
+  }
+}catch(e){}
+
+
+
+        if (pos) {
+          document.getElementById('tg-pos-active').style.display = "block";
+          document.getElementById('tg-no-pos').style.display = "none";
+          const diff = (btc - pos.entry) / pos.entry * (pos.side === 'short' ? -1 : 1);
+          const pnl = pos.amt * diff * pos.lev;
+          const roe = diff * pos.lev * 100;
+          const qty = (pos.amt * pos.lev) / pos.entry;
+
+          document.getElementById('tg-roe').innerText = (roe>=0?"+":"")+roe.toFixed(2) + "%";
+          document.getElementById('tg-roe').style.color = roe>=0?"#02c076":"#cf304a";
+          document.getElementById('tg-pnl-val').innerText = (pnl>=0?"+$":"-$")+Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits:2});
+          document.getElementById('tg-pnl-val').style.color = pnl>=0?"#02c076":"#cf304a";
+          document.getElementById('tg-side-badge').innerText = pos.side.toUpperCase()+" "+pos.lev+"x";
+          document.getElementById('tg-side-badge').style.background = pos.side==='long'?"#02c076":"#cf304a";
+
+          document.getElementById('tg-pos-qty').innerText = qty.toFixed(3);
+          document.getElementById('tg-pos-value').innerText = "$" + (pos.amt * pos.lev + pnl).toLocaleString(undefined, {maximumFractionDigits:2});
+          document.getElementById('tg-pos-entry').innerText = "$" + pos.entry.toLocaleString();
+          document.getElementById('tg-pos-liq').innerText = "$" + pos.liqPrice.toLocaleString(undefined, {maximumFractionDigits:1});
+        } else {
+          document.getElementById('tg-pos-active').style.display = "none";
+          document.getElementById('tg-no-pos').style.display = "block";
+        }
+        autoRefillIfNeeded();
+      }
+
+      setTimeout(() => { updateLines(); updateOrderLines(); }, 1500);
+    })();
+  </script>
+  <!-- 게임 코드들 쭉... -->
+
+  <!-- GoatCounter (game daily unique) -->
+  <script>
+    window.goatcounter = { no_onload: true };
+  </script>
+  <script async src="https://gc.zgo.at/count.js"
+          data-goatcounter="https://bit-model-123.goatcounter.com/count"></script>
+
+  <script>
+    (function(){
+      try{
+        const today = new Date().toISOString().slice(0,10);
+        const key = "gc_game_daily_" + today;
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, "1");
+
+        setTimeout(function(){
+          window.goatcounter?.count?.({
+            path: location.pathname + "#game_daily"
+          });
+        }, 2000);
+      }catch(e){}
+    })();
+  </script>
+  <script src="tg-common.js"></script>
+
+<script>
+(function(){
+  function initAuthPanel(){
+    if (!window.TG_COMMON || typeof window.TG_COMMON.attachAuthPanel !== "function") return;
+
+    // Avoid double-init
+    if (window.__TG_AUTH_UPDATE) return;
+
+    window.__TG_HAS_POS = window.__TG_HAS_POS || false;
+
+    window.__TG_AUTH_UPDATE = window.TG_COMMON.attachAuthPanel({
+      panelId: "tg-auth-panel",
+      getAuthed: () => (localStorage.getItem("btc_user_done") === "true"),
+      getHasPos: () => !!window.__TG_HAS_POS,
+      onExitPos: () => { try{ window.tgExit && window.tgExit(); }catch(e){} },
+      onAfterLogout: () => { try{ location.reload(); }catch(e){} }
+    });
+
+    // initial paint
+    try{ window.__TG_AUTH_UPDATE( localStorage.getItem("btc_user_done") === "true"); }catch(e){}
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAuthPanel);
+  } else initAuthPanel();
+})();
+</script>
+</script>
+
+<style>
+  /* 모바일에서 인증 패널을 가운데 + 넓게 */
+  @media (max-width: 768px){
+  #tg-auth-panel{
+    text-align:center;
+  }
+  #tg-auth-panel .tg-stats{
+    text-align:center;
+  }
+}
+
+  </style>
+  
+
+</body>
+
+
+</body>
+
+</body>
+</html>
