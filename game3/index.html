@@ -628,6 +628,14 @@ canvas, #uiLayer, #mobileControls{
 </style>
 </head>
 <body>
+
+<div id="buildBadge" style="
+  position:fixed; left:8px; top:8px; z-index:100000;
+  background:rgba(0,0,0,0.45); color:#fff; font:700 11px system-ui;
+  padding:4px 6px; border-radius:8px; display:none;">
+  ANDROID-FIX v4
+</div>
+
 <canvas id="c"></canvas>
 
 <!-- 📱 Mobile Gates: landscape required, iPhone requires Add to Home Screen (standalone) -->
@@ -2761,6 +2769,76 @@ loop();
   window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
   document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
   setInterval(updateGates, 800);
+})();
+</script>
+
+
+<style id="androidFixV4">
+/* ===== ANDROID-FIX v4 (LAST OVERRIDES) ===== */
+@media (hover:none) and (pointer:coarse){
+  #buildBadge{ display:block !important; }
+
+  #topBar{
+    left:50% !important;
+    transform: translateX(-50%) scale(0.72) !important;
+    transform-origin:center top !important;
+    top: 6px !important;
+    width: calc(100% - 16px) !important;
+  }
+  #topBar .nameTag{ font-size: 8px !important; padding: 4px 6px !important; }
+  #topBar .hpBox{ flex: 0 0 36vw !important; max-width: 38vw !important; }
+
+  #leftPanel, #rightPanel{
+    transform: scale(0.50) !important;
+    width: 240px !important;
+    padding: 10px !important;
+  }
+  #leftPanel{ transform-origin:left top !important; left: 6px !important; top: 74px !important; }
+  #rightPanel{ transform-origin:right top !important; right: 6px !important; top: 74px !important; }
+
+  /* controls */
+  #mobileControls{
+    position:fixed !important;
+    left:0 !important; right:0 !important;
+    width:100% !important;
+    display:flex !important;
+    justify-content: space-between !important;
+    align-items:flex-end !important;
+    padding: 0 14px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    transform:none !important;
+    z-index:100000 !important;
+  }
+}
+</style>
+
+
+<script id="androidFixV4js">
+(function(){
+  function isMobile(){ try{return matchMedia("(hover:none) and (pointer:coarse)").matches;}catch(e){return false;} }
+  function showMsg(txt){
+    let el=document.getElementById("androidMsg");
+    if(!el){
+      el=document.createElement("div");
+      el.id="androidMsg";
+      el.style.cssText="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:100001;background:rgba(0,0,0,0.7);color:#fff;padding:10px 12px;border-radius:12px;font:700 13px system-ui;display:none;text-align:center;max-width:80vw;";
+      document.body.appendChild(el);
+    }
+    el.innerHTML=txt;
+    el.style.display="block";
+  }
+  if(!isMobile()) return;
+  // If after 1.2s both sprites still not drawn (likely offscreen), force reset positions
+  setTimeout(()=>{
+    try{
+      if(typeof player==='object' && typeof enemy==='object'){
+        player.x = Math.max(120, (window.innerWidth||800)*0.28);
+        player.y = Math.max(140, (window.innerHeight||400)*0.70);
+        enemy.x  = Math.min((window.innerWidth||800)-120, (window.innerWidth||800)*0.72);
+        enemy.y  = Math.max(140, (window.innerHeight||400)*0.70);
+      }
+    }catch(e){}
+  }, 1200);
 })();
 </script>
 
