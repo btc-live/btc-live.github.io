@@ -447,10 +447,69 @@ canvas{display:block;width:100vw;height:100vh}
   }
 }
 
+
+/* ===== Mobile Gate Overlays (landscape / iPhone standalone) ===== */
+#rotateOverlay, #iphoneStandaloneOverlay{
+  position:fixed; inset:0;
+  display:none;
+  align-items:center; justify-content:center;
+  padding:24px;
+  background:rgba(0,0,0,0.86);
+  z-index:999999;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.tgGateCard{
+  width:min(560px, 92vw);
+  border-radius:18px;
+  padding:18px 16px;
+  background:rgba(20,20,20,0.88);
+  border:1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  color:#fff;
+  text-align:center;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+.tgGateTitle{ font-size:18px; font-weight:900; margin-bottom:8px; letter-spacing:-0.2px; }
+.tgGateDesc{ font-size:14px; opacity:0.92; line-height:1.4; }
+.tgGateHint{ font-size:12px; opacity:0.72; margin-top:10px; line-height:1.35; }
+.tgGateSteps{
+  margin-top:12px;
+  text-align:left;
+  display:inline-block;
+  font-size:13px;
+  opacity:0.92;
+  line-height:1.55;
+}
+
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+
+<!-- 📱 Mobile Gates: landscape required, iPhone requires Add to Home Screen (standalone) -->
+<div id="rotateOverlay" style="display:none;">
+  <div class="tgGateCard">
+    <div class="tgGateTitle">가로모드로 돌려주세요</div>
+    <div class="tgGateDesc">모바일은 <b>가로(landscape)</b>에서만 플레이 가능합니다.</div>
+    <div class="tgGateHint">휴대폰을 가로로 돌린 뒤 다시 시작해 주세요.</div>
+  </div>
+</div>
+
+<div id="iphoneStandaloneOverlay" style="display:none;">
+  <div class="tgGateCard">
+    <div class="tgGateTitle">아이폰은 홈화면에서만 플레이 가능</div>
+    <div class="tgGateDesc">아이폰 Safari 탭에서는 입력/화면이 불안정해서<br><b>“홈화면 추가(Add to Home Screen)”</b>로 실행해야 합니다.</div>
+    <div class="tgGateSteps">
+      <div>1) 공유(⬆︎) 버튼</div>
+      <div>2) <b>홈 화면에 추가</b></div>
+      <div>3) 홈화면 아이콘으로 실행</div>
+    </div>
+    <div class="tgGateHint">※ 갤럭시는 홈화면 추가는 권장(선택)이며, 가로모드만 필수입니다.</div>
+  </div>
+</div>
+
+
 
 <div id="mobileDebugOverlay" style="
   position:fixed; inset:0; display:none;
@@ -2336,5 +2395,47 @@ function loop(){
 setTimeout(mobileAssetTimeoutCheck, 1500);
 loop();
 </script>
+
+<script>
+/* ===== Mobile Gate Logic (Game3) ===== */
+(function(){
+  const rotateOv = document.getElementById("rotateOverlay");
+  const iosOv = document.getElementById("iphoneStandaloneOverlay");
+  if (!rotateOv || !iosOv) return;
+
+  const ua = navigator.userAgent || "";
+  const isIPhone = /iPhone|iPod/i.test(ua);        // ✅ iPhone만 강제
+  const isMobile = () => (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || (Math.min(window.innerWidth, window.innerHeight) <= 980);
+  const isPortrait = () => window.innerHeight > window.innerWidth;
+
+  function isStandalone(){
+    try{
+      if (window.navigator && window.navigator.standalone === true) return true; // iOS A2HS
+      if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true;
+      if (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches) return true;
+      if (window.matchMedia && window.matchMedia("(display-mode: minimal-ui)").matches) return true;
+    }catch(_){}
+    return false;
+  }
+
+  function updateGates(){
+    const mobile = isMobile();
+    const needRotate = mobile && isPortrait();
+    rotateOv.style.display = needRotate ? "flex" : "none";
+
+    // portrait 상태면 rotate가 우선
+    const needIPhoneStandalone = mobile && !needRotate && isIPhone && !isStandalone();
+    iosOv.style.display = needIPhoneStandalone ? "flex" : "none";
+  }
+
+  // 주기적으로도 체크(주소창/툴바 변화, iOS standalone 인식 타이밍 대응)
+  updateGates();
+  window.addEventListener("resize", updateGates, { passive:true });
+  window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
+  document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
+  setInterval(updateGates, 800);
+})();
+</script>
+
 </body>
 </html>
