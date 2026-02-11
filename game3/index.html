@@ -1600,6 +1600,53 @@ function resize(){
 addEventListener("resize", resize);
 resize();
 
+// ===== ANDROID FLOOR FIX (v5): force player/enemy onto visible floor after resize =====
+function __isAndroidMobile(){
+  try{ return /Android/i.test(navigator.userAgent) && (innerWidth <= 980); }catch(e){ return false; }
+}
+function __getStageBounds(poly){
+  try{
+    if(!poly || !poly.length) return null;
+    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+    for(const p of poly){
+      if(!p) continue;
+      if(p.x<minX) minX=p.x;
+      if(p.y<minY) minY=p.y;
+      if(p.x>maxX) maxX=p.x;
+      if(p.y>maxY) maxY=p.y;
+    }
+    return {minX,minY,maxX,maxY};
+  }catch(e){ return null; }
+}
+function __forceCharsOnFloor(){
+  try{
+    if(!__isAndroidMobile()) return;
+    const poly = (typeof STAGE_POLY_ACTIVE !== "undefined" && STAGE_POLY_ACTIVE && STAGE_POLY_ACTIVE.length) ? STAGE_POLY_ACTIVE
+               : (typeof STAGE_POLY !== "undefined" ? STAGE_POLY : null);
+    const b = __getStageBounds(poly);
+    // fallback floor: 78% of viewH
+    const floorY = b ? Math.min(viewH - 60, b.maxY - 20) : Math.round(viewH * 0.78);
+    const leftX  = b ? Math.max(120, b.minX + 140) : Math.max(120, viewW * 0.28);
+    const rightX = b ? Math.min(viewW-120, b.maxX - 140) : Math.min(viewW-120, viewW * 0.72);
+
+    if(typeof player === "object" && player){
+      player.x = leftX;
+      player.y = floorY;
+      player.z = 0;
+      player.face = 1;
+      player.vy = 0;
+    }
+    if(typeof enemy === "object" && enemy){
+      enemy.x = rightX;
+      enemy.y = floorY;
+      enemy.z = 0;
+      enemy.face = -1;
+      enemy.vy = 0;
+    }
+  }catch(e){}
+}
+
+
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
   let inside=false;
