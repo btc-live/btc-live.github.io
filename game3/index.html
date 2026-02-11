@@ -247,10 +247,220 @@ canvas{display:block;width:100vw;height:100vh}
 .rankEN{ display:block; font-weight:800; font-size:11px; opacity:0.92; margin-top:2px; }
 #topBar .nameTag .rankEN{ font-size:10px; } /* top small tags slightly smaller */
 
+
+/* ===== Mobile UI v2: shrink LEFT/RIGHT panels hard (desktop unchanged) ===== */
+@media (hover:none) and (pointer:coarse){
+  html, body{
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* LEFT/RIGHT panels: hard shrink */
+  #leftPanel, #rightPanel{
+    width:130px !important;
+    padding:6px !important;
+    font-size:10px !important;
+    border-radius:10px !important;
+    transform:scale(0.60);
+  }
+  #leftPanel{
+    transform-origin:left top;
+    left:6px !important;
+    top:54px !important;
+    max-height:calc(100vh - 220px);
+    overflow:auto;
+  }
+  #rightPanel{
+    transform-origin:right top;
+    right:6px !important;
+    top:54px !important;
+    max-height:calc(100vh - 68px);
+    overflow:auto;
+  }
+  #leftPanel button, #rightPanel button{
+    padding:6px 7px !important;
+    font-size:10px !important;
+    border-radius:9px !important;
+    margin-top:7px !important;
+  }
+  #rightPanel .title, #leftPanel .title{
+    font-size:11px !important;
+    margin-bottom:6px !important;
+  }
+
+  /* top bar slightly smaller */
+  #topBar{
+    transform:scale(0.85);
+    transform-origin:center top;
+    top:6px;
+  }
+
+  /* mobile controls: keep usable but smaller */
+  #mobileControls{
+    position:fixed !important;
+    left:8px !important;
+    bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+    z-index:100 !important;
+    transform:scale(0.46);
+    transform-origin:left bottom;
+  }
+}
+
+
+/* ===== Mobile UI v3: keep TOP BAR centered (do not override translateX) ===== */
+@media (hover:none) and (pointer:coarse){
+  /* 원래 #topBar는 translateX(-50%)로 가운데 정렬됨.
+     이전 모바일 CSS가 transform을 덮어써서 오른쪽으로 밀렸던 문제를 해결 */
+  #topBar{
+    left:50% !important;
+    transform: translateX(-50%) scale(0.85) !important;
+    transform-origin: center top !important;
+    width: calc(100% - 16px) !important;
+  }
+
+  /* 양쪽 작은 박스(네임태그)도 화면 밖으로 나가지 않게 */
+  #topBar .nameTag{
+    min-width: 64px !important;
+    padding: 4px 6px !important;
+  }
+
+  /* HP바도 너무 길면 잘리니 약간 줄임 */
+  #topBar .hpBox{
+    flex: 0 0 40vw !important;
+    max-width: 42vw !important;
+  }
+}
+
+
+/* ===== Mobile UI v4 (requested tweaks) ===== */
+@media (hover:none) and (pointer:coarse){
+
+  /* 1) 양쪽 패널(좌/우 박스) 조금 아래로 */
+  #leftPanel{ top: 72px !important; }
+  #rightPanel{ top: 72px !important; }
+
+  /* 2) 상단의 양쪽 작은 박스(네임태그) 글씨 40% 줄이기 */
+  #topBar .nameTag{
+    font-size: 7px !important;           /* ~12px의 60% */
+    line-height: 1.1 !important;
+    padding: 4px 6px !important;
+  }
+
+  /* 3) 모바일 컨트롤 레이아웃 개선:
+        - 방향키(D-pad)는 왼쪽
+        - 점프/공격(A/S/D)은 오른쪽
+        - 스크롤/줌 방지로 끊김 최소화
+  */
+  #mobileControls{
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    padding: 0 14px !important;
+    gap: 12px !important;
+    transform: none !important;          /* 중앙/좌우 배치 위해 scale 제거 */
+    touch-action: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+
+  /* D-pad 크기: 화면에 맞춰 자동 */
+  #dpad{
+    width: min(34vw, 140px) !important;
+    height: min(34vw, 140px) !important;
+    gap: 6px !important;
+  }
+  #dpad button{
+    font-size: 13px !important;
+  }
+
+  /* 액션 버튼: 오른쪽에 모아 배치 */
+  #mobileActions{
+    display:flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-end !important;
+  }
+  #mobileActions button{
+    width: min(20vw, 96px) !important;
+    padding: 10px 10px !important;
+    font-size: 13px !important;
+    touch-action: none !important;
+  }
+
+  /* 액션 버튼이 너무 아래로 내려가면 살짝 올림 */
+  #mobileActions{ margin-bottom: 4px !important; }
+}
+
+/* 가로모드에서도 동일 원칙 유지 + 버튼 약간 더 작게 */
+@media (hover:none) and (pointer:coarse) and (orientation:landscape){
+  #dpad{
+    width: min(30vw, 128px) !important;
+    height: min(30vw, 128px) !important;
+  }
+  #mobileActions button{
+    width: min(18vw, 88px) !important;
+    padding: 9px 9px !important;
+  }
+}
+
+
+/* ===== Mobile UI v5: action buttons compact (not tall vertical) ===== */
+@media (hover:none) and (pointer:coarse){
+  /* 액션 버튼을 '작은 클러스터'로: JUMP 위, A/S, D 아래 */
+  #mobileActions{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    align-items: end !important;
+    justify-items: end !important;
+    margin-bottom: 2px !important;
+  }
+  #mobileActions button{
+    width: min(22vw, 92px) !important;
+    padding: 10px 10px !important;
+    font-size: 13px !important;
+  }
+  /* JUMP는 두 칸 */
+  #mobileActions button:nth-child(1){
+    grid-column: 1 / 3 !important;
+    width: calc(min(22vw, 92px) * 2 + 8px) !important;
+  }
+  /* D는 아래에서 두 칸(가운데 느낌) */
+  #mobileActions button:nth-child(4){
+    grid-column: 1 / 3 !important;
+    width: calc(min(22vw, 92px) * 2 + 8px) !important;
+  }
+}
+
+/* 가로모드에서 조금 더 작게 */
+@media (hover:none) and (pointer:coarse) and (orientation:landscape){
+  #mobileActions button{
+    width: min(18vw, 82px) !important;
+    padding: 9px 9px !important;
+  }
+  #mobileActions button:nth-child(1),
+  #mobileActions button:nth-child(4){
+    width: calc(min(18vw, 82px) * 2 + 8px) !important;
+  }
+}
+
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+
+<div id="mobileDebugOverlay" style="
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center; flex-direction:column;
+  background:rgba(0,0,0,0.72); z-index:9999; text-align:center; padding:18px;
+  font-family:system-ui; color:#e9efff;">
+  <div id="mobileDebugTitle" style="font-size:18px; font-weight:900; margin-bottom:10px;">문제 감지</div>
+  <div id="mobileDebugMsg" style="max-width:760px; font-size:14px; line-height:1.45; opacity:0.97;"></div>
+</div>
+
 
 
 <div id="uiLayer" aria-hidden="false">
@@ -324,6 +534,67 @@ canvas{display:block;width:100vw;height:100vh}
 <script>
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
+
+/* ===== Mobile character size reduction (20%) ===== */
+const __isMobileChar = matchMedia("(hover:none) and (pointer:coarse)").matches;
+const __mobileCharScale = __isMobileChar ? 0.8 : 1;
+
+
+function showMobileDebug(title, msg){
+  try{
+    const ov = document.getElementById("mobileDebugOverlay");
+    const t  = document.getElementById("mobileDebugTitle");
+    const m  = document.getElementById("mobileDebugMsg");
+    if(ov && m){
+      if(t) t.textContent = title || "문제 감지";
+      m.innerHTML = msg || "";
+      ov.style.display = "flex";
+    }
+  }catch(e){}
+}
+window.addEventListener("error", (e)=>{
+  const msg = (e && e.message) ? e.message : "오류가 발생했습니다.";
+  showMobileDebug("자바스크립트 오류", msg);
+});
+
+const _assetFails = [];
+function watchImg(img, name){
+  if(!img) return;
+  img.addEventListener("error", ()=>{
+    if(!_assetFails.includes(name)) _assetFails.push(name);
+    showMobileDebug(
+      "이미지 로드 실패",
+      "다음 PNG 파일을 못 찾았습니다:<br><b>" + _assetFails.join(", ") + "</b><br><br>" +
+      "✅ 해결: <b>HTML과 PNG를 같은 폴더</b>에 두고, 아이폰은 가능하면 <b>http(s)</b>로 열어주세요.<br>" +
+      "✅ 파일명 <b>대소문자</b>도 정확히 맞춰야 합니다."
+    );
+  });
+}
+
+// iPhone에서 file:// 등으로 열면 error 이벤트 없이 '영원히 complete=false'로 남는 경우가 많아서,
+// 1.5초 후에도 핵심 스프라이트가 로드가 안 됐으면 안내 오버레이를 강제로 띄움.
+function mobileAssetTimeoutCheck(){
+  try{
+    const isMobile = matchMedia("(hover:none) and (pointer:coarse)").matches;
+    if(!isMobile) return;
+    const need = [
+      "main-idle.png","main-move.png","main-attack.png","main-special.png","main-hit.png",
+      "bg-out1.png"
+    ];
+    const okPlayer = (playerImages && playerImages.idle && playerImages.idle.complete);
+    const okBg = (typeof currentBg !== "undefined" && currentBg && currentBg.complete);
+    if(!okPlayer && !okBg){
+      showMobileDebug(
+        "아이폰에서 캐릭터가 안 보이는 이유",
+        "아이폰 Safari가 PNG 로드를 막아서 <b>이미지가 로드되지 않았습니다</b>.<br><br>" +
+        "✅ 가장 확실한 해결: <b>서버(https)</b>로 열기 (GitHub Pages/Netlify/Vercel 등).<br>" +
+        "✅ 또는 PC에서 <b>python -m http.server</b>로 띄운 뒤 아이폰에서 접속.<br><br>" +
+        "필요 파일 예: <b>" + need.join(", ") + "</b>"
+      );
+    }
+  }catch(e){}
+}
+
 
 // ===== HTML UI (ID = Email, Email button is just a gate/CTA) =====
 const ui = {
@@ -412,6 +683,12 @@ function bindMobileControls(){
     btn.addEventListener("pointerup", up);
     btn.addEventListener("pointercancel", up);
     btn.addEventListener("pointerleave", up);
+    btn.addEventListener("touchstart", down, {passive:false});
+    btn.addEventListener("touchend", up, {passive:false});
+    btn.addEventListener("touchcancel", up, {passive:false});
+    btn.addEventListener("mousedown", down);
+    btn.addEventListener("mouseup", up);
+
   });
 
   root.querySelectorAll("[data-tap]").forEach(btn=>{
@@ -512,16 +789,34 @@ const PUSH_APART_STRENGTH = 1.0; // 1.0이면 정확히 겹침만큼 밀어냄
 
 
 // ===== Stage polygon =====
-const STAGE_POLY = [
+const STAGE_POLY_BASE = [
   { x: 502,  y: 544 },
   { x: 1531, y: 545 },
   { x: 1796, y: 802 },
   { x: 262,  y: 806 }
 ];
+// ===== Stage poly (active: desktop=base, mobile=scaled-to-screen) =====
+let STAGE_POLY_ACTIVE = STAGE_POLY_BASE;
+let __isMobile = false;
+
+function computeStagePolyActive(){
+  __isMobile = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
+  if(!__isMobile){
+    STAGE_POLY_ACTIVE = STAGE_POLY_BASE;
+    return;
+  }
+  // Base design space is ~1920x1080 (your stage coords are built for that space)
+  const BASE_W = 1920, BASE_H = 1080;
+  const s = Math.min(viewW / BASE_W, viewH / BASE_H);
+  const ox = (viewW - BASE_W * s) / 2;
+  const oy = (viewH - BASE_H * s) / 2;
+  STAGE_POLY_ACTIVE = STAGE_POLY_BASE.map(p => ({ x: p.x * s + ox, y: p.y * s + oy }));
+}
+
 
 // ===== Backgrounds =====
 const BG_FILES = ["bg-out1.png","bg-out2.png","bg-out3.png","bg-out4.png","bg-out5.png"];
-const bgImages = BG_FILES.map(s=>{const i=new Image(); i.src=s; return i;});
+const bgImages = BG_FILES.map(s=>{const i=new Image(); watchImg(i, s); i.src=s; return i;});
 let currentBg = bgImages[0];
 let _bgIndex = 0;
 
@@ -555,6 +850,12 @@ const ENEMY_SPRITE_SCALE  = 2.6; // 적 160% 더 크게 (2.6x) // 적 100% 크�
 const playerImages = {
   idle:new Image(), move:new Image(), attack:new Image(), special:new Image(), hit:new Image()
 };
+watchImg(playerImages.idle,"main-idle.png");
+watchImg(playerImages.move,"main-move.png");
+watchImg(playerImages.attack,"main-attack.png");
+watchImg(playerImages.special,"main-special.png");
+watchImg(playerImages.hit,"main-hit.png");
+
 playerImages.idle.src="main-idle.png";
 playerImages.move.src="main-move.png";
 playerImages.attack.src="main-attack.png";
@@ -566,6 +867,12 @@ playerImages.hit.src="main-hit.png";
 const enemyImages = {
   idle:new Image(), move:new Image(), attack:new Image(), special:new Image(), hit:new Image()
 };
+watchImg(enemyImages.idle,"enemy-idle.png");
+watchImg(enemyImages.move,"enemy-move.png");
+watchImg(enemyImages.attack,"enemy-attack.png");
+watchImg(enemyImages.special,"enemy-special.png");
+watchImg(enemyImages.hit,"enemy-hit.png");
+
 
 // ✅ 현재 준비된 적 스프라이트: 이사(Director) = D-*
 // 나머지 직급 이미지는 아직 없으니 안전하게 AM-*로 폴백(대체)합니다.
@@ -588,6 +895,11 @@ function getEnemyRankIndex(){
 function loadEnemySprites(){
   const idx = getEnemyRankIndex();
   const set = ENEMY_SPRITE_SETS[idx] || ENEMY_SPRITE_SETS[0];
+  watchImg(enemyImages.idle, set.idle);
+  watchImg(enemyImages.move, set.move);
+  watchImg(enemyImages.attack, set.attack);
+  watchImg(enemyImages.special, set.special);
+  watchImg(enemyImages.hit, set.hit);
   enemyImages.idle.src    = set.idle;
   enemyImages.move.src    = set.move;
   enemyImages.attack.src  = set.attack;
@@ -934,7 +1246,7 @@ function toggleMute(){
   if(btnPause) btnPause.addEventListener("click", ()=>setPaused(!__paused));
   if(btnMain) btnMain.addEventListener("click", ()=>{
     if(confirm("Go to MAIN? (progress in this tab may be lost)")){
-      location.href = "index.html";
+      location.href = "https://btcliveapp.com";
     }
   });
   if(btnMute) btnMute.addEventListener("click", toggleMute);
@@ -988,12 +1300,22 @@ addEventListener("keyup",e=>keys[e.code]=false);
 // ===== Canvas sizing =====
 let viewW=0, viewH=0, dpr=1;
 function resize(){
-  dpr=devicePixelRatio||1;
-  viewW=innerWidth; viewH=innerHeight;
-  canvas.width=viewW*dpr; canvas.height=viewH*dpr;
+  dpr = devicePixelRatio || 1;
+  viewW = innerWidth;
+  viewH = innerHeight;
+  canvas.width  = viewW * dpr;
+  canvas.height = viewH * dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  // ✅ 모바일일 때만 스테이지 폴리곤을 화면에 맞게 변환
+  computeStagePolyActive();
+
+  // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
+  try{ clampIntoPoly(player); }catch(e){}
+  try{ clampIntoPoly(enemy); }catch(e){}
 }
-addEventListener("resize",resize); resize();
+addEventListener("resize", resize);
+resize();
 
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
@@ -1006,7 +1328,7 @@ function pointInPolygon(px,py,poly){
   return inside;
 }
 function canStand(x,y,r){
-  return [[x,y],[x-r,y],[x+r,y],[x,y-r],[x,y+r]].every(p=>pointInPolygon(p[0],p[1],STAGE_POLY));
+  return [[x,y],[x-r,y],[x+r,y],[x,y-r],[x,y+r]].every(p=>pointInPolygon(p[0],p[1],STAGE_POLY_ACTIVE));
 }
 function randomPointInPoly(poly,margin=0){
   let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -1020,7 +1342,7 @@ function randomPointInPoly(poly,margin=0){
 }
 function clampIntoPoly(c){
   if(!canStand(c.x,c.y,c.r)){
-    const p=randomPointInPoly(STAGE_POLY,c.r+2);
+    const p=randomPointInPoly(STAGE_POLY_ACTIVE,c.r+2);
     c.x=p.x; c.y=p.y;
   }
 }
@@ -1061,13 +1383,13 @@ function resolvePlayerEnemyOverlap(){
 }
 // ===== Init positions =====
 function init(){
-  const p=randomPointInPoly(STAGE_POLY,player.r+2);
+  const p=randomPointInPoly(STAGE_POLY_ACTIVE,player.r+2);
   player.x=p.x; player.y=p.y;
-  let e=randomPointInPoly(STAGE_POLY,enemy.r+2);
+  let e=randomPointInPoly(STAGE_POLY_ACTIVE,enemy.r+2);
   // keep some distance
   for(let t=0;t<300;t++){
     if(Math.hypot(e.x-player.x, e.y-player.y) > 260) break;
-    e=randomPointInPoly(STAGE_POLY,enemy.r+2);
+    e=randomPointInPoly(STAGE_POLY_ACTIVE,enemy.r+2);
   }
   enemy.x=e.x; enemy.y=e.y;
 }
@@ -1682,7 +2004,24 @@ function drawBursts(){
 // ===== Drawing =====
 function drawSprite(obj, images){
   const img = images[obj.state] || images.idle;
-  if(!img.complete) return;
+  if(!img || !img.complete){
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    ctx.translate(obj.x, obj.y - (obj.z||0));
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(-26, -34, 52, 68);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.90)";
+    ctx.font = "700 11px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("IMG", 0, 4);
+    ctx.restore();
+    return;
+  }
   const s = obj.scale || 1;
   ctx.save();
   // KO 대상이면 점점 투명해짐
@@ -1994,6 +2333,7 @@ function loop(){
   pressed = {};
   requestAnimationFrame(loop);
 }
+setTimeout(mobileAssetTimeoutCheck, 1500);
 loop();
 </script>
 </body>
