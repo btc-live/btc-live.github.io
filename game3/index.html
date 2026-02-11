@@ -591,6 +591,40 @@ canvas, #uiLayer, #mobileControls{
   user-select:none;
 }
 
+
+/* ===== Mobile Layout Fix (Android + iPhone): shrink UI in landscape ===== */
+@media (hover:none) and (pointer:coarse){
+  /* Top bar: keep centered + smaller */
+  #topBar{
+    left:50% !important;
+    transform: translateX(-50%) scale(0.78) !important;
+    transform-origin: center top !important;
+    top: 6px !important;
+    width: calc(100% - 16px) !important;
+  }
+  #topBar .nameTag{ font-size: 8px !important; padding: 4px 6px !important; }
+  #topBar .hpBox{ flex: 0 0 38vw !important; max-width: 40vw !important; }
+
+  /* Left/Right panels: much smaller */
+  #leftPanel, #rightPanel{
+    transform: scale(0.55) !important;
+    width: 220px !important;   /* base width; scale will shrink */
+    transform-origin: left top;
+  }
+  #rightPanel{ transform-origin: right top; }
+  #leftPanel{ left: 6px !important; top: 72px !important; }
+  #rightPanel{ right: 6px !important; top: 72px !important; }
+
+  /* Mobile controls: ensure visible and not huge */
+  #mobileControls{
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    padding: 0 14px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1623,6 +1657,32 @@ addEventListener("keyup",e=>keys[e.code]=false);
 
 // ===== Canvas sizing =====
 let viewW=0, viewH=0, dpr=1;
+
+// ===== Mobile visibility watchdog (Android fix: ensure characters spawn in view) =====
+function __isTouchMobile(){
+  try{ return matchMedia("(hover:none) and (pointer:coarse)").matches; }catch(e){ return false; }
+}
+function ensureCharsVisible(){
+  try{
+    if(!__isTouchMobile()) return;
+    if(!player || !enemy) return;
+    const bad = (v)=> (typeof v !== "number") || !isFinite(v);
+    const out = (o)=> bad(o.x) || bad(o.y) || o.x < -200 || o.x > viewW+200 || o.y < -200 || o.y > viewH+200;
+    if(out(player)){
+      player.x = Math.max(120, viewW*0.28);
+      player.y = Math.max(140, viewH*0.70);
+      player.z = 0;
+      player.face = 1;
+    }
+    if(out(enemy)){
+      enemy.x = Math.min(viewW-120, viewW*0.72);
+      enemy.y = Math.max(140, viewH*0.70);
+      enemy.z = 0;
+      enemy.face = -1;
+    }
+  }catch(e){}
+}
+
 function resize(){
   dpr = devicePixelRatio || 1;
   viewW = innerWidth;
@@ -1637,9 +1697,11 @@ function resize(){
   // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
   try{ clampIntoPoly(player); }catch(e){}
   try{ clampIntoPoly(enemy); }catch(e){}
+  try{ ensureCharsVisible(); }catch(e){}
 }
 addEventListener("resize", resize);
 resize();
+setInterval(ensureCharsVisible, 800);
 
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
