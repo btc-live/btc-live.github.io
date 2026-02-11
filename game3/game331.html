@@ -1,0 +1,2340 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Office Arena – Player 8-way Shot</title>
+<style>
+html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui}
+canvas{display:block;width:100vw;height:100vh}
+
+/* ===== UI Overlay ===== */
+#resultOverlay{
+  position:fixed; inset:0;
+  display:none;
+  align-items:center; justify-content:center;
+  flex-direction:column;
+  background:rgba(0,0,0,0.55);
+  z-index:10;
+  text-align:center;
+}
+#resultOverlay .resultText{
+  font-size:64px;
+  font-weight:800;
+  letter-spacing:2px;
+  margin-bottom:18px;
+  text-shadow:0 6px 22px rgba(0,0,0,0.7);
+}
+#resultOverlay button{
+  font-size:18px;
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(255,255,255,0.12);
+  color:#e9efff;
+  cursor:pointer;
+}
+#resultOverlay button:hover{ background:rgba(255,255,255,0.18); }
+
+
+/* ===== HTML UI Layer (sketch style) ===== */
+#uiLayer{
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:5;
+}
+#uiLayer *{ box-sizing:border-box; }
+
+#leftPanel{
+  position:absolute;
+  left:16px; top:64px;
+  width:210px;
+  padding:12px 12px;
+  border:3px solid rgba(255,255,255,0.85);
+  border-radius:18px;
+  background:rgba(0,0,0,0.35);
+  color:#e9efff;
+  font-size:14px;
+  line-height:1.25;
+  pointer-events:auto;
+  backdrop-filter: blur(6px);
+}
+#leftPanel hr{
+  border:none;
+  height:1px;
+  background:rgba(255,255,255,0.18);
+  margin:10px 0;
+}
+#leftPanel .muted{ opacity:0.85; font-size:12px; }
+#leftPanel .row{ display:flex; justify-content:space-between; gap:10px; margin:6px 0; }
+#leftPanel .row strong{ font-weight:800; }
+#leftPanel button{
+  width:100%;
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.35);
+  background:rgba(255,255,255,0.10);
+  color:#e9efff;
+  cursor:pointer;
+}
+#leftPanel button:hover{ background:rgba(255,255,255,0.16); }
+
+/* ===== Right Menu Panel (same style as left) ===== */
+#rightPanel{
+  position:absolute;
+  right:16px; top:64px;
+  width:210px;
+  padding:12px 12px;
+  border:3px solid rgba(255,255,255,0.85);
+  border-radius:18px;
+  background:rgba(0,0,0,0.35);
+  color:#e9efff;
+  font-size:14px;
+  line-height:1.25;
+  pointer-events:auto;
+  backdrop-filter: blur(6px);
+  text-align:center;
+}
+#rightPanel .title{ font-weight:900; margin-bottom:10px; letter-spacing:1px; }
+#rightPanel button{
+  width:100%;
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.35);
+  background:rgba(255,255,255,0.10);
+  color:#e9efff;
+  cursor:pointer;
+  font-weight:800;
+}
+#rightPanel button:hover{ background:rgba(255,255,255,0.16); }
+
+#topBar{
+  position:absolute;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(980px, calc(100% - 32px));
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+}
+#topBar .nameTag{
+  pointer-events:auto;
+  padding:10px 12px;
+  border-radius:12px;
+  border:3px solid rgba(255,255,255,0.85);
+  background:rgba(0,0,0,0.35);
+  font-weight:800;
+  min-width:110px;
+  text-align:center;
+}
+#topBar .hpBox{
+  flex:0 0 clamp(180px, 28vw, 360px);
+  height:34px;
+  border-radius:10px;
+  border:3px solid rgba(255,255,255,0.85);
+  background:rgba(0,0,0,0.35);
+  overflow:hidden;
+}
+#topBar .hpFill{
+  height:100%;
+  width:100%;
+  background:rgba(80,220,140,0.90);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  color:#0b0f18;
+}
+#topBar .hpBox.enemy .hpFill{
+  background:rgba(255,110,110,0.92);
+}
+
+#keyGuide{display:none !important;
+
+  position:absolute;
+  right:18px; bottom:18px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:2px solid rgba(255,255,255,0.55);
+  background:rgba(0,0,0,0.28);
+  font-size:12px;
+  pointer-events:none;
+  text-align:right;
+}
+#keyGuide .keys{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  margin-top:6px;
+  font-weight:800;
+}
+#keyGuide .shape{
+  width:26px; height:26px;
+  border:2px solid rgba(255,255,255,0.8);
+  display:inline-block;
+}
+#keyGuide .tri{
+  width:0;height:0;
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-bottom:26px solid rgba(255,255,255,0.85);
+}
+#keyGuide .sq{ }
+#keyGuide .cir{
+  border-radius:999px;
+}
+#keyGuide .dia{
+  transform:rotate(45deg);
+}
+
+/* Mobile controls (touch) */
+#mobileControls{
+  position:absolute;
+  left:18px; bottom:18px;
+  display:none;
+  gap:12px;
+  align-items:flex-end;
+  pointer-events:auto;
+}
+#dpad{
+  width:150px; height:150px;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  grid-template-rows:repeat(3, 1fr);
+  gap:8px;
+}
+#dpad button, #mobileActions button{
+  border-radius:14px;
+  border:2px solid rgba(255,255,255,0.65);
+  background:rgba(0,0,0,0.35);
+  color:#e9efff;
+  font-weight:900;
+  font-size:16px;
+  touch-action:none;
+}
+#dpad button:active, #mobileActions button:active{
+  background:rgba(255,255,255,0.12);
+}
+#dpad .empty{ border:none; background:transparent; }
+#mobileActions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+#mobileActions button{
+  width:88px;
+  padding:12px 10px;
+}
+
+@media (hover:none) and (pointer:coarse), (max-width: 900px){
+  #mobileControls{ display:flex; }
+  #leftPanel{ top:72px; width:210px; }
+  #topBar{ width:min(980px, calc(100% - 32px)); }
+}
+@media (max-width: 720px){
+  #topBar{ width:calc(100% - 20px); }
+  #leftPanel{ width:200px; left:10px; }
+}
+
+
+/* ===== Rank display (KR + EN stacked) ===== */
+.rankKR{ display:block; font-weight:900; line-height:1.05; }
+.rankEN{ display:block; font-weight:800; font-size:11px; opacity:0.92; margin-top:2px; }
+#topBar .nameTag .rankEN{ font-size:10px; } /* top small tags slightly smaller */
+
+
+/* ===== Mobile UI v2: shrink LEFT/RIGHT panels hard (desktop unchanged) ===== */
+@media (hover:none) and (pointer:coarse){
+  html, body{
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* LEFT/RIGHT panels: hard shrink */
+  #leftPanel, #rightPanel{
+    width:130px !important;
+    padding:6px !important;
+    font-size:10px !important;
+    border-radius:10px !important;
+    transform:scale(0.60);
+  }
+  #leftPanel{
+    transform-origin:left top;
+    left:6px !important;
+    top:54px !important;
+    max-height:calc(100vh - 220px);
+    overflow:auto;
+  }
+  #rightPanel{
+    transform-origin:right top;
+    right:6px !important;
+    top:54px !important;
+    max-height:calc(100vh - 68px);
+    overflow:auto;
+  }
+  #leftPanel button, #rightPanel button{
+    padding:6px 7px !important;
+    font-size:10px !important;
+    border-radius:9px !important;
+    margin-top:7px !important;
+  }
+  #rightPanel .title, #leftPanel .title{
+    font-size:11px !important;
+    margin-bottom:6px !important;
+  }
+
+  /* top bar slightly smaller */
+  #topBar{
+    transform:scale(0.85);
+    transform-origin:center top;
+    top:6px;
+  }
+
+  /* mobile controls: keep usable but smaller */
+  #mobileControls{
+    position:fixed !important;
+    left:8px !important;
+    bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+    z-index:100 !important;
+    transform:scale(0.46);
+    transform-origin:left bottom;
+  }
+}
+
+
+/* ===== Mobile UI v3: keep TOP BAR centered (do not override translateX) ===== */
+@media (hover:none) and (pointer:coarse){
+  /* 원래 #topBar는 translateX(-50%)로 가운데 정렬됨.
+     이전 모바일 CSS가 transform을 덮어써서 오른쪽으로 밀렸던 문제를 해결 */
+  #topBar{
+    left:50% !important;
+    transform: translateX(-50%) scale(0.85) !important;
+    transform-origin: center top !important;
+    width: calc(100% - 16px) !important;
+  }
+
+  /* 양쪽 작은 박스(네임태그)도 화면 밖으로 나가지 않게 */
+  #topBar .nameTag{
+    min-width: 64px !important;
+    padding: 4px 6px !important;
+  }
+
+  /* HP바도 너무 길면 잘리니 약간 줄임 */
+  #topBar .hpBox{
+    flex: 0 0 40vw !important;
+    max-width: 42vw !important;
+  }
+}
+
+
+/* ===== Mobile UI v4 (requested tweaks) ===== */
+@media (hover:none) and (pointer:coarse){
+
+  /* 1) 양쪽 패널(좌/우 박스) 조금 아래로 */
+  #leftPanel{ top: 72px !important; }
+  #rightPanel{ top: 72px !important; }
+
+  /* 2) 상단의 양쪽 작은 박스(네임태그) 글씨 40% 줄이기 */
+  #topBar .nameTag{
+    font-size: 7px !important;           /* ~12px의 60% */
+    line-height: 1.1 !important;
+    padding: 4px 6px !important;
+  }
+
+  /* 3) 모바일 컨트롤 레이아웃 개선:
+        - 방향키(D-pad)는 왼쪽
+        - 점프/공격(A/S/D)은 오른쪽
+        - 스크롤/줌 방지로 끊김 최소화
+  */
+  #mobileControls{
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    padding: 0 14px !important;
+    gap: 12px !important;
+    transform: none !important;          /* 중앙/좌우 배치 위해 scale 제거 */
+    touch-action: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+
+  /* D-pad 크기: 화면에 맞춰 자동 */
+  #dpad{
+    width: min(34vw, 140px) !important;
+    height: min(34vw, 140px) !important;
+    gap: 6px !important;
+  }
+  #dpad button{
+    font-size: 13px !important;
+  }
+
+  /* 액션 버튼: 오른쪽에 모아 배치 */
+  #mobileActions{
+    display:flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-end !important;
+  }
+  #mobileActions button{
+    width: min(20vw, 96px) !important;
+    padding: 10px 10px !important;
+    font-size: 13px !important;
+    touch-action: none !important;
+  }
+
+  /* 액션 버튼이 너무 아래로 내려가면 살짝 올림 */
+  #mobileActions{ margin-bottom: 4px !important; }
+}
+
+/* 가로모드에서도 동일 원칙 유지 + 버튼 약간 더 작게 */
+@media (hover:none) and (pointer:coarse) and (orientation:landscape){
+  #dpad{
+    width: min(30vw, 128px) !important;
+    height: min(30vw, 128px) !important;
+  }
+  #mobileActions button{
+    width: min(18vw, 88px) !important;
+    padding: 9px 9px !important;
+  }
+}
+
+
+/* ===== Mobile UI v5: action buttons compact (not tall vertical) ===== */
+@media (hover:none) and (pointer:coarse){
+  /* 액션 버튼을 '작은 클러스터'로: JUMP 위, A/S, D 아래 */
+  #mobileActions{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    align-items: end !important;
+    justify-items: end !important;
+    margin-bottom: 2px !important;
+  }
+  #mobileActions button{
+    width: min(22vw, 92px) !important;
+    padding: 10px 10px !important;
+    font-size: 13px !important;
+  }
+  /* JUMP는 두 칸 */
+  #mobileActions button:nth-child(1){
+    grid-column: 1 / 3 !important;
+    width: calc(min(22vw, 92px) * 2 + 8px) !important;
+  }
+  /* D는 아래에서 두 칸(가운데 느낌) */
+  #mobileActions button:nth-child(4){
+    grid-column: 1 / 3 !important;
+    width: calc(min(22vw, 92px) * 2 + 8px) !important;
+  }
+}
+
+/* 가로모드에서 조금 더 작게 */
+@media (hover:none) and (pointer:coarse) and (orientation:landscape){
+  #mobileActions button{
+    width: min(18vw, 82px) !important;
+    padding: 9px 9px !important;
+  }
+  #mobileActions button:nth-child(1),
+  #mobileActions button:nth-child(4){
+    width: calc(min(18vw, 82px) * 2 + 8px) !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="mobileDebugOverlay" style="
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center; flex-direction:column;
+  background:rgba(0,0,0,0.72); z-index:9999; text-align:center; padding:18px;
+  font-family:system-ui; color:#e9efff;">
+  <div id="mobileDebugTitle" style="font-size:18px; font-weight:900; margin-bottom:10px;">문제 감지</div>
+  <div id="mobileDebugMsg" style="max-width:760px; font-size:14px; line-height:1.45; opacity:0.97;"></div>
+</div>
+
+
+
+<div id="uiLayer" aria-hidden="false">
+  <div id="topBar">
+    <div class="nameTag" id="uiNameTag">게스트(Guest)</div>
+
+    <div class="hpBox">
+      <div class="hpFill" id="uiPlayerHP">100%</div>
+    </div>
+
+    <div class="hpBox enemy">
+      <div class="hpFill" id="uiEnemyHP">100%</div>
+    </div>
+
+    <div class="nameTag" id="uiEnemyRank"><span class="rankKR">적 직급</span><span class="rankEN">(Enemy Rank)</span></div>
+  </div>
+
+  <div id="leftPanel">
+    <div class="row"><span class="muted">직급(Rank)</span><strong id="uiRank"><span class="rankKR">평사원</span><span class="rankEN">(Staff)</span></strong></div>
+    <div class="row"><span class="muted">아이디(ID=Email)</span><strong id="uiUser">Guest</strong></div>
+    <div class="row"><span class="muted">단계(Stage)</span><strong><span id="uiStage">1</span>/10</strong></div>
+    <div class="row"><span class="muted">승리(VICTORY)</span><strong><span id="uiWin">0</span>/10</strong></div>
+    <hr>
+    <div class="row"><span class="muted">현재 사토시(Current Sats)</span><strong id="uiTemp">0</strong></div>
+    <div class="row"><span class="muted">누적 사토시(Total Sats)</span><strong id="uiTotal">0</strong></div>
+
+    <button id="emailBtn" type="button" style="display:none;">이메일 등록(Register Email)</button>
+    <div class="muted" id="emailHint" style="margin-top:8px; display:none;">
+      누적 저장을 위해 이메일이 필요합니다. (Email is required to save total.)
+    </div>
+  </div>
+  <div id="rightPanel">
+    <div class="title">MENU</div>
+    <button id="btnRefresh" type="button">리플레시(REFRESH)</button>
+    <button id="btnPause" type="button">일시정지(PAUSE)</button>
+    <button id="btnMain" type="button">메인(MAIN)</button>
+    <button id="btnMute" type="button">오디오 끔(MUTE)</button>
+  </div>
+
+
+  <div id="mobileControls">
+    <div id="dpad">
+      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+      <button data-hold="ArrowUp">▲</button>
+      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+
+      <button data-hold="ArrowLeft">◀</button>
+      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+      <button data-hold="ArrowRight">▶</button>
+
+      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+      <button data-hold="ArrowDown">▼</button>
+      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+    </div>
+
+    <div id="mobileActions">
+      <button data-tap="Space">JUMP</button>
+      <button data-tap="KeyA">A</button>
+      <button data-tap="KeyS">S</button>
+      <button data-tap="KeyD">D</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="resultOverlay" role="dialog" aria-modal="true">
+  <div class="resultText" id="resultText">승리(VICTORY)(VICTORY)</div>
+  <button id="restartBtn" type="button">다시 시작(RESTART)</button>
+</div>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+/* ===== Mobile character size reduction (20%) ===== */
+const __isMobileChar = matchMedia("(hover:none) and (pointer:coarse)").matches;
+const __mobileCharScale = __isMobileChar ? 0.8 : 1;
+
+
+function showMobileDebug(title, msg){
+  try{
+    const ov = document.getElementById("mobileDebugOverlay");
+    const t  = document.getElementById("mobileDebugTitle");
+    const m  = document.getElementById("mobileDebugMsg");
+    if(ov && m){
+      if(t) t.textContent = title || "문제 감지";
+      m.innerHTML = msg || "";
+      ov.style.display = "flex";
+    }
+  }catch(e){}
+}
+window.addEventListener("error", (e)=>{
+  const msg = (e && e.message) ? e.message : "오류가 발생했습니다.";
+  showMobileDebug("자바스크립트 오류", msg);
+});
+
+const _assetFails = [];
+function watchImg(img, name){
+  if(!img) return;
+  img.addEventListener("error", ()=>{
+    if(!_assetFails.includes(name)) _assetFails.push(name);
+    showMobileDebug(
+      "이미지 로드 실패",
+      "다음 PNG 파일을 못 찾았습니다:<br><b>" + _assetFails.join(", ") + "</b><br><br>" +
+      "✅ 해결: <b>HTML과 PNG를 같은 폴더</b>에 두고, 아이폰은 가능하면 <b>http(s)</b>로 열어주세요.<br>" +
+      "✅ 파일명 <b>대소문자</b>도 정확히 맞춰야 합니다."
+    );
+  });
+}
+
+// iPhone에서 file:// 등으로 열면 error 이벤트 없이 '영원히 complete=false'로 남는 경우가 많아서,
+// 1.5초 후에도 핵심 스프라이트가 로드가 안 됐으면 안내 오버레이를 강제로 띄움.
+function mobileAssetTimeoutCheck(){
+  try{
+    const isMobile = matchMedia("(hover:none) and (pointer:coarse)").matches;
+    if(!isMobile) return;
+    const need = [
+      "main-idle.png","main-move.png","main-attack.png","main-special.png","main-hit.png",
+      "bg-out1.png"
+    ];
+    const okPlayer = (playerImages && playerImages.idle && playerImages.idle.complete);
+    const okBg = (typeof currentBg !== "undefined" && currentBg && currentBg.complete);
+    if(!okPlayer && !okBg){
+      showMobileDebug(
+        "아이폰에서 캐릭터가 안 보이는 이유",
+        "아이폰 Safari가 PNG 로드를 막아서 <b>이미지가 로드되지 않았습니다</b>.<br><br>" +
+        "✅ 가장 확실한 해결: <b>서버(https)</b>로 열기 (GitHub Pages/Netlify/Vercel 등).<br>" +
+        "✅ 또는 PC에서 <b>python -m http.server</b>로 띄운 뒤 아이폰에서 접속.<br><br>" +
+        "필요 파일 예: <b>" + need.join(", ") + "</b>"
+      );
+    }
+  }catch(e){}
+}
+
+
+// ===== HTML UI (ID = Email, Email button is just a gate/CTA) =====
+const ui = {
+  nameTag: document.getElementById("uiNameTag"),
+  enemyRank: document.getElementById("uiEnemyRank"),
+  rank: document.getElementById("uiRank"),
+  user: document.getElementById("uiUser"),
+  stage: document.getElementById("uiStage"),
+  win: document.getElementById("uiWin"),
+  temp: document.getElementById("uiTemp"),
+  total: document.getElementById("uiTotal"),
+  pHP: document.getElementById("uiPlayerHP"),
+  eHP: document.getElementById("uiEnemyHP"),
+  emailBtn: document.getElementById("emailBtn"),
+  emailHint: document.getElementById("emailHint"),
+};
+
+// 여러 버전 키를 모두 체크 (프로젝트 파일마다 키명이 달랐을 수 있어서)
+const EMAIL_KEYS = ["tg_email","tg_user_email","user_email","userEmail","email"];
+function getSavedEmail(){
+  for(const k of EMAIL_KEYS){
+    const v = (localStorage.getItem(k) || "").trim();
+    if(v) return v;
+  }
+  return "";
+}
+function saveEmail(v){
+  v = (v||"").trim();
+  // 대표 키에 저장 + 호환 키에도 저장(있으면 편함)
+  localStorage.setItem("tg_email", v);
+  localStorage.setItem("user_email", v);
+}
+
+function refreshIdentityUI(){
+  const email = getSavedEmail();
+  if(email){
+    ui.user.textContent = email;
+    ui.nameTag.textContent = email;
+    ui.emailBtn.style.display = "none";
+    ui.emailHint.style.display = "none";
+  }else{
+    ui.user.textContent = "Guest";
+    ui.nameTag.textContent = "게스트(Guest)";
+    ui.emailBtn.style.display = "block";
+    ui.emailHint.style.display = "block";
+  }
+}
+
+// 버튼 클릭 -> 이메일 입력(최소 기능)
+ui.emailBtn.addEventListener("click", ()=>{
+  const cur = getSavedEmail();
+  const v = prompt("이메일(아이디)을 입력해주세요. (Enter your email (ID).)", cur || "");
+  if(v === null) return; // cancel
+  const email = (v||"").trim();
+  // 아주 가벼운 검증(완전 엄격할 필요 X)
+  if(!email || !email.includes("@") || !email.includes(".")){
+    alert("이메일 형식이 아닌 것 같아요. (Invalid email) 예: name@gmail.com");
+    return;
+  }
+  saveEmail(email);
+  refreshIdentityUI();
+});
+
+// 모바일 컨트롤 -> 기존 keys/pressed 시스템을 그대로 사용
+function bindMobileControls(){
+  const root = document.getElementById("mobileControls");
+  if(!root) return;
+
+  const setHold = (code, on)=>{
+    keys[code] = !!on;
+    // 방향키는 눌림 시작 순간에 pressed 처리도 해두면 UX 좋음
+    if(on && !keys[code]) pressed[code] = true;
+  };
+  const tapKey = (code)=>{
+    pressed[code] = true;
+    keys[code] = true;
+    // 한 프레임 뒤에 해제 (연타 안정)
+    setTimeout(()=>{ keys[code] = false; }, 0);
+  };
+
+  root.querySelectorAll("[data-hold]").forEach(btn=>{
+    const code = btn.getAttribute("data-hold");
+    const down = (e)=>{ e.preventDefault(); keys[code] = true; };
+    const up   = (e)=>{ e.preventDefault(); keys[code] = false; };
+    btn.addEventListener("pointerdown", down);
+    btn.addEventListener("pointerup", up);
+    btn.addEventListener("pointercancel", up);
+    btn.addEventListener("pointerleave", up);
+    btn.addEventListener("touchstart", down, {passive:false});
+    btn.addEventListener("touchend", up, {passive:false});
+    btn.addEventListener("touchcancel", up, {passive:false});
+    btn.addEventListener("mousedown", down);
+    btn.addEventListener("mouseup", up);
+
+  });
+
+  root.querySelectorAll("[data-tap]").forEach(btn=>{
+    const code = btn.getAttribute("data-tap");
+    btn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      tapKey(code);
+    });
+  });
+}
+
+bindMobileControls();
+refreshIdentityUI();
+
+function updateUI(){
+  try{
+    // identity
+    // (email은 버튼 누르기 전까지 guest로 유지)
+    // ranks/stage
+    ui.rank.innerHTML = (RANKS[rankIndex] ?? "<span class=\"rankKR\">평사원</span><span class=\"rankEN\">(Staff)</span>");
+    ui.enemyRank.innerHTML = (RANKS[Math.min(rankIndex+1, RANKS.length-1)] ?? "<span class=\"rankKR\">적 직급</span><span class=\"rankEN\">(Enemy Rank)</span>");
+    ui.stage.textContent = String(stage);
+    ui.win.textContent = String(Math.max(0, stage - 1));
+
+    // satoshi
+    ui.temp.textContent = String(tempSalarySatoshi);
+    ui.total.textContent = String(totalSalarySatoshi);
+
+    // HP %
+    const pPct = Math.max(0, Math.min(100, (playerHP/playerMaxHP)*100));
+    const ePct = Math.max(0, Math.min(100, (enemyHP/enemyMaxHP)*100));
+    ui.pHP.style.width = pPct.toFixed(1)+"%";
+    ui.pHP.textContent = Math.round(pPct)+"%";
+    ui.eHP.style.width = ePct.toFixed(1)+"%";
+    ui.eHP.textContent = Math.round(ePct)+"%";
+  }catch(e){}
+}
+
+
+// ===== Hit Stop (타격 순간 잠깐 멈춤) =====
+let hitStopFrames = 0; // >0이면 업데이트를 잠시 정지하고 draw만 수행
+const HIT_STOP_FRAMES = 4; // 4f ≈ 0.067s @60fps
+function triggerHitStop(frames=HIT_STOP_FRAMES){
+  hitStopFrames = Math.max(hitStopFrames, frames|0);
+}
+
+
+// ===== Camera Shake (타격 순간 화면 흔들림) =====
+let camShakeT = 0;
+let camShakeMax = 0;
+let camShakeMag = 0;
+let camShakeX = 0, camShakeY = 0;
+
+function triggerCamShake(mag=4, frames=10){
+  frames = frames|0;
+  if(frames > camShakeT){
+    camShakeT = frames;
+    camShakeMax = frames;
+  }
+  camShakeMag = Math.max(camShakeMag, mag);
+}
+
+function updateCameraShake(){
+  if(camShakeT > 0){
+    camShakeT--;
+    const denom = (camShakeMax||1);
+    const decay = camShakeT / denom; // 1 -> 0
+    const m = camShakeMag * (0.35 + 0.65*decay); // 마지막까지 살짝 남기기
+    camShakeX = (Math.random()*2 - 1) * m;
+    camShakeY = (Math.random()*2 - 1) * m;
+    if(camShakeT === 0){
+      camShakeX = 0; camShakeY = 0;
+      camShakeMag = 0; camShakeMax = 0;
+    }
+  }
+}
+
+
+
+
+const PLAYER_COUNTER_COOLDOWN_FRAMES = 240; // 4.0 seconds @60fps (auto counter on hit)
+
+// Player manual shot cooldown (anti-spam)
+const PLAYER_SHOT_CD_BASE = 26; // base frames (~0.43s) - anti spam // base frames (~0.30s)
+let playerShotCDFrames = PLAYER_SHOT_CD_BASE; // difficulty-scaled
+let playerShotCD = 0;
+
+// ===== Combat tuning =====
+const MELEE_RANGE = 80;        // 근접 사거리
+const MELEE_ARC_DOT = 0.2;     // 전방 판정 (0~1). 높을수록 더 정면만 맞음
+const ENEMY_MELEE_RANGE = 90;   // 적 근접 사거리
+const ENEMY_MELEE_WINDUP = 12;  // 적 근접 예고 프레임(0.2s)
+const ENEMY_MELEE_COOLDOWN = 75; // 적 근접 쿨타임(약 1.25s)
+const ENEMY_MELEE_CHASE_DIST = 170; // 이 거리 안이면 근접 시도
+const PUSH_APART_BUFFER = 6;     // 겹침 방지 여유 거리(px)
+const PUSH_APART_STRENGTH = 1.0; // 1.0이면 정확히 겹침만큼 밀어냄
+
+
+
+// ===== Stage polygon =====
+const STAGE_POLY_BASE = [
+  { x: 502,  y: 544 },
+  { x: 1531, y: 545 },
+  { x: 1796, y: 802 },
+  { x: 262,  y: 806 }
+];
+// ===== Stage poly (active: desktop=base, mobile=scaled-to-screen) =====
+let STAGE_POLY_ACTIVE = STAGE_POLY_BASE;
+let __isMobile = false;
+
+function computeStagePolyActive(){
+  __isMobile = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
+  if(!__isMobile){
+    STAGE_POLY_ACTIVE = STAGE_POLY_BASE;
+    return;
+  }
+  // Base design space is ~1920x1080 (your stage coords are built for that space)
+  const BASE_W = 1920, BASE_H = 1080;
+  const s = Math.min(viewW / BASE_W, viewH / BASE_H);
+  const ox = (viewW - BASE_W * s) / 2;
+  const oy = (viewH - BASE_H * s) / 2;
+  STAGE_POLY_ACTIVE = STAGE_POLY_BASE.map(p => ({ x: p.x * s + ox, y: p.y * s + oy }));
+}
+
+
+// ===== Backgrounds =====
+const BG_FILES = ["bg-out1.png","bg-out2.png","bg-out3.png","bg-out4.png","bg-out5.png"];
+const bgImages = BG_FILES.map(s=>{const i=new Image(); watchImg(i, s); i.src=s; return i;});
+let currentBg = bgImages[0];
+let _bgIndex = 0;
+
+// ✅ 배경은 "한 판(한 게임)" 동안 고정
+// ✅ 새 게임(리셋/재시작) 시작할 때만 랜덤으로 변경
+function pickRandomBg(){
+  if(!bgImages.length) return;
+  if(bgImages.length === 1){
+    _bgIndex = 0;
+    currentBg = bgImages[0];
+    return;
+  }
+  let idx = _bgIndex;
+  // 이전 배경과 "다른" 배경이 나오도록 최대 몇 번 시도
+  for(let t=0; t<12; t++){
+    idx = Math.floor(Math.random()*bgImages.length);
+    if(idx !== _bgIndex) break;
+  }
+  _bgIndex = idx;
+  currentBg = bgImages[_bgIndex];
+}
+
+// 첫 로딩 시에도 랜덤 1회 선택(이후엔 고정)
+pickRandomBg();
+
+// ===== Sprite scale =====
+const PLAYER_SPRITE_SCALE = 2.0; // 주인공 100% 더 크게 (2.0x) // 주인공 70% 크게 (1.7x) // 주인공 70%
+const ENEMY_SPRITE_SCALE  = 2.6; // 적 160% 더 크게 (2.6x) // 적 100% 크게 (2.0x) // 적 100%
+
+// ===== Sprites =====
+const playerImages = {
+  idle:new Image(), move:new Image(), attack:new Image(), special:new Image(), hit:new Image()
+};
+watchImg(playerImages.idle,"main-idle.png");
+watchImg(playerImages.move,"main-move.png");
+watchImg(playerImages.attack,"main-attack.png");
+watchImg(playerImages.special,"main-special.png");
+watchImg(playerImages.hit,"main-hit.png");
+
+playerImages.idle.src="main-idle.png";
+playerImages.move.src="main-move.png";
+playerImages.attack.src="main-attack.png";
+playerImages.special.src="main-special.png";
+playerImages.hit.src="main-hit.png";
+
+// Enemy sprites (no guard) — ✅ 적은 항상 '주인공보다 1직급 위' 스프라이트를 사용
+// (주인공 스프라이트는 main-* 고정, 적만 rankIndex+1에 맞춰 변경)
+const enemyImages = {
+  idle:new Image(), move:new Image(), attack:new Image(), special:new Image(), hit:new Image()
+};
+watchImg(enemyImages.idle,"enemy-idle.png");
+watchImg(enemyImages.move,"enemy-move.png");
+watchImg(enemyImages.attack,"enemy-attack.png");
+watchImg(enemyImages.special,"enemy-special.png");
+watchImg(enemyImages.hit,"enemy-hit.png");
+
+
+// ✅ 현재 준비된 적 스프라이트: 이사(Director) = D-*
+// 나머지 직급 이미지는 아직 없으니 안전하게 AM-*로 폴백(대체)합니다.
+const ENEMY_SPRITE_SETS = [
+  { idle:"AM-idle.png", move:"AM-move.png", attack:"AM-attack.png", special:"AM-special.png", hit:"AM-hit.png" }, // 0 Staff (fallback)
+  { idle:"AM-idle.png", move:"AM-move.png", attack:"AM-attack.png", special:"AM-special.png", hit:"AM-hit.png" }, // 1 Assistant Manager (fallback)
+  { idle:"M-idle.png", move:"M-move.png", attack:"M-attack.png", special:"M-special.png", hit:"M-hit.png" }, // 2 Manager ✅
+  { idle:"SM-idle.png", move:"SM-move.png", attack:"SM-attack.png", special:"SM-special.png", hit:"SM-hit.png" }, // 3 Senior Manager ✅
+  { idle:"D-idle.png",  move:"D-move.png",  attack:"D-attack.png",  special:"D-special.png",  hit:"D-hit.png"  }, // 4 Director ✅
+  { idle:"VP-idle.png", move:"VP-move.png", attack:"VP-attack.png", special:"VP-special.png", hit:"VP-hit.png" }, // 5 Vice President ✅
+  { idle:"P-idle.png",  move:"P-move.png",  attack:"P-attack.png",  special:"P-special.png",  hit:"P-hit.png"  }, // 6 President ✅
+  { idle:"C-idle.png",  move:"C-move.png",  attack:"C-attack.png",  special:"C-special.png",  hit:"C-hit.png"  }, // 7 Chairman ✅
+];
+
+function getEnemyRankIndex(){
+  // 적은 항상 주인공보다 1직급 위 (최대 회장으로 clamp)
+  return Math.min(rankIndex + 1, ENEMY_SPRITE_SETS.length - 1);
+}
+
+function loadEnemySprites(){
+  const idx = getEnemyRankIndex();
+  const set = ENEMY_SPRITE_SETS[idx] || ENEMY_SPRITE_SETS[0];
+  watchImg(enemyImages.idle, set.idle);
+  watchImg(enemyImages.move, set.move);
+  watchImg(enemyImages.attack, set.attack);
+  watchImg(enemyImages.special, set.special);
+  watchImg(enemyImages.hit, set.hit);
+  enemyImages.idle.src    = set.idle;
+  enemyImages.move.src    = set.move;
+  enemyImages.attack.src  = set.attack;
+  enemyImages.special.src = set.special;
+  enemyImages.hit.src     = set.hit;
+}
+
+// ===== Entities =====
+const player={
+  scale: PLAYER_SPRITE_SCALE,
+  x:0,y:0,r:22,speed:4,
+  state:"idle",w:90,h:90,face:1,
+  actionT:0,
+  z:0,vz:0,onGround:true,
+  // counter-shot cooldown (on hit)
+  counterCD:0,
+  flash:0
+};
+
+const enemy={
+  scale: ENEMY_SPRITE_SCALE,
+  x:0,y:0,r:22,speed:2.2,
+  state:"idle",w:90,h:90,face:-1,
+  actionT:0,
+  z:0,vz:0,onGround:true,
+
+  // projectile AI
+  shootCD: 90,          // when 0 can start telegraph
+  telegraphT: 0,        // telegraph frames before shooting
+
+  // melee AI
+  meleeCD: 0,           // 근접 공격 쿨타임
+  meleeTelegraphT: 0,    // 근접 예고 프레임
+
+  // difficulty-applied dynamic values (filled by applyDifficulty)
+  _projSpeed: 7.8,
+  _shootCDBase: 100,
+  _telegraphBase: 18,
+  _meleeCDBase: 75,
+  _meleeWindupBase: 12,
+
+  // telegraph dodge (sidestep)
+  _dodgeDir: 1,
+  flash:0
+
+};
+
+// ===== Score/HP (30 -> 0) =====
+const PLAYER_BASE_HP = 30;
+let playerMaxHP = PLAYER_BASE_HP; // will be increased by rank (+5 per promotion)
+let enemyMaxHP = 30; // will be set by difficulty
+let playerHP = PLAYER_BASE_HP;
+let enemyHP  = enemyMaxHP;
+let gameOver = false;   // true when someone reaches 0
+let gameResult = "";    // "win" | "lose"
+
+// ===== Progression (Rank/Stage) =====
+const RANKS = ["<span class=\"rankKR\">평사원</span><span class=\"rankEN\">(Staff)</span>","<span class=\"rankKR\">대리</span><span class=\"rankEN\">(Assistant Manager)</span>","<span class=\"rankKR\">과장</span><span class=\"rankEN\">(Manager)</span>","<span class=\"rankKR\">부장</span><span class=\"rankEN\">(Senior Manager)</span>","<span class=\"rankKR\">이사</span><span class=\"rankEN\">(Director)</span>","<span class=\"rankKR\">상무</span><span class=\"rankEN\">(Vice President)</span>","<span class=\"rankKR\">사장</span><span class=\"rankEN\">(President)</span>","<span class=\"rankKR\">회장</span><span class=\"rankEN\">(Chairman)</span>"];
+let rankIndex = 0; // 0=평사원
+let stage = 1;     // 1~10 (각 직급 내 단계)
+let seasonComplete = false; // 회장 10단계까지 클리어하면 true
+
+// ===== Step3: Difficulty curve (Rank × Stage) =====
+// 설계 지침 기반: finalDifficulty = rankMultiplier × stageMultiplier
+// - rankMultiplier: 직급별 기준 난이도 배율
+// - stageMultiplier: 같은 직급 내 1~10단계 난이도 곡선
+// 이 값으로 '적 체력/속도/공격 빈도/예고 시간' 등을 스케일링
+const RANK_MULTIPLIER = [1.00, 1.08, 1.16, 1.25, 1.35, 1.46, 1.58, 1.72]; // 평사원~회장
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+// base enemy tuning (Stage1/Rank=평사원 기준)
+const ENEMY_BASE = {
+  hp: 30,
+  speed: 2.2,
+  projSpeed: 7.8,
+  shootCD: 100,
+  telegraph: 18,
+  meleeCD: 75,
+  meleeWindup: 12
+};
+
+// ===== Enemy HP & Damage progression (rank/step based) =====
+// ✅ 적 체력은 승진해도 초기화하지 않고, 전체 진행도에 따라 35,36,37...처럼 계속 증가
+// progressIndex = (rankIndex*10) + (stage-1)
+const ENEMY_HP_START = 30;
+function getProgressIndex(){ return (rankIndex * 10) + (stage - 1); }
+
+// ✅ 적 공격(피해량)은 직급(승급)마다 +0.2: 1.2, 1.4, 1.6 ...
+let enemyDamagePerHit = 1.2;
+
+// ===== Knockback milestones (50% / finish) =====
+let playerHalfTriggered = false;
+let enemyHalfTriggered = false;
+
+// ✅ 50% 트리거 기준은 '해당 판 시작 HP'로 고정 (난이도/승급으로 max 값이 변해도 안정)
+let playerStageMaxHP = 0;
+let enemyStageMaxHP  = 0;
+
+// ===== KO(날아가며 사라짐) 연출 =====
+let koMode = false;
+let koTimer = 0;
+let koResult = "";   // "win" | "lose" (endGame arg)
+let koWho = "";      // "player" | "enemy"
+let koAlpha = 1;
+let koVX = 0;
+let _lastFromXPlayer = 0;
+let _lastFromXEnemy  = 0;
+
+function startKO(who, result){
+  if(koMode || gameOver) return;
+  koMode = true;
+  koTimer = 52; // ~0.87s @60fps
+  koResult = result;
+  koWho = who;
+  koAlpha = 1;
+
+  const obj = (who==="player") ? player : enemy;
+  const fromX = (who==="player") ? _lastFromXPlayer : _lastFromXEnemy;
+
+  // 피니시 연출: 크게 날리기 + 위로 튀기기
+  const dir = (obj.x - fromX) >= 0 ? 1 : -1;
+  koVX = dir * 18;          // 옆으로 날아가는 속도(과장)
+  obj.onGround = false;
+  obj.vz = 14;              // 위로 붕 뜨게
+  obj.state = "hit";
+  obj.actionT = 9999;       // KO 중엔 상태 유지
+  triggerHitStop(2);
+  triggerCamShake(14, 22);
+}
+
+
+
+
+let stageMultiplier = 1.0;
+let rankMultiplier  = 1.0;
+let finalDifficulty = 1.0;
+let MAX_ENEMY_SHOTS = 1; // enemy projectiles cap (difficulty-scaled)
+
+let enemyShotDamage = 1; // difficulty-scaled
+let enemyMeleeDamage = 1; // difficulty-scaled
+
+// anti-camp: if player stands still too long, enemy gets accuracy/rate boost
+let lastPX = 0, lastPY = 0;
+let playerStillFrames = 0;
+
+// 현재 rankIndex / stage 값 기준으로 난이도 계산 + 적 파라미터 적용
+function applyDifficulty(){
+  // stageMultiplier = 0.85 + (stage/10)*0.35  (1단계≈0.88, 10단계≈1.20)
+  stageMultiplier = 0.85 + (stage / 10) * 0.35;
+  rankMultiplier  = RANK_MULTIPLIER[rankIndex] ?? 1.0;
+  finalDifficulty = rankMultiplier * stageMultiplier;
+
+  // 0) 플레이어 체력: 승급(직급 상승)마다 +5
+  playerMaxHP = PLAYER_BASE_HP + (rankIndex * 5);
+
+  // 1) 적 체력: 승진해도 초기화하지 않고 계속 +1씩 상승 (35,36,37...)
+  enemyMaxHP = ENEMY_HP_START + getProgressIndex();
+
+  // 2) 이동 속도 (완만)
+  const spMul = clamp(0.90 + (finalDifficulty - 1.0) * 0.35, 0.85, 1.45);
+  enemy.speed = ENEMY_BASE.speed * spMul;
+
+  // 3) 투사체 속도 (난이도↑ -> 조금 더 빠르게. 과속 상한)
+  const pjMul = clamp(0.95 + (finalDifficulty - 1.0) * 0.32, 0.90, 1.55);
+  enemy._projSpeed = ENEMY_BASE.projSpeed * pjMul;
+
+  // 4) 공격 빈도(쿨타임) (난이도↑ -> 쿨타임↓)
+  const cdRate = clamp(1.00 + (finalDifficulty - 1.0) * 0.35, 1.00, 1.80);
+  enemy._shootCDBase = Math.round(ENEMY_BASE.shootCD / cdRate);
+
+  // 5) 예고 시간(텔레그래프) (난이도↑ -> 더 짧게. 최소 보장)
+  const tgRate = clamp(1.00 + (finalDifficulty - 1.0) * 0.55, 1.00, 2.20);
+  enemy._telegraphBase = Math.max(8, Math.round(ENEMY_BASE.telegraph / tgRate));
+
+  // 6) 근접 (쿨타임/예고)도 완만하게
+  const mcdRate = clamp(1.00 + (finalDifficulty - 1.0) * 0.25, 1.00, 1.60);
+  enemy._meleeCDBase = Math.round(ENEMY_BASE.meleeCD / mcdRate);
+
+  const mwRate = clamp(1.00 + (finalDifficulty - 1.0) * 0.15, 1.00, 1.30);
+  enemy._meleeWindupBase = Math.max(8, Math.round(ENEMY_BASE.meleeWindup / mwRate));
+
+  // 7) 플레이어 서류(수동 S) 난사 억제: 난이도↑ -> 쿨타임↑
+  const pcdMul = clamp(1.00 + (finalDifficulty - 1.0) * 0.55, 1.00, 2.40);
+  playerShotCDFrames = clamp(Math.round(PLAYER_SHOT_CD_BASE * pcdMul), 18, 48);
+
+  // 8) 고난도에서 적 투사체 동시 유지 개수 증가 (압박)
+  if(finalDifficulty < 1.25) MAX_ENEMY_SHOTS = 1;
+  else if(finalDifficulty < 1.60) MAX_ENEMY_SHOTS = 2;
+  else MAX_ENEMY_SHOTS = 3;
+
+  // 9) 적 히트당 데미지: 직급(승급)마다 +0.2 (1.2, 1.4, 1.6 ...)
+  enemyDamagePerHit = +(1.2 + rankIndex * 0.2).toFixed(1);
+  enemyShotDamage  = enemyDamagePerHit;
+  enemyMeleeDamage = enemyDamagePerHit;
+}
+
+// 초기 난이도 1회 적용 (첫 로딩)
+applyDifficulty();
+loadEnemySprites(); // ✅ 적 스프라이트 로딩(주인공 rankIndex+1)
+playerHP = playerMaxHP;
+enemyHP  = enemyMaxHP;
+
+// ✅ 이번 판(현재 단계) 시작 HP 스냅샷(50% 트리거 기준)
+playerStageMaxHP = playerHP;
+enemyStageMaxHP  = enemyHP;
+
+
+// ===== Salary Satoshi (hit-based) =====
+let hitCount = 0;              // counts player hits landed on enemy
+let tempSalarySatoshi = 0;     // "이번 판" 급여 사토시 (3히트마다 +1)
+let totalSalarySatoshi = 0;    // (추후 저장/누적용) 현재는 표시만
+
+function onPlayerLandedHit(){
+  hitCount++;
+  if(hitCount % 3 === 0){
+    tempSalarySatoshi += 1;
+  }
+}
+
+// overlay elements
+const resultOverlay = document.getElementById("resultOverlay");
+const resultTextEl  = document.getElementById("resultText");
+const restartBtn    = document.getElementById("restartBtn");
+
+function endGame(result){
+  if(gameOver) return;
+  gameOver = true;
+  gameResult = result;
+
+  // ===== Step2: 승/패 처리 + 진행(단계/직급) + 급여 정산 =====
+  let overlayText = (result === "win") ? "승리(VICTORY)" : "패(DEFEAT)";
+
+  if(result === "win"){
+    // 급여 정산: 이번 판 급여를 누적에 합산 (패배 시엔 합산 없음)
+    totalSalarySatoshi += tempSalarySatoshi;
+
+    // 진행: 현재 직급 내 단계 +1
+    stage += 1;
+
+    // 10단계 클리어 시 자동 승진
+    if(stage > 10){
+      stage = 1;
+
+      // 마지막 직급(회장)까지 끝냈으면 엔딩
+      if(rankIndex >= RANKS.length - 1){
+        seasonComplete = true;
+        overlayText = "엔딩(ENDING)";
+      }else{
+        rankIndex += 1;
+        overlayText = "승진!(PROMOTION!)";
+      }
+    }
+  }else{
+    // 패배: 단계 하락 없음, 누적 급여 변화 없음
+    // (이번 판 급여는 다음 판에서 resetGame() 때 0으로 리셋)
+  }
+
+  // show centered text + restart button
+  try{
+    resultTextEl.textContent = overlayText;
+    resultOverlay.style.display = "flex";
+  }catch(e){}
+}
+
+function resetGame(){
+  gameOver = false;
+  gameResult = "";
+  koMode = false; koTimer = 0; koResult = ""; koWho = ""; koAlpha = 1; koVX = 0;
+
+  // 엔딩(회장 10단계)까지 완료했다면, 다시 시작 시 시즌을 처음부터
+  if(seasonComplete){
+    seasonComplete = false;
+    rankIndex = 0;
+    stage = 1;
+    // totalSalarySatoshi는 "누적 급여"로 남겨둠 (원하면 여기서 0으로 초기화 가능)
+  }
+
+  // (난이도 적용 후 체력 재설정)
+  applyDifficulty();
+  loadEnemySprites(); // ✅ 적 스프라이트 로딩(주인공 rankIndex+1)
+  playerHP = playerMaxHP;
+  enemyHP  = enemyMaxHP;
+
+  // ✅ 이번 판(현재 단계) 시작 HP 스냅샷(50% 트리거 기준)
+  playerStageMaxHP = playerHP;
+  enemyStageMaxHP  = enemyHP;
+
+  // reset knockback milestone flags
+  playerHalfTriggered = false;
+  enemyHalfTriggered = false;
+
+
+  // reset salary satoshi counters (이번 판)
+  hitCount = 0;
+  tempSalarySatoshi = 0;
+  // reset special shots per stage
+  specialLeft = MAX_SPECIAL_PER_STAGE;
+
+  // clear projectiles
+  playerShots.length = 0;
+  counterShots.length = 0;
+  enemyShots.length = 0;
+
+  // reset states/timers
+  player.state="idle"; player.actionT=0; player.z=0; player.vz=0; player.onGround=true; player.counterCD=0; playerShotCD=0;
+  enemy.state="idle"; enemy.actionT=0; enemy.shootCD=enemy._shootCDBase||100; enemy.telegraphT=0; enemy.meleeCD=0; enemy.meleeTelegraphT=0;
+
+  // fresh positions + bg
+  pickRandomBg();
+  init();
+
+  // hide overlay
+  try{ resultOverlay.style.display = "none"; }catch(e){}
+}
+
+// restart button
+restartBtn.addEventListener("click", resetGame);
+
+// ===== Right Menu Buttons (safe UI-only controls) =====
+let __paused = false;
+function setPaused(v){
+  __paused = !!v;
+  try{
+    const b = document.getElementById("btnPause");
+    if(b) b.textContent = __paused ? "재개(RESUME)" : "일시정지(PAUSE)";
+  }catch(e){}
+}
+function toggleMute(){
+  const cur = (localStorage.getItem("tg_muted") || "0") === "1";
+  const next = !cur;
+  localStorage.setItem("tg_muted", next ? "1" : "0");
+  try{
+    const b = document.getElementById("btnMute");
+    if(b) b.textContent = next ? "오디오 켬(UNMUTE)" : "오디오 끔(MUTE)";
+  }catch(e){}
+}
+(function bindRightMenu(){
+  const btnRefresh = document.getElementById("btnRefresh");
+  const btnPause   = document.getElementById("btnPause");
+  const btnMain    = document.getElementById("btnMain");
+  const btnMute    = document.getElementById("btnMute");
+
+  if(btnRefresh) btnRefresh.addEventListener("click", ()=>location.reload());
+  if(btnPause) btnPause.addEventListener("click", ()=>setPaused(!__paused));
+  if(btnMain) btnMain.addEventListener("click", ()=>{
+    if(confirm("Go to MAIN? (progress in this tab may be lost)")){
+      location.href = "https://btcliveapp.com";
+    }
+  });
+  if(btnMute) btnMute.addEventListener("click", toggleMute);
+
+  // init label from storage
+  // init mute label from storage
+  try{
+    const cur = (localStorage.getItem("tg_muted") || "0") === "1";
+    const b = document.getElementById("btnMute");
+    if(b) b.textContent = cur ? "오디오 켬(UNMUTE)" : "오디오 끔(MUTE)";
+  }catch(e){}
+})();
+
+// simple HP clamp
+function decHP(who, amount=1){
+  if(who === "player"){
+    playerHP = Math.max(0, playerHP - amount);
+    if(playerHP <= 0) startKO("player","lose");
+  }else{
+    enemyHP = Math.max(0, enemyHP - amount);
+    if(enemyHP <= 0) startKO("enemy","win");
+  }
+}
+
+
+// ===== Paper projectile tuning =====
+const PAPER_W = 68; // 페이퍼 가로 (2배)   // 페이퍼 가로 (크게)
+const PAPER_H = 40; // 페이퍼 세로 (2배)   // 페이퍼 세로 (크게)
+
+// ===== Projectiles =====
+const playerShots = []; // normal S shots (optional)
+const counterShots = []; // auto counter on player hit
+const enemyShots  = [];
+
+const MAX_PLAYER_SHOTS = 1;
+const MAX_COUNTER_SHOTS = 1;
+
+// ===== Player Special (D: 서류) 제한 =====
+const MAX_SPECIAL_PER_STAGE = 5; // 단계(스테이지)당 서류 사용 가능 횟수
+let specialLeft = MAX_SPECIAL_PER_STAGE;
+
+// ===== Input =====
+let keys={}, pressed={};
+addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code)) e.preventDefault();
+  if(!keys[e.code]) pressed[e.code]=true;
+  keys[e.code]=true;
+});
+addEventListener("keyup",e=>keys[e.code]=false);
+
+// ===== Canvas sizing =====
+let viewW=0, viewH=0, dpr=1;
+function resize(){
+  dpr = devicePixelRatio || 1;
+  viewW = innerWidth;
+  viewH = innerHeight;
+  canvas.width  = viewW * dpr;
+  canvas.height = viewH * dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  // ✅ 모바일일 때만 스테이지 폴리곤을 화면에 맞게 변환
+  computeStagePolyActive();
+
+  // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
+  try{ clampIntoPoly(player); }catch(e){}
+  try{ clampIntoPoly(enemy); }catch(e){}
+}
+addEventListener("resize", resize);
+resize();
+
+// ===== Polygon helpers =====
+function pointInPolygon(px,py,poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const a=poly[i], b=poly[j];
+    const hit=((a.y>py)!==(b.y>py))&&(px<(b.x-a.x)*(py-a.y)/(b.y-a.y+1e-12)+a.x);
+    if(hit) inside=!inside;
+  }
+  return inside;
+}
+function canStand(x,y,r){
+  return [[x,y],[x-r,y],[x+r,y],[x,y-r],[x,y+r]].every(p=>pointInPolygon(p[0],p[1],STAGE_POLY_ACTIVE));
+}
+function randomPointInPoly(poly,margin=0){
+  let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  for(const p of poly){ minX=Math.min(minX,p.x); minY=Math.min(minY,p.y); maxX=Math.max(maxX,p.x); maxY=Math.max(maxY,p.y); }
+  for(let i=0;i<2000;i++){
+    const x=minX+margin+Math.random()*(maxX-minX-2*margin);
+    const y=minY+margin+Math.random()*(maxY-minY-2*margin);
+    if(pointInPolygon(x,y,poly)) return {x,y};
+  }
+  return {x:(minX+maxX)/2, y:(minY+maxY)/2};
+}
+function clampIntoPoly(c){
+  if(!canStand(c.x,c.y,c.r)){
+    const p=randomPointInPoly(STAGE_POLY_ACTIVE,c.r+2);
+    c.x=p.x; c.y=p.y;
+  }
+}
+
+
+function resolvePlayerEnemyOverlap(){
+  // 원형 충돌(겹침) 방지: 서로 반대로 밀어냄
+  const dx = enemy.x - player.x;
+  const dy = enemy.y - player.y;
+  const dist = Math.hypot(dx,dy);
+  const minDist = player.r + enemy.r + PUSH_APART_BUFFER;
+
+  if(dist >= minDist) return;
+
+  // 방향 벡터(완전 겹치면 임의 방향)
+  const nx = dist > 0.0001 ? dx / dist : (player.face || 1);
+  const ny = dist > 0.0001 ? dy / dist : 0;
+
+  const overlap = (minDist - dist) * PUSH_APART_STRENGTH;
+  const push = overlap / 2;
+
+  // 목표 위치
+  const pnx = player.x - nx * push;
+  const pny = player.y - ny * push;
+  const enx = enemy.x + nx * push;
+  const eny = enemy.y + ny * push;
+
+  // 폴리곤 내부 체크하면서 적용(둘 다 가능하면 둘 다, 아니면 가능한 쪽만)
+  const pOk = canStand(pnx,pny,player.r);
+  const eOk = canStand(enx,eny,enemy.r);
+
+  if(pOk){ player.x = pnx; player.y = pny; }
+  if(eOk){ enemy.x = enx; enemy.y = eny; }
+
+  // 둘 다 안 되면(모서리) 그냥 clamp로 복구
+  if(!pOk) clampIntoPoly(player);
+  if(!eOk) clampIntoPoly(enemy);
+}
+// ===== Init positions =====
+function init(){
+  const p=randomPointInPoly(STAGE_POLY_ACTIVE,player.r+2);
+  player.x=p.x; player.y=p.y;
+  let e=randomPointInPoly(STAGE_POLY_ACTIVE,enemy.r+2);
+  // keep some distance
+  for(let t=0;t<300;t++){
+    if(Math.hypot(e.x-player.x, e.y-player.y) > 260) break;
+    e=randomPointInPoly(STAGE_POLY_ACTIVE,enemy.r+2);
+  }
+  enemy.x=e.x; enemy.y=e.y;
+}
+init();
+
+// ===== Movement & actions =====
+function movePlayer(){
+  if(player.state === "hit") return; // hit 중엔 상태 덮어쓰기/입력 최소화(안정)
+
+  let dx=0,dy=0;
+  if(keys.ArrowLeft) dx--;
+  if(keys.ArrowRight) dx++;
+  if(keys.ArrowUp) dy--;
+  if(keys.ArrowDown) dy++;
+  const len=Math.hypot(dx,dy);
+  if(len){
+    dx/=len; dy/=len;
+    const nx=player.x+dx*player.speed, ny=player.y+dy*player.speed;
+    if(canStand(nx,ny,player.r)){ player.x=nx; player.y=ny; }
+    if(dx>0.1) player.face=1;
+    else if(dx<-0.1) player.face=-1;
+    if(player.actionT<=0) player.state="move";
+  }else{
+    if(player.actionT<=0) player.state="idle";
+  }
+}
+
+
+function getAimDir(){
+  // 방향키 입력을 서류 방향으로 사용 (대각선 포함)
+  let ax = 0, ay = 0;
+  if(keys.ArrowLeft)  ax -= 1;
+  if(keys.ArrowRight) ax += 1;
+  if(keys.ArrowUp)    ay -= 1;
+  if(keys.ArrowDown)  ay += 1;
+
+  // 입력이 없으면 기존처럼 좌/우(face) 방향
+  if(ax === 0 && ay === 0){
+    ax = player.face || 1;
+    ay = 0;
+  }
+
+  const len = Math.hypot(ax, ay) || 1;
+  ax /= len; ay /= len;
+
+  // 좌우 입력이 있으면 face도 그 방향으로 맞춤(시각적으로 자연)
+  if(ax > 0.15) player.face = 1;
+  else if(ax < -0.15) player.face = -1;
+
+  return {ax, ay};
+}
+
+// Basic melee (A)
+function melee(){
+  if(player.actionT>0 || player.state==="hit") return;
+
+  player.state="attack";
+  player.actionT=10;
+
+  // ===== 근접 히트 판정 (시작 프레임 1회) =====
+  // 거리 체크
+  const dx = enemy.x - player.x;
+  const dy = enemy.y - player.y;
+  const dist = Math.hypot(dx, dy);
+
+  if(dist <= MELEE_RANGE){
+    // 전방 체크 (플레이어 바라보는 방향 기준)
+    const nx = dx / (dist || 1);
+    const ny = dy / (dist || 1);
+    const facingDot = nx * player.face; // y는 무시한 단순 전방 체크
+
+    if(facingDot >= MELEE_ARC_DOT){
+      enemyTakeHit(player.x);
+    }
+  }
+}
+
+// Kick melee (S) - slightly longer range / wider arc
+function kick(){
+  if(player.actionT>0 || player.state==="hit") return;
+
+  player.state="attack";
+  player.actionT=12; // 손(A)보다 약간 느리게
+
+  const dx = enemy.x - player.x;
+  const dy = enemy.y - player.y;
+  const dist = Math.hypot(dx, dy);
+
+  // 킥은 사거리 조금 더 김
+  if(dist <= (MELEE_RANGE + 22)){
+    const nx = dx / (dist || 1);
+    const facingDot = nx * player.face; // y는 단순화
+
+    // 킥은 판정이 조금 더 넓다
+    if(facingDot >= -0.05){
+      enemyTakeHit(player.x);
+    }
+  }
+}
+
+
+// Manual D throw (서류) (keep it; now limited per stage)
+function firePlayerShot(){
+  // D: 서류(투사체) — 단계당 횟수 제한
+  if(specialLeft <= 0) return;
+  if(player.actionT>0 || player.state==="hit") return;
+  if(playerShotCD > 0) return;
+  if(playerShots.length >= MAX_PLAYER_SHOTS) return;
+
+  // 1회 사용
+  specialLeft--;
+
+  const {ax, ay} = getAimDir();
+  const spd = 11;
+
+  player.state="special";
+  player.actionT=10;
+
+  // 발사 위치를 방향에 맞게 살짝 앞으로
+  const spawnX = player.x + ax*40;
+  const spawnY = player.y + ay*20;
+
+  playerShotCD = playerShotCDFrames;
+
+  playerShots.push({
+    x: spawnX,
+    y: spawnY,
+    vx: ax*spd,
+    vy: ay*spd,
+    r: 24,
+    life: 90
+  });
+}
+
+// Jump (Space)
+function jump(){
+  if(!player.onGround || player.state==="hit") return;
+  player.onGround=false;
+  player.vz=12;
+}
+
+// Player takes hit -> show hit sprite + (optional) auto counter shot with 18s cooldown
+
+function enemyTakeHit(fromX){
+  _lastFromXEnemy = fromX;
+  triggerHitStop();
+  triggerCamShake(3.5, 8);
+  // 스파크: 적이 맞은 지점
+  spawnHitSparks(enemy.x, enemy.y - (enemy.z||0), "melee");
+  // 이미 히트 중이면 연타 방지
+  if(enemy.state === "hit") return;
+
+  enemy.state = "hit";
+  enemy.actionT = 14; // 히트 유지 프레임
+
+  const prevHP = enemyHP;
+
+  // score/HP -1
+  decHP("enemy", 1);
+
+  // ✅ Step1 적용: 3히트마다 "이번 판 급여 사토시" +1
+  onPlayerLandedHit();
+
+  // ===== Knockback rules =====
+  // 기본 넉백(작게)
+  let knock = 22;
+
+  // 50% 이하로 "처음" 진입하는 순간: 크게 옆으로 날아감
+  if(!enemyHalfTriggered && enemyHP > 0 && prevHP > enemyStageMaxHP * 0.5 && enemyHP <= enemyStageMaxHP * 0.5){
+    enemyHalfTriggered = true;
+    knock = 86;
+    triggerCamShake(10.0, 18);
+    // 50% 순간: 붕 떴다가 착지
+    enemy.onGround = false;
+    enemy.vz = 20;
+    // 50% 순간: 폭발 표시(링+레이)
+    spawnBurst(enemy.x, enemy.y - (enemy.z||0), 2.2);
+    triggerHitStop(2);
+  }
+
+  // 마지막(0): 피니시 크게
+  if(enemyHP <= 0 && prevHP > 0){
+    knock = 90;
+    triggerCamShake(9.0, 16);
+  }
+
+    // KO(마지막)면 날아가며 사라짐을 우선한다
+  if(koMode && koWho==="enemy") return;
+
+  const dir = (enemy.x - fromX) >= 0 ? 1 : -1;
+  const nx = enemy.x + dir * knock;
+  if(canStand(nx, enemy.y, enemy.r)) enemy.x = nx;
+}
+
+
+function playerTakeHit(fromX, dmg=1){
+  _lastFromXPlayer = fromX;
+  triggerHitStop();
+  triggerCamShake(4.5, 10);
+  // 스파크: 주인공이 맞은 지점
+  spawnHitSparks(player.x, player.y - (player.z||0), "melee");
+  if(player.state==="hit") return; // already in hit
+
+  player.state="hit";
+  player.actionT=14; // a bit longer so you can see it
+
+  const prevHP = playerHP;
+
+  // score/HP -dmg
+  decHP("player", dmg);
+
+  // ===== Knockback rules =====
+  // 기본 넉백(작게)
+  let knock = 18;
+
+  // 50% 이하로 "처음" 진입하는 순간: 크게 옆으로 날아감
+  if(!playerHalfTriggered && playerHP > 0 && prevHP > playerStageMaxHP * 0.5 && playerHP <= playerStageMaxHP * 0.5){
+    playerHalfTriggered = true;
+    knock = 86;
+    triggerCamShake(11.0, 20);
+    // 50% 순간: 붕 떴다가 착지
+    player.onGround = false;
+    player.vz = 20;
+    // 50% 순간: 폭발 표시(링+레이)
+    spawnBurst(player.x, player.y - (player.z||0), 2.2);
+    triggerHitStop(2);
+  }
+
+  // 마지막(0): 피니시 크게
+  if(playerHP <= 0 && prevHP > 0){
+    knock = 90;
+    triggerCamShake(10.0, 18);
+  }
+
+    // KO(마지막)면 날아가며 사라짐을 우선한다
+  if(koMode && koWho==="player") return;
+
+  const dir = (player.x - fromX) >= 0 ? 1 : -1;
+  const nx = player.x + dir*knock;
+  if(canStand(nx, player.y, player.r)) player.x = nx;
+
+  // auto counter (1 projectile, 18s cooldown)
+  if(player.counterCD<=0 && counterShots.length < MAX_COUNTER_SHOTS){
+    counterShots.push({
+      x: player.x + player.face*40,
+      y: player.y,
+      vx: player.face*12,
+      vy: 0,
+      r: 10,
+      life: 90
+    });
+    player.counterCD = PLAYER_COUNTER_COOLDOWN_FRAMES;
+  }
+}
+
+function moveEnemy(){
+  // 예고/공격/피격 중엔 이동 금지(안정)
+  if(enemy.telegraphT > 0 || enemy.meleeTelegraphT > 0 || enemy.actionT > 0) return;
+
+  const dx = player.x - enemy.x;
+  const dy = player.y - enemy.y;
+  const d  = Math.hypot(dx,dy) || 1;
+
+  enemy.face = dx >= 0 ? 1 : -1;
+
+  let vx=0, vy=0;
+
+  // ✅ 근접 시도: 가까우면 들어간다
+  if(enemy.meleeCD <= 0 && d <= ENEMY_MELEE_CHASE_DIST){
+    vx = (dx/d) * enemy.speed;
+    vy = (dy/d) * enemy.speed;
+    enemy.state = "move";
+  } else {
+    // ✅ 기본은 거리 유지(카이팅)
+    const MIN_D = 170, MAX_D = 280; // tighter pressure
+
+    if(d > MAX_D){
+      vx = (dx/d) * enemy.speed;
+      vy = (dy/d) * enemy.speed;
+      enemy.state = "move";
+    }else if(d < MIN_D){
+      vx = (-dx/d) * enemy.speed;
+      vy = (-dy/d) * enemy.speed;
+      enemy.state = "move";
+    }else{
+      enemy.state = "idle";
+    }
+  }
+
+  const nx = enemy.x + vx, ny = enemy.y + vy;
+  if((vx||vy) && canStand(nx,ny,enemy.r)){
+    enemy.x = nx; enemy.y = ny;
+  }
+}
+
+// Enemy decides to shoot (telegraph -> fire)
+
+function enemyStartMelee(){
+  if(enemy.meleeCD > 0) return;
+  if(enemy.meleeTelegraphT > 0 || enemy.telegraphT > 0 || enemy.actionT > 0) return;
+  enemy.meleeTelegraphT = enemy._meleeWindupBase || ENEMY_MELEE_WINDUP;
+  enemy.state = "attack";
+}
+
+function enemyMeleeResolve(){
+  // 예고 끝나는 순간 1회 판정
+  // 점프 중이면 안 맞게 (공정)
+  if(player.z > 0) return;
+
+  const dx = player.x - enemy.x;
+  const dy = player.y - enemy.y;
+  const d = Math.hypot(dx,dy);
+
+  if(d <= ENEMY_MELEE_RANGE){
+    // scaled melee damage (float 가능)
+    playerTakeHit(enemy.x, enemyMeleeDamage);
+  }
+}
+
+function enemyAI(){
+  // cooldown tick
+  if(enemy.shootCD > 0) enemy.shootCD--;
+  if(enemy.meleeCD > 0) enemy.meleeCD--;
+
+  // melee telegraph (attack windup)
+  if(enemy.meleeTelegraphT > 0){
+    enemy.meleeTelegraphT--;
+    enemy.state = "attack";
+    if(enemy.meleeTelegraphT === 0){
+      enemyMeleeResolve();
+      enemy.actionT = 10;          // 후딜
+      enemy.meleeCD = enemy._meleeCDBase || ENEMY_MELEE_COOLDOWN;
+    }
+    return;
+  }
+
+  // telegraph phase
+  if(enemy.telegraphT > 0){
+    // telegraph 동안 살짝 옆으로 피하는 움직임(서류 고정 난사 카운터)
+    const dxm = player.x - enemy.x;
+    const dym = player.y - enemy.y;
+    const dm  = Math.hypot(dxm,dym) || 1;
+    const px = (-dym/dm) * enemy.speed * 0.65 * (enemy._dodgeDir||1);
+    const py = ( dxm/dm) * enemy.speed * 0.65 * (enemy._dodgeDir||1);
+    const nx = enemy.x + px;
+    const ny = enemy.y + py;
+    if(canStand(nx, ny, enemy.r)){
+      enemy.x = nx; enemy.y = ny;
+    }
+
+    enemy.telegraphT--;
+    enemy.state = "special";
+    if(enemy.telegraphT === 0){
+      // fire now
+      const shotsLeft = Math.max(0, MAX_ENEMY_SHOTS - enemyShots.length);
+      if(shotsLeft > 0){
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const d  = Math.hypot(dx,dy) || 1;
+
+        // aim with spread (fair) + anti-camp boost
+        const spreadBase = 0.22;
+        let spreadMul = clamp(1.00 - (finalDifficulty - 1.0) * 0.26, 0.38, 1.00); // 난이도↑ -> 더 정확
+        if(playerStillFrames >= 90) spreadMul = Math.max(0.22, spreadMul * 0.55); // 서 있으면 더 정확하게 맞춘다
+
+        const baseAng = Math.atan2(dy, dx);
+        const spdBase = enemy._projSpeed || 7.8;
+
+        // burst count by difficulty (but also limited by shotsLeft)
+        let want = 1;
+        if(finalDifficulty >= 1.55) want = 2;
+        if(finalDifficulty >= 1.95) want = 3;
+        want = Math.min(want, shotsLeft);
+
+        // symmetric angles
+        const offsets = (want===1) ? [0] : (want===2) ? [-0.12, +0.12] : [-0.16, 0, +0.16];
+
+        for(let si=0; si<want; si++){
+          const spread = (Math.random()*2-1) * (spreadBase * spreadMul);
+          const ang = baseAng + offsets[si] + spread;
+          const spd = spdBase * (playerStillFrames >= 90 ? 1.12 : 1.00); // 캠핑하면 더 빠름
+          enemyShots.push({
+            x: enemy.x + Math.cos(ang)*40,
+            y: enemy.y + Math.sin(ang)*10,
+            vx: Math.cos(ang)*spd,
+            vy: Math.sin(ang)*spd,
+            r: 24,
+            life: 130
+          });
+        }
+      }
+      enemy.actionT = 10;     // small recover
+      enemy.shootCD = enemy._shootCDBase || 100;    // difficulty-scaled cooldown
+    }
+    return;
+  }
+
+  // recovering
+  if(enemy.actionT > 0){
+    enemy.actionT--;
+    return;
+  }
+
+  // ✅ 근접 우선: 가까우면 근접 공격 시작
+  const distToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+  if(distToPlayer <= (ENEMY_MELEE_RANGE + 15) && enemy.meleeCD <= 0){
+    enemyStartMelee();
+    return;
+  }
+
+
+  // start telegraph if allowed and within range
+  if(enemy.shootCD <= 0 && enemyShots.length < MAX_ENEMY_SHOTS){
+    // anti-camp: 서 있으면 더 자주 쏜다
+    if(playerStillFrames >= 120) enemy.shootCD = Math.max(0, enemy.shootCD - 12);
+
+    const d = Math.hypot(player.x-enemy.x, player.y-enemy.y);
+    if(d >= 90 && d <= 560){
+      enemy.telegraphT = enemy._telegraphBase || 18; // telegraph (difficulty-scaled)
+      enemy._dodgeDir = (Math.random()<0.5 ? -1 : 1);
+      enemy.state = "special";
+    }
+  }
+}
+
+function updateProjectiles(arr){
+  for(let i=arr.length-1;i>=0;i--){
+    const p=arr[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    if(p.life<=0 || p.x<-60 || p.x>viewW+60 || p.y<-60 || p.y>viewH+60){
+      arr.splice(i,1);
+    }
+  }
+}
+
+function projectileHitsCircle(p, c){
+  const d = Math.hypot(c.x - p.x, c.y - p.y);
+  return d < (c.r + p.r);
+}
+
+
+// ===== Hit Spark (스파크 파티클) =====
+// 플래시(사각형 번쩍) 대신, 맞은 지점에 작은 스파크를 튀기고 바로 사라지게 함.
+const sparks = [];
+function spawnHitSparks(x, y, kind="melee"){
+  // kind: "melee" | "shot"
+  const n = (kind==="shot") ? 7 : 5;
+  const base = (kind==="shot") ? 2.2 : 1.8;
+  for(let i=0;i<n;i++){
+    const ang = Math.random()*Math.PI*2;
+    const spd = base + Math.random()*2.4;
+    sparks.push({
+      x, y,
+      vx: Math.cos(ang)*spd,
+      vy: Math.sin(ang)*spd,
+      life: 10 + (Math.random()*6|0),
+      max: 16,
+      r: 1.5 + Math.random()*2.0
+    });
+  }
+}
+function updateSparks(){
+  for(let i=sparks.length-1;i>=0;i--){
+    const s = sparks[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vx *= 0.88;
+    s.vy *= 0.88;
+    s.life--;
+    if(s.life<=0) sparks.splice(i,1);
+  }
+}
+function drawSparks(){
+  // Simple, safe spark rendering (no extra effects that can crash)
+  for(const s of sparks){
+    const a = Math.max(0, Math.min(1, s.life / (s.max||16)));
+    ctx.save();
+    ctx.globalAlpha = 0.25 + 0.75*a;
+    ctx.fillStyle = "rgba(255,140,0,0.95)";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+
+    // a tiny tail line to show direction
+    ctx.globalAlpha = 0.18 + 0.55*a;
+    ctx.strokeStyle = "rgba(255,245,190,0.9)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y);
+    ctx.lineTo(s.x - s.vx*2.2, s.y - s.vy*2.2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+
+
+// ===== Burst Explosion (50% 전용 '폭발 링 + 스파크') =====
+// PNG 없이 도형으로 만드는 폭발 연출. 50% 진입 순간에만 1회 발생.
+const bursts = [];
+function spawnBurst(x, y, power=1){
+  // power: 1=기본, 1.4=강
+  const rays = Math.round(12 + 6*power);
+  bursts.push({
+    x, y,
+    t: 0,
+    life: Math.round(18 + 10*power), // frames
+    r0: 6,
+    r1: 120 * power,
+    rays,
+    seed: Math.random()*9999
+  });
+}
+
+function updateBursts(){
+  for(let i=bursts.length-1;i>=0;i--){
+    const b = bursts[i];
+    b.t++;
+    if(b.t >= b.life) bursts.splice(i,1);
+  }
+}
+
+function drawBursts(){
+  for(const b of bursts){
+    const p = b.t / (b.life||1); // 0->1
+    const ease = 1 - Math.pow(1-p, 2); // easeOut
+    const r = b.r0 + (b.r1 - b.r0) * ease;
+
+    // alpha fades fast after mid
+
+    // debug text (makes it obvious)
+    if(p < 0.18){
+      ctx.save();
+      ctx.globalAlpha = 0.9 * (1 - p/0.18);
+      ctx.font = "bold 22px system-ui";
+      ctx.fillStyle = "rgba(255,140,0,0.95)";
+      ctx.fillText("BOOM", b.x - 32, b.y - r - 10);
+      ctx.restore();
+    }
+
+    const a = (p < 0.45) ? 1.0 : Math.max(0, 1 - (p-0.45)/0.55);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.90 * a;
+
+    // outer ring
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(255,140,0,0.95)";
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, r, 0, Math.PI*2);
+    ctx.stroke();
+
+    // soft fill flash (very short)
+    if(p < 0.22){
+      ctx.globalAlpha = 0.28 * (1 - p/0.22);
+      ctx.fillStyle = "rgba(255,140,0,0.9)";
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, r*0.85, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 0.90 * a;
+    }
+
+    // inner ring (slightly yellow)
+    ctx.globalAlpha = 0.55 * a;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(255,170,60,0.95)";
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, r*0.72, 0, Math.PI*2);
+    ctx.stroke();
+
+    // rays
+    ctx.globalAlpha = 0.70 * a;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(255,140,0,0.9)";
+    for(let i=0;i<b.rays;i++){
+      const ang = (i / b.rays) * Math.PI*2 + (b.seed*0.001);
+      const len = (10 + 18*Math.sin(b.seed + i*1.7)) * (0.55 + 0.55*(1-p));
+      const x0 = b.x + Math.cos(ang) * (r*0.55);
+      const y0 = b.y + Math.sin(ang) * (r*0.55);
+      const x1 = b.x + Math.cos(ang) * (r*0.55 + len);
+      const y1 = b.y + Math.sin(ang) * (r*0.55 + len);
+      ctx.beginPath();
+      ctx.moveTo(x0,y0);
+      ctx.lineTo(x1,y1);
+      ctx.stroke();
+    }
+
+
+    // sparkle dots
+    ctx.globalAlpha = 0.75 * a;
+    ctx.fillStyle = "rgba(255,140,0,0.95)";
+    const dots = Math.round(10 + 10*(1-p));
+    for(let j=0;j<dots;j++){
+      const ang2 = (j/dots)*Math.PI*2 + b.seed*0.003;
+      const rr = r*(0.35 + 0.55*Math.random());
+      const dx = Math.cos(ang2)*rr;
+      const dy = Math.sin(ang2)*rr;
+      ctx.beginPath();
+      ctx.arc(b.x+dx, b.y+dy, 2.2 + 1.8*(1-p), 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+  }
+}
+
+
+// ===== Drawing =====
+function drawSprite(obj, images){
+  const img = images[obj.state] || images.idle;
+  if(!img || !img.complete){
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    ctx.translate(obj.x, obj.y - (obj.z||0));
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.strokeStyle = "rgba(255,255,255,0.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(-26, -34, 52, 68);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.90)";
+    ctx.font = "700 11px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("IMG", 0, 4);
+    ctx.restore();
+    return;
+  }
+  const s = obj.scale || 1;
+  ctx.save();
+  // KO 대상이면 점점 투명해짐
+  if(koMode && ((koWho==="player" && obj===player) || (koWho==="enemy" && obj===enemy))){
+    ctx.globalAlpha = Math.max(0, Math.min(1, koAlpha));
+  }
+  ctx.translate(obj.x, obj.y - (obj.z||0));
+  ctx.scale(obj.face * s, s);
+  ctx.drawImage(img, -obj.w/2, -obj.h/2, obj.w, obj.h);
+  ctx.restore();
+}
+
+
+
+function drawPaper(p, color){
+  const baseAng = Math.atan2(p.vy || 0, p.vx || 0);
+  const wobble = Math.sin((p.life||0)*0.3) * 0.15; // 살짝 흔들림
+  const ang = baseAng + wobble;
+
+  const w = PAPER_W;
+  const h = PAPER_H;
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(ang);
+
+  // 종이 본체 (오프화이트)
+  ctx.fillStyle = "#f6f4ee";
+  ctx.beginPath();
+  ctx.moveTo(-w/2, -h/2);
+  ctx.lineTo(w/2, -h/2 + 2);
+  ctx.lineTo(w/2 - 3, h/2);
+  ctx.lineTo(-w/2, h/2 - 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // 접힌 모서리
+  ctx.fillStyle = "#e6e2d8";
+  ctx.beginPath();
+  ctx.moveTo(w/2 - 6, -h/2);
+  ctx.lineTo(w/2, -h/2);
+  ctx.lineTo(w/2, -h/2 + 6);
+  ctx.closePath();
+  ctx.fill();
+
+  // 중앙 접힘선
+  ctx.strokeStyle = "rgba(0,0,0,0.12)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-w/2 + 4, 0);
+  ctx.lineTo(w/2 - 6, 0);
+  ctx.stroke();
+
+  // 외곽선
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.strokeRect(-w/2, -h/2, w, h);
+
+  ctx.restore();
+}
+
+
+
+function drawHUD(){
+  const pad = 18;
+  const barW = Math.min(360, viewW*0.36);
+  const barH = 16;
+
+  // background panels
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+
+  // PLAYER (left)
+  const pX = pad, pY = pad;
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(pX-8, pY-12, barW+16, barH+32);
+
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.fillRect(pX, pY, barW, barH);
+
+  const pRatio = playerHP / playerMaxHP;
+  ctx.fillStyle = "rgba(80,220,140,0.9)";
+  ctx.fillRect(pX, pY, barW * pRatio, barH);
+
+  ctx.fillStyle = "rgba(255,140,0,0.9)";
+  ctx.font = "700 14px system-ui";
+  ctx.fillText(`주인공 ${playerHP.toFixed(1)}/${playerMaxHP}`, pX, pY-2);
+
+  // salary satoshi (left)
+  ctx.fillStyle = "rgba(255,140,0,0.9)";
+  ctx.font = "700 14px system-ui";
+  ctx.fillText(`이번 판 급여 사토시: ${tempSalarySatoshi}  (3히트=+1)`, pX, pY + barH + 22);
+  ctx.font = "700 13px system-ui";
+  ctx.fillText(`직급: ${RANKS[rankIndex]}   단계: ${stage}/10`, pX, pY + barH + 40);
+  ctx.font = "700 12px system-ui";
+  ctx.fillText(`난이도: ${finalDifficulty.toFixed(2)} (rank ${rankMultiplier.toFixed(2)} × stage ${stageMultiplier.toFixed(2)})`, pX, pY + barH + 74);
+  ctx.font = "700 12px system-ui";
+  ctx.fillText(`서류 쿨타임: ${playerShotCDFrames}f`, pX, pY + barH + 56);
+  ctx.font = "700 12px system-ui";
+  ctx.fillText(`서류(D) 남은 횟수: ${specialLeft}/${MAX_SPECIAL_PER_STAGE}`, pX, pY + barH + 110);
+  ctx.font = "700 13px system-ui";
+  ctx.fillText(`누적 급여 사토시: ${totalSalarySatoshi}`, pX, pY + barH + 92);
+
+  // ENEMY (right)
+  const eX = viewW - pad - barW, eY = pad;
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(eX-8, eY-12, barW+16, barH+32);
+
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.fillRect(eX, eY, barW, barH);
+
+  const eRatio = enemyHP / enemyMaxHP;
+  ctx.fillStyle = "rgba(255,110,110,0.9)";
+  ctx.fillRect(eX + barW*(1-eRatio), eY, barW * eRatio, barH);
+
+  ctx.fillStyle = "rgba(255,140,0,0.9)";
+  ctx.textAlign = "right";
+  ctx.fillText(`적 ${enemyHP}/${enemyMaxHP}`, eX + barW, eY-2);
+  ctx.textAlign = "left";
+
+  ctx.restore();
+}
+
+function draw(){
+  // 카메라 흔들림은 '월드'만 흔들고, HUD는 고정
+  ctx.save();
+  ctx.translate(camShakeX, camShakeY);
+
+  // 흔들릴 때 가장자리 잔상(검은 테두리) 방지용으로 넓게 클리어
+  ctx.clearRect(-80, -80, viewW + 160, viewH + 160);
+
+  if(currentBg.complete) ctx.drawImage(currentBg,0,0,viewW,viewH);
+
+  // papers
+  for(const p of playerShots){ drawPaper(p, "rgba(255,140,0,0.95)"); }
+  for(const p of counterShots){ drawPaper(p, "rgba(255,240,180,0.98)"); }
+  for(const p of enemyShots){ drawPaper(p, "rgba(255,160,160,0.98)"); }
+
+  drawSprite(player, playerImages);
+  drawSprite(enemy, enemyImages);
+
+  // sparks on top
+  drawSparks();
+
+
+  // burst explosions (50%)
+  drawBursts();
+  ctx.restore();
+
+  // HUD on top (고정) - 캔버스 HUD 대신 HTML UI 사용
+  updateUI();
+  // drawHUD();
+}
+
+// ===== Main loop =====
+function loop(){
+  updateCameraShake();
+  // ===== PAUSE: render only =====
+  if(__paused){
+    draw();
+    pressed = {};
+    requestAnimationFrame(loop);
+    return;
+  }
+  // stop updates when game over (keep rendering)
+  if(gameOver){
+    draw();
+    pressed = {};
+    requestAnimationFrame(loop);
+    return;
+  }
+
+  // ===== Hit Stop: 타격 순간 잠깐 멈춤 (draw만) =====
+  if(hitStopFrames > 0){
+    hitStopFrames--;
+    draw();
+    pressed = {};
+    requestAnimationFrame(loop);
+    return;
+  }
+
+  // ===== KO 연출: 마지막에 완전 날아가며 사라지기 =====
+  if(koMode){
+    const obj = (koWho==="player") ? player : enemy;
+
+    // 날아가며 이동(스테이지 밖으로 나가도 허용)
+    obj.x += koVX;
+    obj.z += obj.vz;
+    obj.vz -= 0.85;
+
+    // 바닥에 닿아도 계속 미끄러지며 사라지게(피니시 과장)
+    if(obj.z < 0){ obj.z = 0; obj.vz *= -0.15; }
+
+    // 점점 투명해짐
+    koAlpha -= 1/52;
+
+    koTimer--;
+    if(koTimer <= 0 || koAlpha <= 0.02 || obj.x < -240 || obj.x > viewW + 240){
+      koMode = false;
+      obj.actionT = 0;
+      endGame(koResult);
+    }
+
+    draw();
+    pressed = {};
+    requestAnimationFrame(loop);
+    return;
+  }
+
+
+  // inputs
+  movePlayer();
+
+  // anti-camp tracking
+  if(Math.hypot(player.x-lastPX, player.y-lastPY) < 0.5){ playerStillFrames++; }
+  else { playerStillFrames = 0; }
+  lastPX = player.x; lastPY = player.y;
+  if(pressed.KeyA) melee();
+  if(pressed.KeyS) kick();
+  if(pressed.KeyD) firePlayerShot();
+  if(pressed.Space) jump();
+
+  // player timers
+  if(player.actionT>0){
+    player.actionT--;
+    if(player.actionT===0 && player.state==="hit"){
+      // return to idle; movement will set move when key pressed
+      player.state="idle";
+    }
+  }
+  if(player.counterCD>0) player.counterCD--;
+  if(playerShotCD>0) playerShotCD--;
+
+  // jump physics
+  if(!player.onGround){
+    player.z += player.vz;
+    player.vz -= 0.8;
+    if(player.z <= 0){
+      player.z = 0; player.vz = 0; player.onGround = true;
+    }
+  }
+
+  // enemy jump physics (연출용: 50%에서 붕 뜨기)
+  if(!enemy.onGround){
+    enemy.z += enemy.vz;
+    enemy.vz -= 0.8;
+    if(enemy.z <= 0){
+      enemy.z = 0; enemy.vz = 0; enemy.onGround = true;
+    }
+  }
+
+  // enemy logic
+  enemyAI();
+  moveEnemy();
+
+  // ✅ 겹치면 서로 반대로 밀어내기
+  resolvePlayerEnemyOverlap();
+
+  // update projectiles
+  updateProjectiles(playerShots);
+  updateProjectiles(counterShots);
+  updateProjectiles(enemyShots);
+
+  // hit sparks
+  updateSparks();
+
+  // burst explosions
+  updateBursts();
+  // collisions: enemy shot -> player (jumping avoids)
+  if(player.z <= 0){ // only hittable on ground (simple, fun)
+    for(let i=enemyShots.length-1;i>=0;i--){
+      const p = enemyShots[i];
+      if(projectileHitsCircle(p, player)){
+        enemyShots.splice(i,1);
+        spawnHitSparks(player.x, player.y - (player.z||0), "shot");
+        playerTakeHit(enemy.x, enemyShotDamage);
+        break;
+      }
+    }
+  }
+
+  // collisions: player/counter shots -> enemy
+  for(let i=playerShots.length-1;i>=0;i--){
+    const p=playerShots[i];
+    if(projectileHitsCircle(p, enemy)){
+      playerShots.splice(i,1);
+      spawnHitSparks(enemy.x, enemy.y - (enemy.z||0), "shot");
+      enemyTakeHit(player.x);
+      break;
+    }
+  }
+  for(let i=counterShots.length-1;i>=0;i--){
+    const p=counterShots[i];
+    if(projectileHitsCircle(p, enemy)){
+      counterShots.splice(i,1);
+      spawnHitSparks(enemy.x, enemy.y - (enemy.z||0), "shot");
+      enemyTakeHit(player.x);
+      break;
+    }
+  }
+  if(enemy.actionT>0 && enemy.state==="hit"){
+    // keep hit pose during actionT; when ends, enemyAI/moveEnemy will set state
+  }
+
+  clampIntoPoly(player);
+  clampIntoPoly(enemy);
+
+  draw();
+
+  pressed = {};
+  requestAnimationFrame(loop);
+}
+setTimeout(mobileAssetTimeoutCheck, 1500);
+loop();
+</script>
+</body>
+</html>
