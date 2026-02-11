@@ -482,6 +482,92 @@ canvas{display:block;width:100vw;height:100vh}
   line-height:1.55;
 }
 
+
+/* =============================
+   📱 Mobile Controls (Game2-style, for Game3)
+   - Left: dpadZone swipe
+   - Right: Jump + A/S/D
+   ============================= */
+#mobileControls{
+  position: fixed;
+  left: calc(env(safe-area-inset-left) + 18px);
+  right: calc(env(safe-area-inset-right) + 18px);
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  z-index: 80;
+  display: none;              /* 기본 숨김, 모바일에서만 표시 */
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;         /* 스크롤/줌 방지 */
+  pointer-events: auto;
+}
+#mobileControls .mc-dpad{
+  flex: 0 0 auto;
+  min-width: 150px;           /* 히트박스 확대 */
+  height: 78px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#mobileControls .mc-dpad .mc-lr{
+  width: 100%;
+  display:flex;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-weight: 950;
+  opacity: 0.9;
+}
+#mobileControls .mc-dpad .mc-hint{
+  font-size: 18px;
+}
+
+#mobileControls .mc-actions{
+  flex: 0 0 auto;
+  display:flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+#mobileControls .mc-row{
+  display:flex;
+  gap: 10px;
+}
+#mobileControls .mc-btn{
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.42);
+  color: #fff;
+  font-weight: 950;
+  font-size: 18px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  padding: 0;
+  touch-action: none;
+}
+#mobileControls .mc-btn:active{ transform: translateY(1px); }
+
+#mobileControls .mc-jump{
+  width: 86px;
+  height: 56px;
+  font-size: 14px;
+  letter-spacing: 0.4px;
+}
+#mobileControls .mc-atk{
+  border-color: rgba(243,186,47,0.55);
+}
+
+@media (max-width: 980px){
+  #mobileControls{ display: flex; }
+}
 </style>
 </head>
 <body>
@@ -560,26 +646,24 @@ canvas{display:block;width:100vw;height:100vh}
   </div>
 
 
-  <div id="mobileControls">
-    <div id="dpad">
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-      <button data-hold="ArrowUp">▲</button>
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-
-      <button data-hold="ArrowLeft">◀</button>
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-      <button data-hold="ArrowRight">▶</button>
-
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-      <button data-hold="ArrowDown">▼</button>
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+  
+  <div id="mobileControls" aria-label="mobile controls">
+    <!-- LEFT: swipe D-pad zone -->
+    <div class="mc-dpad mc-left" id="dpadZone" aria-label="move">
+      <div class="mc-lr">
+        <div class="mc-hint">◀︎</div>
+        <div class="mc-hint">▶︎</div>
+      </div>
     </div>
 
-    <div id="mobileActions">
-      <button data-tap="Space">JUMP</button>
-      <button data-tap="KeyA">A</button>
-      <button data-tap="KeyS">S</button>
-      <button data-tap="KeyD">D</button>
+    <!-- RIGHT: actions -->
+    <div class="mc-actions mc-right" id="actionZone" aria-label="actions">
+      <button id="btnJump" type="button" class="mc-btn mc-jump" aria-label="jump">JUMP</button>
+      <div class="mc-row">
+        <button id="btnA" type="button" class="mc-btn mc-atk" aria-label="attack A">A</button>
+        <button id="btnS" type="button" class="mc-btn mc-atk" aria-label="attack S">S</button>
+        <button id="btnD" type="button" class="mc-btn mc-atk" aria-label="attack D">D</button>
+      </div>
     </div>
   </div>
 </div>
@@ -593,6 +677,10 @@ canvas{display:block;width:100vw;height:100vh}
 <script>
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
+
+// ===== Input state (must exist before mobile controls bind) =====
+let keys = {}, pressed = {};
+
 
 /* ===== Mobile character size reduction (20%) ===== */
 const __isMobileChar = matchMedia("(hover:none) and (pointer:coarse)").matches;
@@ -718,45 +806,155 @@ ui.emailBtn.addEventListener("click", ()=>{
 });
 
 // 모바일 컨트롤 -> 기존 keys/pressed 시스템을 그대로 사용
+// 모바일 컨트롤(게임2 느낌):
+// - 왼쪽: 전체 영역(dpadZone)에서 손가락 위치로 좌/우 결정 (드래그 전환, 끊김 방지)
+// - 오른쪽: 점프/공격 버튼 + (드래그로 다른 버튼 위로 이동해도 인식)
 function bindMobileControls(){
   const root = document.getElementById("mobileControls");
   if(!root) return;
 
-  const setHold = (code, on)=>{
-    keys[code] = !!on;
-    // 방향키는 눌림 시작 순간에 pressed 처리도 해두면 UX 좋음
-    if(on && !keys[code]) pressed[code] = true;
-  };
+  const zone = document.getElementById("dpadZone");
+  const actionZone = document.getElementById("actionZone");
+
+  const btnJump = document.getElementById("btnJump");
+  const btnA = document.getElementById("btnA");
+  const btnS = document.getElementById("btnS");
+  const btnD = document.getElementById("btnD");
+
   const tapKey = (code)=>{
-    pressed[code] = true;
-    keys[code] = true;
-    // 한 프레임 뒤에 해제 (연타 안정)
-    setTimeout(()=>{ keys[code] = false; }, 0);
+    try{
+      // "눌림 시작" 1회만 잡히게
+      pressed[code] = true;
+      keys[code] = true;
+      setTimeout(()=>{ keys[code] = false; }, 0);
+    }catch(e){}
   };
 
-  root.querySelectorAll("[data-hold]").forEach(btn=>{
-    const code = btn.getAttribute("data-hold");
-    const down = (e)=>{ e.preventDefault(); keys[code] = true; };
-    const up   = (e)=>{ e.preventDefault(); keys[code] = false; };
-    btn.addEventListener("pointerdown", down);
-    btn.addEventListener("pointerup", up);
-    btn.addEventListener("pointercancel", up);
-    btn.addEventListener("pointerleave", up);
-    btn.addEventListener("touchstart", down, {passive:false});
-    btn.addEventListener("touchend", up, {passive:false});
-    btn.addEventListener("touchcancel", up, {passive:false});
-    btn.addEventListener("mousedown", down);
-    btn.addEventListener("mouseup", up);
+  /* ===== D-pad swipe (Game2 방식) ===== */
+  (function bindDpadSwipe(){
+    if(!zone) return;
+    let activePointerId = null;
 
-  });
+    function setDirFromEvent(e){
+      const r = zone.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const half = r.width / 2;
+      if (x < half){
+        keys["ArrowLeft"] = true;
+        keys["ArrowRight"] = false;
+      }else{
+        keys["ArrowRight"] = true;
+        keys["ArrowLeft"] = false;
+      }
+    }
+    function clearDir(){
+      keys["ArrowLeft"] = false;
+      keys["ArrowRight"] = false;
+    }
 
-  root.querySelectorAll("[data-tap]").forEach(btn=>{
-    const code = btn.getAttribute("data-tap");
-    btn.addEventListener("click", (e)=>{
-      e.preventDefault();
+    zone.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      activePointerId = e.pointerId;
+      try{ zone.setPointerCapture(activePointerId); }catch(_){}
+      setDirFromEvent(e);
+    }, { passive:false });
+
+    zone.addEventListener("pointermove", (e)=>{
+      if (activePointerId === null) return;
+      if (e.pointerId !== activePointerId) return;
+      setDirFromEvent(e);
+    }, { passive:true });
+
+    const end = (e)=>{
+      if (activePointerId === null) return;
+      if (e && e.pointerId !== activePointerId) return;
+      activePointerId = null;
+      clearDir();
+    };
+
+    zone.addEventListener("pointerup", end, { passive:true });
+    zone.addEventListener("pointercancel", end, { passive:true });
+    zone.addEventListener("lostpointercapture", end, { passive:true });
+  })();
+
+  /* ===== Actions: tap + drag switching ===== */
+  function codeForBtn(el){
+    if(!el) return null;
+    if(el === btnJump) return "Space";
+    if(el === btnA) return "KeyA";
+    if(el === btnS) return "KeyS";
+    if(el === btnD) return "KeyD";
+    return null;
+  }
+
+  // 각 버튼은 기본 탭(빠른 반응)
+  [
+    [btnJump,"Space"],
+    [btnA,"KeyA"],
+    [btnS,"KeyS"],
+    [btnD,"KeyD"],
+  ].forEach(([btn, code])=>{
+    if(!btn) return;
+    btn.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       tapKey(code);
-    });
+    }, { passive:false });
   });
+
+  // 드래그로 버튼 전환(손가락을 떼지 않아도 됨)
+  (function bindActionDrag(){
+    if(!actionZone) return;
+    let activePointerId = null;
+    let lastBtn = null;
+    let lastFireAt = 0;
+
+    function pickBtnFromPoint(x,y){
+      const el = document.elementFromPoint(x,y);
+      if(!el) return null;
+      const b = el.closest && el.closest("button");
+      if(!b) return null;
+      if(b === btnJump || b === btnA || b === btnS || b === btnD) return b;
+      return null;
+    }
+
+    function fire(btn){
+      const now = Date.now();
+      // 너무 과한 연타 방지(드래그 이동 중 스팸 방지)
+      if (now - lastFireAt < 120) return;
+      lastFireAt = now;
+      const code = codeForBtn(btn);
+      if(code) tapKey(code);
+    }
+
+    actionZone.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      activePointerId = e.pointerId;
+      try{ actionZone.setPointerCapture(activePointerId); }catch(_){}
+      lastBtn = pickBtnFromPoint(e.clientX, e.clientY);
+      if(lastBtn) fire(lastBtn);
+    }, { passive:false });
+
+    actionZone.addEventListener("pointermove", (e)=>{
+      if(activePointerId === null) return;
+      if(e.pointerId !== activePointerId) return;
+      const b = pickBtnFromPoint(e.clientX, e.clientY);
+      if(b && b !== lastBtn){
+        lastBtn = b;
+        fire(b);
+      }
+    }, { passive:true });
+
+    const end = (e)=>{
+      if(activePointerId === null) return;
+      if(e && e.pointerId !== activePointerId) return;
+      activePointerId = null;
+      lastBtn = null;
+    };
+
+    actionZone.addEventListener("pointerup", end, { passive:true });
+    actionZone.addEventListener("pointercancel", end, { passive:true });
+    actionZone.addEventListener("lostpointercapture", end, { passive:true });
+  })();
 }
 
 bindMobileControls();
@@ -1348,7 +1546,7 @@ const MAX_SPECIAL_PER_STAGE = 5; // 단계(스테이지)당 서류 사용 가능
 let specialLeft = MAX_SPECIAL_PER_STAGE;
 
 // ===== Input =====
-let keys={}, pressed={};
+// (moved) let keys={}, pressed={};
 addEventListener("keydown",e=>{
   if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code)) e.preventDefault();
   if(!keys[e.code]) pressed[e.code]=true;
