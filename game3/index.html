@@ -650,8 +650,12 @@ canvas{display:block;width:100vw;height:100vh}
   <div id="mobileControls" aria-label="mobile controls">
     <!-- LEFT: swipe D-pad zone -->
     <div class="mc-dpad mc-left" id="dpadZone" aria-label="move">
-      <div class="mc-lr">
+      <div class="mc-lr" style="align-items:center;">
         <div class="mc-hint">◀︎</div>
+        <div style="display:flex; flex-direction:column; gap:2px; align-items:center; opacity:0.9;">
+          <div class="mc-hint" style="font-size:16px;">▲</div>
+          <div class="mc-hint" style="font-size:16px;">▼</div>
+        </div>
         <div class="mc-hint">▶︎</div>
       </div>
     </div>
@@ -684,7 +688,7 @@ let keys = {}, pressed = {};
 
 /* ===== Mobile character size reduction (20%) ===== */
 const __isMobileChar = matchMedia("(hover:none) and (pointer:coarse)").matches;
-const __mobileCharScale = __isMobileChar ? 0.8 : 1;
+const __mobileCharScale = __isMobileChar ? 0.4 : 1;
 
 
 function showMobileDebug(title, msg){
@@ -838,21 +842,33 @@ function bindMobileControls(){
     function setDirFromEvent(e){
       const r = zone.getBoundingClientRect();
       const x = e.clientX - r.left;
-      const half = r.width / 2;
-      if (x < half){
-        keys["ArrowLeft"] = true;
-        keys["ArrowRight"] = false;
-      }else{
-        keys["ArrowRight"] = true;
-        keys["ArrowLeft"] = false;
+      const y = e.clientY - r.top;
+
+      const cx = r.width / 2;
+      const cy = r.height / 2;
+
+      const dx = x - cx;
+      const dy = y - cy;
+
+      const threshold = 10; // 감도(너무 민감하지 않게)
+
+      keys["ArrowLeft"]  = dx < -threshold;
+      keys["ArrowRight"] = dx >  threshold;
+      keys["ArrowUp"]    = dy < -threshold;
+      keys["ArrowDown"]  = dy >  threshold;
+
+      // 아무 방향도 아니면 전부 끄기(중앙)
+      if(!keys["ArrowLeft"] && !keys["ArrowRight"] && !keys["ArrowUp"] && !keys["ArrowDown"]){
+        clearDir();
       }
     }
     function clearDir(){
-      keys["ArrowLeft"] = false;
+      keys["ArrowLeft"]  = false;
       keys["ArrowRight"] = false;
+      keys["ArrowUp"]    = false;
+      keys["ArrowDown"]  = false;
     }
-
-    zone.addEventListener("pointerdown", (e)=>{
+zone.addEventListener("pointerdown", (e)=>{
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       activePointerId = e.pointerId;
       try{ zone.setPointerCapture(activePointerId); }catch(_){}
@@ -1100,8 +1116,8 @@ function pickRandomBg(){
 pickRandomBg();
 
 // ===== Sprite scale =====
-const PLAYER_SPRITE_SCALE = 2.0; // 주인공 100% 더 크게 (2.0x) // 주인공 70% 크게 (1.7x) // 주인공 70%
-const ENEMY_SPRITE_SCALE  = 2.6; // 적 160% 더 크게 (2.6x) // 적 100% 크게 (2.0x) // 적 100%
+const PLAYER_SPRITE_SCALE = 2.0 * __mobileCharScale; // 주인공 100% 더 크게 (2.0x) // 주인공 70% 크게 (1.7x) // 주인공 70%
+const ENEMY_SPRITE_SCALE  = 2.6 * __mobileCharScale; // 적 160% 더 크게 (2.6x) // 적 100% 크게 (2.0x) // 적 100%
 
 // ===== Sprites =====
 const playerImages = {
