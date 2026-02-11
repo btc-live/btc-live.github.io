@@ -576,7 +576,7 @@ canvas{display:block;width:100vw;height:100vh}
   position:fixed; left:8px; top:8px; z-index:100000;
   background:rgba(0,0,0,0.45); color:#fff; font:700 11px system-ui;
   padding:4px 6px; border-radius:8px; display:none;">
-  GAME3 ANDROID v1
+  GAME3 ANDROID v3
 </div>
 
 <canvas id="c"></canvas>
@@ -2661,7 +2661,7 @@ loop();
 
 
 <style id="androidOverridesV1">
-/* ===== GAME3 ANDROID v1 (LAST OVERRIDES) ===== */
+/* ===== GAME3 ANDROID v3 (LAST OVERRIDES) ===== */
 @media screen and (max-width: 980px) and (orientation: landscape){
   #buildBadge{ display:block !important; }
 
@@ -2710,21 +2710,45 @@ loop();
 </style>
 
 
-<script id="mobileGestureLockV1">
+
+<script id="mobileGestureLockV3_scoped">
 (function(){
-  // Stop pinch/double-tap zoom and edge scroll during controls
-  document.addEventListener("touchmove", function(e){
-    try{ e.preventDefault(); }catch(_){}
-  }, { passive:false });
+  function inControls(el){
+    try{
+      return !!(el && (el.closest && (el.closest("#mobileControls") || el.closest("#dpadZone") || el.closest("#actionZone"))));
+    }catch(e){ return false; }
+  }
+  // Only block scrolling/gestures when the touch started on the controller area
+  let __lock = false;
 
   document.addEventListener("touchstart", function(e){
-    if(e.touches && e.touches.length > 1){
+    __lock = inControls(e.target);
+    if(__lock && e.touches && e.touches.length > 1){
       try{ e.preventDefault(); }catch(_){}
     }
   }, { passive:false });
 
+  document.addEventListener("touchmove", function(e){
+    if(!__lock) return;
+    try{ e.preventDefault(); }catch(_){}
+  }, { passive:false });
+
+  document.addEventListener("touchend", function(e){
+    __lock = false;
+  }, { passive:true });
+
+  // iOS gesture events (safe to keep scoped off; but harmless)
+  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
+    window.addEventListener(ev, function(e){
+      // do not block on Android; only if we're locked
+      if(__lock){ try{ e.preventDefault(); }catch(_){} }
+    }, { passive:false });
+  });
+
+  // double-tap zoom prevention (only when interacting with controls)
   let last=0;
   document.addEventListener("touchend", function(e){
+    if(!inControls(e.target)) return;
     const now=Date.now();
     if(now-last<=300){
       try{ e.preventDefault(); }catch(_){}
@@ -2735,80 +2759,30 @@ loop();
 </script>
 
 
-<style id="androidCanvasLayerV2">
-/* ===== GAME3 ANDROID v2: ensure canvas is visible ===== */
-#c{
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 1 !important;
-}
-#uiLayer, #gateOverlay, #mobileDebugOverlay{
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 10 !important;
-  pointer-events: none;
-}
-/* but keep actual buttons clickable */
-#mobileControls, #leftPanel, #rightPanel, #topBar, #hud, button{
-  pointer-events: auto;
-}
-</style>
-
-
-<script id="androidCharForceV2">
+<script id="androidRAFWatchdogV3">
 (function(){
-  function isMobileLandscape(){
-    try{
-      return (window.innerWidth <= 980) && (window.innerWidth > window.innerHeight);
-    }catch(e){ return false; }
-  }
-  function forcePos(){
-    try{
-      if(!isMobileLandscape()) return;
-      if(typeof player === "object" && player){
-        player.x = Math.max(120, window.innerWidth * 0.30);
-        player.y = Math.max(160, window.innerHeight * 0.72);
-        player.z = 0;
-        player.face = 1;
-      }
-      if(typeof enemy === "object" && enemy){
-        enemy.x = Math.min(window.innerWidth-120, window.innerWidth * 0.70);
-        enemy.y = Math.max(160, window.innerHeight * 0.72);
-        enemy.z = 0;
-        enemy.face = -1;
-      }
-    }catch(e){}
-  }
-  // run soon after load and on resize/orientation
-  setTimeout(forcePos, 400);
-  setTimeout(forcePos, 1200);
-  window.addEventListener("resize", ()=>setTimeout(forcePos, 200));
-  window.addEventListener("orientationchange", ()=>setTimeout(forcePos, 200));
+  // Track last frame timestamp (we hook into requestAnimationFrame via a tiny wrapper)
+  let lastFrame = performance.now();
+  const _raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = function(cb){
+    return _raf(function(t){
+      lastFrame = t || performance.now();
+      cb(t);
+    });
+  };
 
-  // also draw a tiny "canvas alive" dot if we can access ctx
-  setInterval(()=>{
+  function kick(){
     try{
-      if(!isMobileLandscape()) return;
-      if(typeof ctx !== "undefined" && ctx){
-        ctx.save();
-        ctx.globalAlpha = 0.9;
-        ctx.fillStyle = "rgba(255,0,0,0.9)";
-        ctx.fillRect(6, 6, 6, 6);
-        // mark where we think player/enemy are
-        if(typeof player==="object" && player){
-          ctx.fillStyle = "rgba(0,255,0,0.9)";
-          ctx.fillRect(player.x-3, player.y-3, 6, 6);
+      if(typeof loop === "function"){
+        // If no frame in > 1200ms, call loop once to restart the chain.
+        const now = performance.now();
+        if(now - lastFrame > 1200){
+          loop();
         }
-        if(typeof enemy==="object" && enemy){
-          ctx.fillStyle = "rgba(0,160,255,0.9)";
-          ctx.fillRect(enemy.x-3, enemy.y-3, 6, 6);
-        }
-        ctx.restore();
       }
     }catch(e){}
-  }, 300);
+  }
+  setInterval(kick, 700);
 })();
 </script>
 
