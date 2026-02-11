@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
 <title>Office Arena – Player 8-way Shot</title>
 <style>
-html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui}
-canvas{display:block;width:100vw;height:100vh}
+html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none;height:100%}
+canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:var(--vh,100vh);touch-action:none}
 
 /* ===== UI Overlay ===== */
 #resultOverlay{
@@ -571,14 +571,6 @@ canvas{display:block;width:100vw;height:100vh}
 </style>
 </head>
 <body>
-
-<div id="buildBadge" style="
-  position:fixed; left:8px; top:8px; z-index:100000;
-  background:rgba(0,0,0,0.45); color:#fff; font:700 11px system-ui;
-  padding:4px 6px; border-radius:8px; display:none;">
-  GAME3 ANDROID v6
-</div>
-
 <canvas id="c"></canvas>
 
 <!-- 📱 Mobile Gates: landscape required, iPhone requires Add to Home Screen (standalone) -->
@@ -658,12 +650,8 @@ canvas{display:block;width:100vw;height:100vh}
   <div id="mobileControls" aria-label="mobile controls">
     <!-- LEFT: swipe D-pad zone -->
     <div class="mc-dpad mc-left" id="dpadZone" aria-label="move">
-      <div class="mc-lr" style="align-items:center;">
+      <div class="mc-lr">
         <div class="mc-hint">◀︎</div>
-        <div style="display:flex; flex-direction:column; gap:2px; align-items:center; opacity:0.9;">
-          <div class="mc-hint" style="font-size:16px;">▲</div>
-          <div class="mc-hint" style="font-size:16px;">▼</div>
-        </div>
         <div class="mc-hint">▶︎</div>
       </div>
     </div>
@@ -690,54 +678,13 @@ canvas{display:block;width:100vw;height:100vh}
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 
-// ===== ANDROID v6: VisualViewport-based sizing + hard character fallback draw =====
-function __getVWVH(){
-  // Prefer visualViewport on mobile browsers (especially Android Chrome with dynamic URL bar)
-  try{
-    const vv = window.visualViewport;
-    if(vv && vv.width && vv.height){
-      // Use layout viewport width/height; vv.* are CSS pixels
-      return { w: Math.floor(vv.width), h: Math.floor(vv.height) };
-
-function __hardKeepCharsInView(){
-  try{
-    if(!player || !enemy) return;
-    // If values are missing/out of range, snap to visible area.
-    const bad = (v)=> (typeof v !== "number") || !isFinite(v);
-    const clamp = (v, a, b)=> Math.max(a, Math.min(b, v));
-    const padX = 120;
-    const baseY = Math.max(160, viewH * 0.72);
-    if(bad(player.x) || bad(player.y) || player.x < -500 || player.x > viewW+500 || player.y < -500 || player.y > viewH+500){
-      player.x = clamp(viewW*0.30, padX, viewW-padX);
-      player.y = baseY;
-      player.face = 1;
-    }
-    if(bad(enemy.x) || bad(enemy.y) || enemy.x < -500 || enemy.x > viewW+500 || enemy.y < -500 || enemy.y > viewH+500){
-      enemy.x = clamp(viewW*0.70, padX, viewW-padX);
-      enemy.y = baseY;
-      enemy.face = -1;
-    }
-    // keep inside view bounds always (no falling below screen)
-    player.x = clamp(player.x, padX, viewW-padX);
-    enemy.x  = clamp(enemy.x,  padX, viewW-padX);
-    player.y = clamp(player.y, 80, viewH-60);
-    enemy.y  = clamp(enemy.y,  80, viewH-60);
-  }catch(e){}
-}
-
-    }
-  }catch(e){}
-  return { w: Math.floor(innerWidth), h: Math.floor(innerHeight) };
-}
-
-
 // ===== Input state (must exist before mobile controls bind) =====
 let keys = {}, pressed = {};
 
 
 /* ===== Mobile character size reduction (20%) ===== */
 const __isMobileChar = matchMedia("(hover:none) and (pointer:coarse)").matches;
-const __mobileCharScale = __isMobileChar ? 0.4 : 1;
+const __mobileCharScale = __isMobileChar ? 0.8 : 1;
 
 
 function showMobileDebug(title, msg){
@@ -891,33 +838,21 @@ function bindMobileControls(){
     function setDirFromEvent(e){
       const r = zone.getBoundingClientRect();
       const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-
-      const cx = r.width / 2;
-      const cy = r.height / 2;
-
-      const dx = x - cx;
-      const dy = y - cy;
-
-      const threshold = 10; // 감도(너무 민감하지 않게)
-
-      keys["ArrowLeft"]  = dx < -threshold;
-      keys["ArrowRight"] = dx >  threshold;
-      keys["ArrowUp"]    = dy < -threshold;
-      keys["ArrowDown"]  = dy >  threshold;
-
-      // 아무 방향도 아니면 전부 끄기(중앙)
-      if(!keys["ArrowLeft"] && !keys["ArrowRight"] && !keys["ArrowUp"] && !keys["ArrowDown"]){
-        clearDir();
+      const half = r.width / 2;
+      if (x < half){
+        keys["ArrowLeft"] = true;
+        keys["ArrowRight"] = false;
+      }else{
+        keys["ArrowRight"] = true;
+        keys["ArrowLeft"] = false;
       }
     }
     function clearDir(){
-      keys["ArrowLeft"]  = false;
+      keys["ArrowLeft"] = false;
       keys["ArrowRight"] = false;
-      keys["ArrowUp"]    = false;
-      keys["ArrowDown"]  = false;
     }
-zone.addEventListener("pointerdown", (e)=>{
+
+    zone.addEventListener("pointerdown", (e)=>{
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       activePointerId = e.pointerId;
       try{ zone.setPointerCapture(activePointerId); }catch(_){}
@@ -1165,8 +1100,8 @@ function pickRandomBg(){
 pickRandomBg();
 
 // ===== Sprite scale =====
-const PLAYER_SPRITE_SCALE = 2.0 * __mobileCharScale; // 주인공 100% 더 크게 (2.0x) // 주인공 70% 크게 (1.7x) // 주인공 70%
-const ENEMY_SPRITE_SCALE  = 2.6 * __mobileCharScale; // 적 160% 더 크게 (2.6x) // 적 100% 크게 (2.0x) // 적 100%
+const PLAYER_SPRITE_SCALE = 2.0; // 주인공 100% 더 크게 (2.0x) // 주인공 70% 크게 (1.7x) // 주인공 70%
+const ENEMY_SPRITE_SCALE  = 2.6; // 적 160% 더 크게 (2.6x) // 적 100% 크게 (2.0x) // 적 100%
 
 // ===== Sprites =====
 const playerImages = {
@@ -1620,28 +1555,66 @@ addEventListener("keydown",e=>{
 addEventListener("keyup",e=>keys[e.code]=false);
 
 // ===== Canvas sizing =====
+
+// ===== Canvas sizing (stable on Android/iOS) =====
 let viewW=0, viewH=0, dpr=1;
-function resize(){
-  dpr = devicePixelRatio || 1;
-  // ANDROID DPR FIX: 일부 안드로이드(크롬)에서 DPR 스케일+좌표 변환이 어긋나 캐릭터가 화면 밖으로 밀리는 현상 방지
-  try{ if(/Android/i.test(navigator.userAgent) && (innerWidth<=980)) dpr = 1; }catch(e){}
-  const __vv = __getVWVH();
-  viewW = __vv.w;
-  viewH = __vv.h;
-  canvas.width  = viewW * dpr;
-  canvas.height = viewH * dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
 
-  // ✅ 모바일일 때만 스테이지 폴리곤을 화면에 맞게 변환
-  computeStagePolyActive();
-
-  // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
-  try{ clampIntoPoly(player); }catch(e){}
-  try{ clampIntoPoly(enemy); }catch(e){}
+function _getViewportSize(){
+  // Use visualViewport when available (Android URL bar / keyboard issues)
+  const vv = window.visualViewport;
+  const w = Math.round((vv && vv.width)  ? vv.width  : window.innerWidth);
+  const h = Math.round((vv && vv.height) ? vv.height : window.innerHeight);
+  return {w,h};
 }
-addEventListener("resize", resize);
+
+let _resizePending = false;
+function resize(){
+  if(_resizePending) return;
+  _resizePending = true;
+  requestAnimationFrame(()=>{
+    _resizePending = false;
+
+    const {w,h} = _getViewportSize();
+    viewW = w; viewH = h;
+
+    // Cap DPR for performance on mobile (prevents huge canvas on high-DPR Android)
+    const rawDpr = window.devicePixelRatio || 1;
+    dpr = Math.min(rawDpr, 2);
+
+    // lock CSS size to viewport px (prevents 100vh bugs)
+    document.documentElement.style.setProperty("--vw", viewW + "px");
+    document.documentElement.style.setProperty("--vh", viewH + "px");
+    canvas.style.width  = viewW + "px";
+    canvas.style.height = viewH + "px";
+
+    canvas.width  = Math.max(1, Math.round(viewW * dpr));
+    canvas.height = Math.max(1, Math.round(viewH * dpr));
+
+    // draw in CSS pixels
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    // ✅ 모바일일 때만 스테이지 폴리곤을 화면에 맞게 변환
+    computeStagePolyActive();
+
+    // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
+    try{ clampIntoPoly(player); }catch(e){}
+    try{ clampIntoPoly(enemy); }catch(e){}
+  });
+}
+
+addEventListener("resize", resize, {passive:true});
+addEventListener("orientationchange", resize, {passive:true});
+if(window.visualViewport){
+  visualViewport.addEventListener("resize", resize, {passive:true});
+  visualViewport.addEventListener("scroll", resize, {passive:true});
+}
 resize();
 
+// prevent accidental zoom while playing (Android pinch / iOS double tap)
+document.addEventListener("gesturestart", (e)=>{ e.preventDefault(); }, {passive:false});
+document.addEventListener("touchmove", (e)=>{
+  if(e.scale && e.scale !== 1) e.preventDefault();
+}, {passive:false});
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
   let inside=false;
@@ -2327,19 +2300,6 @@ function drawBursts(){
 
 
 // ===== Drawing =====
-
-function __drawFallbackBox(o, rgba){
-  try{
-    if(!o) return;
-    ctx.save();
-    ctx.globalAlpha = 0.95;
-    ctx.fillStyle = rgba || "rgba(255,255,255,0.9)";
-    const w = 34, h = 54;
-    ctx.fillRect(o.x - w/2, o.y - h, w, h);
-    ctx.restore();
-  }catch(e){}
-}
-
 function drawSprite(obj, images){
   const img = images[obj.state] || images.idle;
   if(!img || !img.complete){
@@ -2515,8 +2475,7 @@ function draw(){
 
 // ===== Main loop =====
 function loop(){
-  try{ __hardKeepCharsInView(); }catch(e){}
-updateCameraShake();
+  updateCameraShake();
   // ===== PAUSE: render only =====
   if(__paused){
     draw();
@@ -2674,20 +2633,6 @@ updateCameraShake();
 }
 setTimeout(mobileAssetTimeoutCheck, 1500);
 loop();
-
-(function(){
-  // draw a tiny red dot every second to prove canvas is actively rendering
-  setInterval(()=>{
-    try{
-      ctx.save();
-      ctx.globalAlpha=0.9;
-      ctx.fillStyle="rgba(255,0,0,0.9)";
-      ctx.fillRect(6,6,6,6);
-      ctx.restore();
-    }catch(e){}
-  }, 500);
-})();
-
 </script>
 
 <script>
@@ -2728,146 +2673,6 @@ loop();
   window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
   document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
   setInterval(updateGates, 800);
-})();
-</script>
-
-
-<style id="androidOverridesV1">
-/* ===== GAME3 ANDROID v6 (LAST OVERRIDES) ===== */
-@media screen and (max-width: 980px) and (orientation: landscape){
-  #buildBadge{ display:block !important; }
-
-  /* Top bar centered + smaller */
-  #topBar{
-    left:50% !important;
-    transform: translateX(-50%) scale(0.72) !important;
-    transform-origin:center top !important;
-    top: 6px !important;
-    width: calc(100% - 16px) !important;
-    z-index: 1000 !important;
-  }
-  #topBar .nameTag{ font-size: 8px !important; padding: 4px 6px !important; }
-  #topBar .hpBox{ flex: 0 0 36vw !important; max-width: 38vw !important; }
-
-  /* Left/Right panels smaller */
-  #leftPanel, #rightPanel{
-    transform: scale(0.52) !important;
-    width: 260px !important;
-    padding: 10px !important;
-    z-index: 900 !important;
-  }
-  #leftPanel{ transform-origin:left top !important; left: 6px !important; top: 74px !important; }
-  #rightPanel{ transform-origin:right top !important; right: 6px !important; top: 74px !important; }
-
-  /* Controls */
-  #mobileControls{
-    position:fixed !important;
-    left:0 !important; right:0 !important;
-    width:100% !important;
-    display:flex !important;
-    justify-content: space-between !important;
-    align-items:flex-end !important;
-    padding: 0 14px !important;
-    bottom: 10px !important;
-    transform:none !important;
-    z-index:100000 !important;
-    touch-action:none !important;
-  }
-  #dpadZone, #actionZone, #mobileControls button{
-    touch-action:none !important;
-    -webkit-user-select:none !important;
-    user-select:none !important;
-  }
-}
-</style>
-
-
-
-<script id="mobileGestureLockV3_scoped">
-(function(){
-  function inControls(el){
-    try{
-      return !!(el && (el.closest && (el.closest("#mobileControls") || el.closest("#dpadZone") || el.closest("#actionZone"))));
-    }catch(e){ return false; }
-  }
-  // Only block scrolling/gestures when the touch started on the controller area
-  let __lock = false;
-
-  document.addEventListener("touchstart", function(e){
-    __lock = inControls(e.target);
-    if(__lock && e.touches && e.touches.length > 1){
-      try{ e.preventDefault(); }catch(_){}
-    }
-  }, { passive:false });
-
-  document.addEventListener("touchmove", function(e){
-    if(!__lock) return;
-    try{ e.preventDefault(); }catch(_){}
-  }, { passive:false });
-
-  document.addEventListener("touchend", function(e){
-    __lock = false;
-  }, { passive:true });
-
-  // iOS gesture events (safe to keep scoped off; but harmless)
-  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
-    window.addEventListener(ev, function(e){
-      // do not block on Android; only if we're locked
-      if(__lock){ try{ e.preventDefault(); }catch(_){} }
-    }, { passive:false });
-  });
-
-  // double-tap zoom prevention (only when interacting with controls)
-  let last=0;
-  document.addEventListener("touchend", function(e){
-    if(!inControls(e.target)) return;
-    const now=Date.now();
-    if(now-last<=300){
-      try{ e.preventDefault(); }catch(_){}
-    }
-    last=now;
-  }, { passive:false });
-})();
-</script>
-
-
-<script id="androidRAFWatchdogV3">
-(function(){
-  // Track last frame timestamp (we hook into requestAnimationFrame via a tiny wrapper)
-  let lastFrame = performance.now();
-  const _raf = window.requestAnimationFrame.bind(window);
-  window.requestAnimationFrame = function(cb){
-    return _raf(function(t){
-      lastFrame = t || performance.now();
-      cb(t);
-    });
-  };
-
-  function kick(){
-    try{
-      if(typeof loop === "function"){
-        // If no frame in > 1200ms, call loop once to restart the chain.
-        const now = performance.now();
-        if(now - lastFrame > 1200){
-          loop();
-        }
-      }
-    }catch(e){}
-  }
-  setInterval(kick, 700);
-})();
-</script>
-
-
-<script id="androidDprDebugV4">
-(function(){
-  try{
-    if(!/Android/i.test(navigator.userAgent)) return;
-    const el=document.getElementById("buildBadge");
-    if(el){
-      el.textContent = (el.textContent || "GAME3 ANDROID v6") + " (dpr=1 + vv)";
-    }
-  }catch(e){}
 })();
 </script>
 
