@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta name="theme-color" content="#000000"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
 <title>Office Arena – Player 8-way Shot</title>
@@ -571,60 +568,6 @@ canvas{display:block;width:100vw;height:100vh}
 @media (max-width: 980px){
   #mobileControls{ display: flex; }
 }
-
-/* ===== Mobile Stability Lock (prevent edge-zoom/scroll) ===== */
-html, body{
-  width:100%;
-  height:100%;
-  overflow:hidden !important;
-  position:fixed; /* prevents Android overscroll + iOS bounce affecting layout */
-  inset:0;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: auto;
-  touch-action: none;           /* stop browser gestures on touch */
-  -webkit-user-select: none;
-  user-select: none;
-}
-canvas, #uiLayer, #mobileControls{
-  touch-action: none !important;
-  -webkit-user-select:none;
-  user-select:none;
-}
-
-
-/* ===== Mobile Layout Fix (Android + iPhone): shrink UI in landscape ===== */
-@media (hover:none) and (pointer:coarse){
-  /* Top bar: keep centered + smaller */
-  #topBar{
-    left:50% !important;
-    transform: translateX(-50%) scale(0.78) !important;
-    transform-origin: center top !important;
-    top: 6px !important;
-    width: calc(100% - 16px) !important;
-  }
-  #topBar .nameTag{ font-size: 8px !important; padding: 4px 6px !important; }
-  #topBar .hpBox{ flex: 0 0 38vw !important; max-width: 40vw !important; }
-
-  /* Left/Right panels: much smaller */
-  #leftPanel, #rightPanel{
-    transform: scale(0.55) !important;
-    width: 220px !important;   /* base width; scale will shrink */
-    transform-origin: left top;
-  }
-  #rightPanel{ transform-origin: right top; }
-  #leftPanel{ left: 6px !important; top: 72px !important; }
-  #rightPanel{ right: 6px !important; top: 72px !important; }
-
-  /* Mobile controls: ensure visible and not huge */
-  #mobileControls{
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    padding: 0 14px !important;
-    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -633,7 +576,7 @@ canvas, #uiLayer, #mobileControls{
   position:fixed; left:8px; top:8px; z-index:100000;
   background:rgba(0,0,0,0.45); color:#fff; font:700 11px system-ui;
   padding:4px 6px; border-radius:8px; display:none;">
-  ANDROID-FIX v4
+  GAME3 ANDROID v1
 </div>
 
 <canvas id="c"></canvas>
@@ -746,32 +689,6 @@ canvas, #uiLayer, #mobileControls{
 <script>
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
-
-// ===== Mobile Stability: prevent pinch/edge zoom (iOS/Android) =====
-(function(){
-  // iOS Safari gesture events
-  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
-    window.addEventListener(ev, function(e){ try{ e.preventDefault(); }catch(_){} }, { passive:false });
-  });
-
-  // Prevent multi-touch pinch from triggering zoom/scroll
-  document.addEventListener("touchstart", function(e){
-    if(e.touches && e.touches.length > 1){
-      try{ e.preventDefault(); }catch(_){}
-    }
-  }, { passive:false });
-
-  // Prevent double-tap zoom
-  let __lastTouchEnd = 0;
-  document.addEventListener("touchend", function(e){
-    const now = Date.now();
-    if(now - __lastTouchEnd <= 300){
-      try{ e.preventDefault(); }catch(_){}
-    }
-    __lastTouchEnd = now;
-  }, { passive:false });
-})();
-
 
 // ===== Input state (must exist before mobile controls bind) =====
 let keys = {}, pressed = {};
@@ -970,8 +887,7 @@ zone.addEventListener("pointerdown", (e)=>{
       if (activePointerId === null) return;
       if (e.pointerId !== activePointerId) return;
       setDirFromEvent(e);
-    
-      try{ e.preventDefault(); }catch(_){}} , { passive:false });
+    }, { passive:true });
 
     const end = (e)=>{
       if (activePointerId === null) return;
@@ -1050,8 +966,7 @@ zone.addEventListener("pointerdown", (e)=>{
         lastBtn = b;
         fire(b);
       }
-    
-      try{ e.preventDefault(); }catch(_){}} , { passive:false });
+    }, { passive:true });
 
     const end = (e)=>{
       if(activePointerId === null) return;
@@ -1665,32 +1580,6 @@ addEventListener("keyup",e=>keys[e.code]=false);
 
 // ===== Canvas sizing =====
 let viewW=0, viewH=0, dpr=1;
-
-// ===== Mobile visibility watchdog (Android fix: ensure characters spawn in view) =====
-function __isTouchMobile(){
-  try{ return matchMedia("(hover:none) and (pointer:coarse)").matches; }catch(e){ return false; }
-}
-function ensureCharsVisible(){
-  try{
-    if(!__isTouchMobile()) return;
-    if(!player || !enemy) return;
-    const bad = (v)=> (typeof v !== "number") || !isFinite(v);
-    const out = (o)=> bad(o.x) || bad(o.y) || o.x < -200 || o.x > viewW+200 || o.y < -200 || o.y > viewH+200;
-    if(out(player)){
-      player.x = Math.max(120, viewW*0.28);
-      player.y = Math.max(140, viewH*0.70);
-      player.z = 0;
-      player.face = 1;
-    }
-    if(out(enemy)){
-      enemy.x = Math.min(viewW-120, viewW*0.72);
-      enemy.y = Math.max(140, viewH*0.70);
-      enemy.z = 0;
-      enemy.face = -1;
-    }
-  }catch(e){}
-}
-
 function resize(){
   dpr = devicePixelRatio || 1;
   viewW = innerWidth;
@@ -1705,11 +1594,9 @@ function resize(){
   // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
   try{ clampIntoPoly(player); }catch(e){}
   try{ clampIntoPoly(enemy); }catch(e){}
-  try{ ensureCharsVisible(); }catch(e){}
 }
 addEventListener("resize", resize);
 resize();
-setInterval(ensureCharsVisible, 800);
 
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
@@ -2773,30 +2660,34 @@ loop();
 </script>
 
 
-<style id="androidFixV4">
-/* ===== ANDROID-FIX v4 (LAST OVERRIDES) ===== */
-@media (hover:none) and (pointer:coarse){
+<style id="androidOverridesV1">
+/* ===== GAME3 ANDROID v1 (LAST OVERRIDES) ===== */
+@media screen and (max-width: 980px) and (orientation: landscape){
   #buildBadge{ display:block !important; }
 
+  /* Top bar centered + smaller */
   #topBar{
     left:50% !important;
     transform: translateX(-50%) scale(0.72) !important;
     transform-origin:center top !important;
     top: 6px !important;
     width: calc(100% - 16px) !important;
+    z-index: 1000 !important;
   }
   #topBar .nameTag{ font-size: 8px !important; padding: 4px 6px !important; }
   #topBar .hpBox{ flex: 0 0 36vw !important; max-width: 38vw !important; }
 
+  /* Left/Right panels smaller */
   #leftPanel, #rightPanel{
-    transform: scale(0.50) !important;
-    width: 240px !important;
+    transform: scale(0.52) !important;
+    width: 260px !important;
     padding: 10px !important;
+    z-index: 900 !important;
   }
   #leftPanel{ transform-origin:left top !important; left: 6px !important; top: 74px !important; }
   #rightPanel{ transform-origin:right top !important; right: 6px !important; top: 74px !important; }
 
-  /* controls */
+  /* Controls */
   #mobileControls{
     position:fixed !important;
     left:0 !important; right:0 !important;
@@ -2805,40 +2696,41 @@ loop();
     justify-content: space-between !important;
     align-items:flex-end !important;
     padding: 0 14px !important;
-    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    bottom: 10px !important;
     transform:none !important;
     z-index:100000 !important;
+    touch-action:none !important;
+  }
+  #dpadZone, #actionZone, #mobileControls button{
+    touch-action:none !important;
+    -webkit-user-select:none !important;
+    user-select:none !important;
   }
 }
 </style>
 
 
-<script id="androidFixV4js">
+<script id="mobileGestureLockV1">
 (function(){
-  function isMobile(){ try{return matchMedia("(hover:none) and (pointer:coarse)").matches;}catch(e){return false;} }
-  function showMsg(txt){
-    let el=document.getElementById("androidMsg");
-    if(!el){
-      el=document.createElement("div");
-      el.id="androidMsg";
-      el.style.cssText="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:100001;background:rgba(0,0,0,0.7);color:#fff;padding:10px 12px;border-radius:12px;font:700 13px system-ui;display:none;text-align:center;max-width:80vw;";
-      document.body.appendChild(el);
+  // Stop pinch/double-tap zoom and edge scroll during controls
+  document.addEventListener("touchmove", function(e){
+    try{ e.preventDefault(); }catch(_){}
+  }, { passive:false });
+
+  document.addEventListener("touchstart", function(e){
+    if(e.touches && e.touches.length > 1){
+      try{ e.preventDefault(); }catch(_){}
     }
-    el.innerHTML=txt;
-    el.style.display="block";
-  }
-  if(!isMobile()) return;
-  // If after 1.2s both sprites still not drawn (likely offscreen), force reset positions
-  setTimeout(()=>{
-    try{
-      if(typeof player==='object' && typeof enemy==='object'){
-        player.x = Math.max(120, (window.innerWidth||800)*0.28);
-        player.y = Math.max(140, (window.innerHeight||400)*0.70);
-        enemy.x  = Math.min((window.innerWidth||800)-120, (window.innerWidth||800)*0.72);
-        enemy.y  = Math.max(140, (window.innerHeight||400)*0.70);
-      }
-    }catch(e){}
-  }, 1200);
+  }, { passive:false });
+
+  let last=0;
+  document.addEventListener("touchend", function(e){
+    const now=Date.now();
+    if(now-last<=300){
+      try{ e.preventDefault(); }catch(_){}
+    }
+    last=now;
+  }, { passive:false });
 })();
 </script>
 
