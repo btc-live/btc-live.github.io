@@ -576,7 +576,7 @@ canvas{display:block;width:100vw;height:100vh}
   position:fixed; left:8px; top:8px; z-index:100000;
   background:rgba(0,0,0,0.45); color:#fff; font:700 11px system-ui;
   padding:4px 6px; border-radius:8px; display:none;">
-  GAME3 ANDROID v3
+  GAME3 ANDROID v4
 </div>
 
 <canvas id="c"></canvas>
@@ -1582,6 +1582,8 @@ addEventListener("keyup",e=>keys[e.code]=false);
 let viewW=0, viewH=0, dpr=1;
 function resize(){
   dpr = devicePixelRatio || 1;
+  // ANDROID DPR FIX: 일부 안드로이드(크롬)에서 DPR 스케일+좌표 변환이 어긋나 캐릭터가 화면 밖으로 밀리는 현상 방지
+  try{ if(/Android/i.test(navigator.userAgent) && (innerWidth<=980)) dpr = 1; }catch(e){}
   viewW = innerWidth;
   viewH = innerHeight;
   canvas.width  = viewW * dpr;
@@ -2661,7 +2663,7 @@ loop();
 
 
 <style id="androidOverridesV1">
-/* ===== GAME3 ANDROID v3 (LAST OVERRIDES) ===== */
+/* ===== GAME3 ANDROID v4 (LAST OVERRIDES) ===== */
 @media screen and (max-width: 980px) and (orientation: landscape){
   #buildBadge{ display:block !important; }
 
@@ -2783,6 +2785,19 @@ loop();
     }catch(e){}
   }
   setInterval(kick, 700);
+})();
+</script>
+
+
+<script id="androidDprDebugV4">
+(function(){
+  try{
+    if(!/Android/i.test(navigator.userAgent)) return;
+    const el=document.getElementById("buildBadge");
+    if(el){
+      el.textContent = (el.textContent || "GAME3 ANDROID v4") + " (dpr=1)";
+    }
+  }catch(e){}
 })();
 </script>
 
