@@ -2734,5 +2734,83 @@ loop();
 })();
 </script>
 
+
+<style id="androidCanvasLayerV2">
+/* ===== GAME3 ANDROID v2: ensure canvas is visible ===== */
+#c{
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 1 !important;
+}
+#uiLayer, #gateOverlay, #mobileDebugOverlay{
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10 !important;
+  pointer-events: none;
+}
+/* but keep actual buttons clickable */
+#mobileControls, #leftPanel, #rightPanel, #topBar, #hud, button{
+  pointer-events: auto;
+}
+</style>
+
+
+<script id="androidCharForceV2">
+(function(){
+  function isMobileLandscape(){
+    try{
+      return (window.innerWidth <= 980) && (window.innerWidth > window.innerHeight);
+    }catch(e){ return false; }
+  }
+  function forcePos(){
+    try{
+      if(!isMobileLandscape()) return;
+      if(typeof player === "object" && player){
+        player.x = Math.max(120, window.innerWidth * 0.30);
+        player.y = Math.max(160, window.innerHeight * 0.72);
+        player.z = 0;
+        player.face = 1;
+      }
+      if(typeof enemy === "object" && enemy){
+        enemy.x = Math.min(window.innerWidth-120, window.innerWidth * 0.70);
+        enemy.y = Math.max(160, window.innerHeight * 0.72);
+        enemy.z = 0;
+        enemy.face = -1;
+      }
+    }catch(e){}
+  }
+  // run soon after load and on resize/orientation
+  setTimeout(forcePos, 400);
+  setTimeout(forcePos, 1200);
+  window.addEventListener("resize", ()=>setTimeout(forcePos, 200));
+  window.addEventListener("orientationchange", ()=>setTimeout(forcePos, 200));
+
+  // also draw a tiny "canvas alive" dot if we can access ctx
+  setInterval(()=>{
+    try{
+      if(!isMobileLandscape()) return;
+      if(typeof ctx !== "undefined" && ctx){
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = "rgba(255,0,0,0.9)";
+        ctx.fillRect(6, 6, 6, 6);
+        // mark where we think player/enemy are
+        if(typeof player==="object" && player){
+          ctx.fillStyle = "rgba(0,255,0,0.9)";
+          ctx.fillRect(player.x-3, player.y-3, 6, 6);
+        }
+        if(typeof enemy==="object" && enemy){
+          ctx.fillStyle = "rgba(0,160,255,0.9)";
+          ctx.fillRect(enemy.x-3, enemy.y-3, 6, 6);
+        }
+        ctx.restore();
+      }
+    }catch(e){}
+  }, 300);
+})();
+</script>
+
 </body>
 </html>
