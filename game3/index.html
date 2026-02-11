@@ -576,7 +576,7 @@ canvas{display:block;width:100vw;height:100vh}
   position:fixed; left:8px; top:8px; z-index:100000;
   background:rgba(0,0,0,0.45); color:#fff; font:700 11px system-ui;
   padding:4px 6px; border-radius:8px; display:none;">
-  GAME3 ANDROID v4
+  GAME3 ANDROID v6
 </div>
 
 <canvas id="c"></canvas>
@@ -689,6 +689,47 @@ canvas{display:block;width:100vw;height:100vh}
 <script>
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
+
+// ===== ANDROID v6: VisualViewport-based sizing + hard character fallback draw =====
+function __getVWVH(){
+  // Prefer visualViewport on mobile browsers (especially Android Chrome with dynamic URL bar)
+  try{
+    const vv = window.visualViewport;
+    if(vv && vv.width && vv.height){
+      // Use layout viewport width/height; vv.* are CSS pixels
+      return { w: Math.floor(vv.width), h: Math.floor(vv.height) };
+
+function __hardKeepCharsInView(){
+  try{
+    if(!player || !enemy) return;
+    // If values are missing/out of range, snap to visible area.
+    const bad = (v)=> (typeof v !== "number") || !isFinite(v);
+    const clamp = (v, a, b)=> Math.max(a, Math.min(b, v));
+    const padX = 120;
+    const baseY = Math.max(160, viewH * 0.72);
+    if(bad(player.x) || bad(player.y) || player.x < -500 || player.x > viewW+500 || player.y < -500 || player.y > viewH+500){
+      player.x = clamp(viewW*0.30, padX, viewW-padX);
+      player.y = baseY;
+      player.face = 1;
+    }
+    if(bad(enemy.x) || bad(enemy.y) || enemy.x < -500 || enemy.x > viewW+500 || enemy.y < -500 || enemy.y > viewH+500){
+      enemy.x = clamp(viewW*0.70, padX, viewW-padX);
+      enemy.y = baseY;
+      enemy.face = -1;
+    }
+    // keep inside view bounds always (no falling below screen)
+    player.x = clamp(player.x, padX, viewW-padX);
+    enemy.x  = clamp(enemy.x,  padX, viewW-padX);
+    player.y = clamp(player.y, 80, viewH-60);
+    enemy.y  = clamp(enemy.y,  80, viewH-60);
+  }catch(e){}
+}
+
+    }
+  }catch(e){}
+  return { w: Math.floor(innerWidth), h: Math.floor(innerHeight) };
+}
+
 
 // ===== Input state (must exist before mobile controls bind) =====
 let keys = {}, pressed = {};
@@ -1584,8 +1625,9 @@ function resize(){
   dpr = devicePixelRatio || 1;
   // ANDROID DPR FIX: 일부 안드로이드(크롬)에서 DPR 스케일+좌표 변환이 어긋나 캐릭터가 화면 밖으로 밀리는 현상 방지
   try{ if(/Android/i.test(navigator.userAgent) && (innerWidth<=980)) dpr = 1; }catch(e){}
-  viewW = innerWidth;
-  viewH = innerHeight;
+  const __vv = __getVWVH();
+  viewW = __vv.w;
+  viewH = __vv.h;
   canvas.width  = viewW * dpr;
   canvas.height = viewH * dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -1599,53 +1641,6 @@ function resize(){
 }
 addEventListener("resize", resize);
 resize();
-
-// ===== ANDROID FLOOR FIX (v5): force player/enemy onto visible floor after resize =====
-function __isAndroidMobile(){
-  try{ return /Android/i.test(navigator.userAgent) && (innerWidth <= 980); }catch(e){ return false; }
-}
-function __getStageBounds(poly){
-  try{
-    if(!poly || !poly.length) return null;
-    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-    for(const p of poly){
-      if(!p) continue;
-      if(p.x<minX) minX=p.x;
-      if(p.y<minY) minY=p.y;
-      if(p.x>maxX) maxX=p.x;
-      if(p.y>maxY) maxY=p.y;
-    }
-    return {minX,minY,maxX,maxY};
-  }catch(e){ return null; }
-}
-function __forceCharsOnFloor(){
-  try{
-    if(!__isAndroidMobile()) return;
-    const poly = (typeof STAGE_POLY_ACTIVE !== "undefined" && STAGE_POLY_ACTIVE && STAGE_POLY_ACTIVE.length) ? STAGE_POLY_ACTIVE
-               : (typeof STAGE_POLY !== "undefined" ? STAGE_POLY : null);
-    const b = __getStageBounds(poly);
-    // fallback floor: 78% of viewH
-    const floorY = b ? Math.min(viewH - 60, b.maxY - 20) : Math.round(viewH * 0.78);
-    const leftX  = b ? Math.max(120, b.minX + 140) : Math.max(120, viewW * 0.28);
-    const rightX = b ? Math.min(viewW-120, b.maxX - 140) : Math.min(viewW-120, viewW * 0.72);
-
-    if(typeof player === "object" && player){
-      player.x = leftX;
-      player.y = floorY;
-      player.z = 0;
-      player.face = 1;
-      player.vy = 0;
-    }
-    if(typeof enemy === "object" && enemy){
-      enemy.x = rightX;
-      enemy.y = floorY;
-      enemy.z = 0;
-      enemy.face = -1;
-      enemy.vy = 0;
-    }
-  }catch(e){}
-}
-
 
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
@@ -2332,6 +2327,19 @@ function drawBursts(){
 
 
 // ===== Drawing =====
+
+function __drawFallbackBox(o, rgba){
+  try{
+    if(!o) return;
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = rgba || "rgba(255,255,255,0.9)";
+    const w = 34, h = 54;
+    ctx.fillRect(o.x - w/2, o.y - h, w, h);
+    ctx.restore();
+  }catch(e){}
+}
+
 function drawSprite(obj, images){
   const img = images[obj.state] || images.idle;
   if(!img || !img.complete){
@@ -2507,7 +2515,8 @@ function draw(){
 
 // ===== Main loop =====
 function loop(){
-  updateCameraShake();
+  try{ __hardKeepCharsInView(); }catch(e){}
+updateCameraShake();
   // ===== PAUSE: render only =====
   if(__paused){
     draw();
@@ -2665,6 +2674,20 @@ function loop(){
 }
 setTimeout(mobileAssetTimeoutCheck, 1500);
 loop();
+
+(function(){
+  // draw a tiny red dot every second to prove canvas is actively rendering
+  setInterval(()=>{
+    try{
+      ctx.save();
+      ctx.globalAlpha=0.9;
+      ctx.fillStyle="rgba(255,0,0,0.9)";
+      ctx.fillRect(6,6,6,6);
+      ctx.restore();
+    }catch(e){}
+  }, 500);
+})();
+
 </script>
 
 <script>
@@ -2710,7 +2733,7 @@ loop();
 
 
 <style id="androidOverridesV1">
-/* ===== GAME3 ANDROID v4 (LAST OVERRIDES) ===== */
+/* ===== GAME3 ANDROID v6 (LAST OVERRIDES) ===== */
 @media screen and (max-width: 980px) and (orientation: landscape){
   #buildBadge{ display:block !important; }
 
@@ -2842,7 +2865,7 @@ loop();
     if(!/Android/i.test(navigator.userAgent)) return;
     const el=document.getElementById("buildBadge");
     if(el){
-      el.textContent = (el.textContent || "GAME3 ANDROID v4") + " (dpr=1)";
+      el.textContent = (el.textContent || "GAME3 ANDROID v6") + " (dpr=1 + vv)";
     }
   }catch(e){}
 })();
