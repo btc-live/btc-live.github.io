@@ -217,56 +217,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   transform:rotate(45deg);
 }
 
-/* Mobile controls (touch) */
-#mobileControls{
-  position:absolute;
-  left:18px; bottom:18px;
-  display:none;
-  gap:12px;
-  align-items:flex-end;
-  pointer-events:auto;
-}
-#dpad{
-  width:150px; height:150px;
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  grid-template-rows:repeat(3, 1fr);
-  gap:8px;
-}
-#dpad button, #mobileActions button{
-  border-radius:14px;
-  border:2px solid rgba(255,255,255,0.65);
-  background:rgba(0,0,0,0.35);
-  color:#e9efff;
-  font-weight:900;
-  font-size:16px;
-  touch-action:none;
-}
-#dpad button:active, #mobileActions button:active{
-  background:rgba(255,255,255,0.12);
-}
-#dpad .empty{ border:none; background:transparent; }
-#mobileActions{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-#mobileActions button{
-  width:88px;
-  padding:12px 10px;
-}
-
-@media (hover:none) and (pointer:coarse), (max-width: 900px){
-  #mobileControls{ display:flex; }
-  #leftPanel{ top:72px; width:210px; }
-  #topBar{ width:min(980px, calc(100% - 32px)); }
-}
-@media (max-width: 720px){
-  #topBar{ width:calc(100% - 20px); }
-  #leftPanel{ width:200px; left:10px; }
-}
-
-
 /* ===== Rank display (KR + EN stacked) ===== */
 .rankKR{ display:block; font-weight:900; line-height:1.05; }
 .rankEN{ display:block; font-weight:800; font-size:11px; opacity:0.92; margin-top:2px; }
@@ -320,14 +270,15 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     top:6px;
   }
 
-  /* mobile controls: keep usable but smaller */
+    /* mobile controls: keep usable but NOT shifted left (attack buttons stay on the right) */
   #mobileControls{
     position:fixed !important;
-    left:8px !important;
-    bottom:calc(8px + env(safe-area-inset-bottom)) !important;
-    z-index:100 !important;
-    transform:scale(0.46);
-    transform-origin:left bottom;
+    left:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    z-index:200 !important;
+    transform:none !important;
+    transform-origin:initial !important;
   }
 }
 
@@ -353,122 +304,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   #topBar .hpBox{
     flex: 0 0 40vw !important;
     max-width: 42vw !important;
-  }
-}
-
-
-/* ===== Mobile UI v4 (requested tweaks) ===== */
-@media (hover:none) and (pointer:coarse){
-
-  /* 1) 양쪽 패널(좌/우 박스) 조금 아래로 */
-  #leftPanel{ top: 72px !important; }
-  #rightPanel{ top: 72px !important; }
-
-  /* 2) 상단의 양쪽 작은 박스(네임태그) 글씨 40% 줄이기 */
-  #topBar .nameTag{
-    font-size: 7px !important;           /* ~12px의 60% */
-    line-height: 1.1 !important;
-    padding: 4px 6px !important;
-  }
-
-  /* 3) 모바일 컨트롤 레이아웃 개선:
-        - 방향키(D-pad)는 왼쪽
-        - 점프/공격(A/S/D)은 오른쪽
-        - 스크롤/줌 방지로 끊김 최소화
-  */
-  #mobileControls{
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-end !important;
-    padding: 0 14px !important;
-    gap: 12px !important;
-    transform: none !important;          /* 중앙/좌우 배치 위해 scale 제거 */
-    touch-action: none !important;
-    -webkit-user-select: none !important;
-    user-select: none !important;
-  }
-
-  /* D-pad 크기: 화면에 맞춰 자동 */
-  #dpad{
-    width: min(34vw, 140px) !important;
-    height: min(34vw, 140px) !important;
-    gap: 6px !important;
-  }
-  #dpad button{
-    font-size: 13px !important;
-  }
-
-  /* 액션 버튼: 오른쪽에 모아 배치 */
-  #mobileActions{
-    display:flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    align-items: flex-end !important;
-  }
-  #mobileActions button{
-    width: min(20vw, 96px) !important;
-    padding: 10px 10px !important;
-    font-size: 13px !important;
-    touch-action: none !important;
-  }
-
-  /* 액션 버튼이 너무 아래로 내려가면 살짝 올림 */
-  #mobileActions{ margin-bottom: 4px !important; }
-}
-
-/* 가로모드에서도 동일 원칙 유지 + 버튼 약간 더 작게 */
-@media (hover:none) and (pointer:coarse) and (orientation:landscape){
-  #dpad{
-    width: min(30vw, 128px) !important;
-    height: min(30vw, 128px) !important;
-  }
-  #mobileActions button{
-    width: min(18vw, 88px) !important;
-    padding: 9px 9px !important;
-  }
-}
-
-
-/* ===== Mobile UI v5: action buttons compact (not tall vertical) ===== */
-@media (hover:none) and (pointer:coarse){
-  /* 액션 버튼을 '작은 클러스터'로: JUMP 위, A/S, D 아래 */
-  #mobileActions{
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-    align-items: end !important;
-    justify-items: end !important;
-    margin-bottom: 2px !important;
-  }
-  #mobileActions button{
-    width: min(22vw, 92px) !important;
-    padding: 10px 10px !important;
-    font-size: 13px !important;
-  }
-  /* JUMP는 두 칸 */
-  #mobileActions button:nth-child(1){
-    grid-column: 1 / 3 !important;
-    width: calc(min(22vw, 92px) * 2 + 8px) !important;
-  }
-  /* D는 아래에서 두 칸(가운데 느낌) */
-  #mobileActions button:nth-child(4){
-    grid-column: 1 / 3 !important;
-    width: calc(min(22vw, 92px) * 2 + 8px) !important;
-  }
-}
-
-/* 가로모드에서 조금 더 작게 */
-@media (hover:none) and (pointer:coarse) and (orientation:landscape){
-  #mobileActions button{
-    width: min(18vw, 82px) !important;
-    padding: 9px 9px !important;
-  }
-  #mobileActions button:nth-child(1),
-  #mobileActions button:nth-child(4){
-    width: calc(min(18vw, 82px) * 2 + 8px) !important;
   }
 }
 
@@ -505,186 +340,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   font-size:13px;
   opacity:0.92;
   line-height:1.55;
-}
-
-
-/* =============================
-   📱 Mobile Controls (Game2-style, for Game3)
-   - Left: dpadZone swipe
-   - Right: Jump + A/S/D
-   ============================= */
-#mobileControls{
-  position: fixed;
-  left: calc(env(safe-area-inset-left) + 18px);
-  right: calc(env(safe-area-inset-right) + 18px);
-  bottom: calc(var(--vvb, 0px) + max(env(safe-area-inset-bottom), 0px) + 14px);
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
-z-index: 80;
-  display: none;              /* 기본 숨김, 모바일에서만 표시 */
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 14px;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;         /* 스크롤/줌 방지 */
-  pointer-events: auto;
-}
-#mobileControls .mc-dpad{
-  flex: 0 0 auto;
-  min-width: 150px;           /* 히트박스 확대 */
-  height: 78px;
-  border-radius: 16px;
-  background: rgba(0,0,0,0.18);
-  border: 1px solid rgba(255,255,255,0.14);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-#mobileControls .mc-dpad .mc-lr{
-  width: 100%;
-  display:flex;
-  justify-content: space-between;
-  padding: 0 18px;
-  font-weight: 950;
-  opacity: 0.9;
-}
-#mobileControls .mc-dpad .mc-hint{
-  font-size: 18px;
-}
-
-#mobileControls .mc-actions{
-  flex: 0 0 auto;
-  display:flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-#mobileControls .mc-row{
-  display:flex;
-  gap: 10px;
-}
-#mobileControls .mc-btn{
-  width: 39px;
-  height: 39px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(0,0,0,0.42);
-  color: #fff;
-  font-weight: 950;
-  font-size: 18px;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-  padding: 0;
-  touch-action: none;
-}
-#mobileControls .mc-btn:active{ transform: translateY(1px); }
-
-#mobileControls .mc-jump{
-  width: 86px;
-  height: 39px;
-  font-size: 14px;
-  letter-spacing: 0.4px;
-}
-#mobileControls .mc-atk{
-  border-color: rgba(243,186,47,0.55);
-}
-
-@media (max-width: 980px){
-  #mobileControls{ display: flex; }
-}
-
-/* ==============================
-   ✅ ANDROID STABLE MODE (v1)
-   - Kill conflicting legacy mobile UI rules
-   - Use only Game2-style mobileControls
-   ============================== */
-@media (hover:none) and (pointer:coarse), (max-width: 980px){
-  /* Prevent any old scale-based mobileControls rules from messing layout */
-  #mobileControls{
-    position: fixed !important;
-    left: calc(env(safe-area-inset-left) + 12px) !important;
-    right: calc(env(safe-area-inset-right) + 12px) !important;
-    bottom: calc(env(safe-area-inset-bottom) + 10px) !important;
-    z-index: 120 !important;
-    display: flex !important;
-    align-items: flex-end !important;
-    justify-content: space-between !important;
-    gap: 14px !important;
-    transform: none !important;
-  }
-
-  /* Make panels smaller & scrollable */
-  #leftPanel, #rightPanel{
-    width: 160px !important;
-    padding: 8px !important;
-    font-size: 11px !important;
-    border-radius: 12px !important;
-    top: 64px !important;
-    max-height: calc(100vh - 200px) !important;
-    overflow: auto !important;
-  }
-  #leftPanel{ left: 8px !important; }
-  #rightPanel{ right: 8px !important; }
-
-  /* Keep top bar centered */
-  #topBar{
-    left: 50% !important;
-    transform: translateX(-50%) scale(0.86) !important;
-    transform-origin: center top !important;
-    top: 8px !important;
-    width: calc(100% - 12px) !important;
-  }
-  #topBar .nameTag{ min-width: 72px !important; padding: 6px 8px !important; font-size: 11px !important; }
-
-  /* Disable hover styles (some Android browsers do weird things) */
-  #leftPanel button:hover, #rightPanel button:hover{ background: rgba(255,255,255,0.10) !important; }
-}
-
-
-/* =============================
-   📱 Smooth 4-way D-Pad (Joystick)
-   - Continuous pointer tracking (no stutter)
-   - Supports diagonals (Up+Left, etc.)
-   ============================= */
-#mobileControls .mc-dpad{
-  width: clamp(92px, 20vw, 119px);
-  height: clamp(92px, 20vw, 119px);
-  border-radius: 999px;
-  position: relative;
-  overflow: visible;
-}
-#mobileControls .mc-joyBase{
-  position:absolute; inset:0;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.22);
-  border: 1px solid rgba(255,255,255,0.18);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
-}
-#mobileControls .mc-joyKnob{
-  position:absolute;
-  left:50%; top:50%;
-  width: 39px; height: 39px;
-  margin-left: -19.5px;
-  margin-top: -19.5px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.22);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-  transform: translate3d(0,0,0);
-  will-change: transform;
-}
-#mobileControls .mc-joyHint{
-  position:absolute;
-  left:50%; bottom:-22px;
-  transform: translateX(-50%);
-  font-size: 11px;
-  letter-spacing: 1.2px;
-  opacity: 0.65;
-  font-weight: 900;
-  user-select:none;
 }
 
 
@@ -829,6 +484,105 @@ z-index: 80;
 
 
 #infoOverlay .infoSub{ margin:10px 0 2px; font-size:12px; font-weight:950; opacity:0.92; letter-spacing:0.2px; }
+
+
+
+
+/* =============================
+   📱 Mobile Controls (Rebuilt v4)
+   - iPhone/Android safe-area not cut
+   - Simple: Joystick + Jump + A/S/D
+   ============================= */
+#mobileControls{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding:
+    12px
+    calc(env(safe-area-inset-right) + 12px)
+    calc(env(safe-area-inset-bottom) + 14px)
+    calc(env(safe-area-inset-left) + 12px);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  pointer-events: auto;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+#mobileControls .mc-move{
+  width: clamp(92px, 24vw, 116px);
+  height: clamp(92px, 24vw, 116px);
+  border-radius: 999px;
+  position: relative;
+  background: rgba(0,0,0,0.20);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+  overflow: hidden;
+}
+#mobileControls .mc-knob{
+  position:absolute;
+  left:50%; top:50%;
+  width: 40px; height: 40px;
+  margin-left:-20px; margin-top:-20px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  transform: translate3d(0,0,0);
+  will-change: transform;
+}
+#mobileControls .mc-buttons{
+  display:flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+#mobileControls button{
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.42);
+  color: #fff;
+  font-weight: 950;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  padding: 0;
+  touch-action:none;
+}
+#mcJump{
+  width: clamp(92px, 22vw, 118px);
+  height: 42px;
+  font-size: 14px;
+  letter-spacing: .4px;
+}
+#mobileControls .mc-row{
+  display:flex;
+  gap: 10px;
+}
+#mobileControls .mc-row button{
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+}
+#mobileControls button:active{ transform: translateY(1px); }
+
+@media (hover:none) and (pointer:coarse), (max-width: 980px){
+  #mobileControls{ display:flex; }
+}
+/* extra-small iPhone widths */
+@media (max-width: 390px){
+  #mobileControls{ gap: 10px; }
+  #mobileControls .mc-row{ gap: 8px; }
+  #mobileControls .mc-row button{ width: 40px; height: 40px; }
+  #mcJump{ height: 40px; }
+}
+
 </style>
 
 <style id="__desktopSlimPanels">
@@ -924,29 +678,16 @@ z-index: 80;
     </div>
     <div class="tgGateHint">※ 갤럭시는 홈화면 추가는 권장(선택)이며, 가로모드만 필수입니다.</div>
   </div>
+</div>
 
 <div id="androidFullscreenOverlay" style="display:none;">
   <div class="tgGateCard">
-    <div class="tgGateTitle">전체화면으로 시작하기</div>
-    <div class="tgGateDesc">안드로이드 브라우저는 보안 때문에 <b>자동 전체화면</b>이 불가능합니다.<br>아래 버튼을 한 번 누르면 전체화면을 시도합니다.</div>
-    <div style="margin-top:14px;">
-      <button id="btnAndroidFullscreen" type="button" style="
-        font-size:16px; font-weight:900;
-        padding:12px 16px; border-radius:14px;
-        border:1px solid rgba(255,255,255,0.35);
-        background:rgba(255,255,255,0.12); color:#e9efff;
-        cursor:pointer;
-      ">전체화면 시작(FULLSCREEN)</button>
-    </div>
-    <div class="tgGateHint" style="margin-top:12px; opacity:0.85;">
-      ※ 홈 화면에 추가(A2HS)로 실행하면 더 안정적입니다.
-    </div>
+    <div class="tgGateTitle">전체화면으로 실행해주세요</div>
+    <div class="tgGateDesc">안드로이드 브라우저는 <b>버튼을 눌러야</b> 전체화면 전환이 가능합니다.</div>
+    <button id="androidFsBtn" class="tgFsBtn" type="button">전체화면 시작 (FULLSCREEN)</button>
+    <div class="tgGateHint" style="margin-top:10px;">※ 전체화면 후 게임이 바로 시작됩니다.</div>
   </div>
 </div>
-
-</div>
-
-
 
 <div id="mobileDebugOverlay" style="
   position:fixed; inset:0; display:none;
@@ -1017,25 +758,21 @@ z-index: 80;
 
 
   
-  <div id="mobileControls" aria-label="mobile controls">
-    <!-- LEFT: swipe D-pad zone -->
-    <div class="mc-dpad mc-left" id="joyPad" aria-label="move">
-      <div class="mc-joyBase" aria-hidden="true">
-        <div class="mc-joyKnob" id="joyKnob"></div>
-      </div>
-      <div class="mc-joyHint" aria-hidden="true">MOVE</div>
+    <div id="mobileControls" aria-label="mobile controls">
+    <div class="mc-move" id="mcMove" aria-label="move">
+      <div class="mc-knob" id="mcKnob" aria-hidden="true"></div>
     </div>
 
-    <!-- RIGHT: actions -->
-    <div class="mc-actions mc-right" id="actionZone" aria-label="actions">
-      <button id="btnJump" type="button" class="mc-btn mc-jump" aria-label="jump">JUMP</button>
+    <div class="mc-buttons" aria-label="actions">
+      <button id="mcJump" type="button" aria-label="jump">JUMP</button>
       <div class="mc-row">
-        <button id="btnA" type="button" class="mc-btn mc-atk" aria-label="attack A">A</button>
-        <button id="btnS" type="button" class="mc-btn mc-atk" aria-label="attack S">S</button>
-        <button id="btnD" type="button" class="mc-btn mc-atk" aria-label="attack D">D</button>
+        <button id="mcA" type="button" aria-label="attack A">A</button>
+        <button id="mcS" type="button" aria-label="attack S">S</button>
+        <button id="mcD" type="button" aria-label="attack D">D</button>
       </div>
     </div>
   </div>
+</div>
 </div>
 
 
@@ -1237,237 +974,153 @@ function bindMobileControls(){
   const root = document.getElementById("mobileControls");
   if(!root) return;
 
-  const zone = document.getElementById("joyPad");
-  const actionZone = document.getElementById("actionZone");
+  const pad  = document.getElementById("mcMove");
+  const knob = document.getElementById("mcKnob");
 
-  const btnJump = document.getElementById("btnJump");
-  const btnA = document.getElementById("btnA");
-  const btnS = document.getElementById("btnS");
-  const btnD = document.getElementById("btnD");
+  const bJump = document.getElementById("mcJump");
+  const bA = document.getElementById("mcA");
+  const bS = document.getElementById("mcS");
+  const bD = document.getElementById("mcD");
+
+  // one-tap helper (keeps your existing keyboard system intact)
   const tapKey = (code)=>{
     try{
-      // 모바일에서 pressed가 프레임 타이밍에 씹히는 경우가 있어 별도 큐 사용
-      tapOnce[code] = true;     // 다음 프레임에서 1회 처리
-      keys[code] = true;        // 상태도 잠깐 유지(조금 더 길게)
+      tapOnce[code] = true;
+      keys[code] = true;
       setTimeout(()=>{ keys[code] = false; }, 160);
     }catch(e){}
   };
 
-  // ✅ iOS/Android 일부 브라우저는 pointer 이벤트가 불안정하거나 비활성일 수 있어
-  // touch/mouse까지 함께 바인딩해서 "무조건" 입력이 들어오게 합니다.
-  function bindPress(el, fn){
+  function bindPress(el, code){
     if(!el) return;
-    // Pointer
-    el.addEventListener("pointerdown", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){} fn(e); }, {passive:false});
-    // Touch fallback
-    el.addEventListener("touchstart", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){} fn(e); }, {passive:false});
-    // Mouse fallback (some Android browsers / Samsung DeX)
-    el.addEventListener("mousedown", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){} fn(e); }, {passive:false});
-  }
-
-
-  /* ===== Smooth Joystick D-pad (Up/Down/Left/Right + diagonals) ===== */
-  (function bindJoystick(){
-    const pad = document.getElementById("joyPad");
-    const knob = document.getElementById("joyKnob");
-    if(!pad) return;
-
-    let activePointerId = null;
-    let centerX = 0, centerY = 0, radius = 0;
-
-    function recalc(){
-      const r = pad.getBoundingClientRect();
-      centerX = r.left + r.width/2;
-      centerY = r.top  + r.height/2;
-      radius = Math.max(32, r.width * 0.38); // usable radius
-    }
-
-    function setKeysFromVec(dx, dy){
-      // deadzone + axis thresholds (tuned for "smooth" feel)
-      const dead = radius * 0.18;
-
-      // reset
-      keys["ArrowLeft"] = false;
-      keys["ArrowRight"] = false;
-      keys["ArrowUp"] = false;
-      keys["ArrowDown"] = false;
-
-      if(Math.abs(dx) < dead && Math.abs(dy) < dead){
-        return;
-      }
-
-      if(dx < -dead) keys["ArrowLeft"] = true;
-      if(dx >  dead) keys["ArrowRight"] = true;
-      if(dy < -dead) keys["ArrowUp"] = true;
-      if(dy >  dead) keys["ArrowDown"] = true;
-    }
-
-    function moveKnob(dx, dy){
-      if(!knob) return;
-      // clamp knob within radius
-      const d = Math.hypot(dx,dy) || 1;
-      const max = radius;
-      const k = (d > max) ? (max/d) : 1;
-      const tx = dx * k;
-      const ty = dy * k;
-      knob.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
-    }
-
-    function reset(){
-      activePointerId = null;
-      keys["ArrowLeft"] = keys["ArrowRight"] = keys["ArrowUp"] = keys["ArrowDown"] = false;
-      if(knob) knob.style.transform = "translate3d(0,0,0)";
-    }
-
-    pad.addEventListener("pointerdown", (e)=>{
+    const onDown = (e)=>{
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      activePointerId = e.pointerId;
-      try{ pad.setPointerCapture(activePointerId); }catch(_){}
-      recalc();
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
-      moveKnob(dx, dy);
-      setKeysFromVec(dx, dy);
-    }, {passive:false});
-
-    pad.addEventListener("pointermove", (e)=>{
-      if(activePointerId === null) return;
-      if(e.pointerId !== activePointerId) return;
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
-      moveKnob(dx, dy);
-      setKeysFromVec(dx, dy);
-    }, {passive:true});
-
-    const end = (e)=>{
-      if(activePointerId === null) return;
-      if(e && e.pointerId !== activePointerId) return;
-      reset();
-    };
-
-    pad.addEventListener("pointerup", end, {passive:true});
-    pad.addEventListener("pointercancel", end, {passive:true});
-    pad.addEventListener("lostpointercapture", end, {passive:true});
-
-    // Touch fallback (pointer 미지원/불안정 기기 대응)
-    let activeTouchId = null;
-    pad.addEventListener("touchstart", (e)=>{
-      try{ e.preventDefault(); }catch(_){}
-      const touch = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
-      if(!touch) return;
-      activeTouchId = touch.identifier;
-      recalc();
-      const dx = touch.clientX - centerX;
-      const dy = touch.clientY - centerY;
-      moveKnob(dx, dy);
-      setKeysFromVec(dx, dy);
-    }, {passive:false});
-
-    pad.addEventListener("touchmove", (e)=>{
-      if(activeTouchId === null) return;
-      const touches = e.changedTouches || e.touches;
-      if(!touches) return;
-      let touch = null;
-      for(let i=0;i<touches.length;i++){
-        if(touches[i].identifier === activeTouchId){ touch = touches[i]; break; }
-      }
-      if(!touch) return;
-      const dx = touch.clientX - centerX;
-      const dy = touch.clientY - centerY;
-      moveKnob(dx, dy);
-      setKeysFromVec(dx, dy);
-    }, {passive:false});
-
-    const tend = (e)=>{
-      if(activeTouchId === null) return;
-      activeTouchId = null;
-      reset();
-    };
-    pad.addEventListener("touchend", tend, {passive:true});
-    pad.addEventListener("touchcancel", tend, {passive:true});
-
-
-    // initial
-    recalc();
-  })();
-
-/* ===== Actions: tap + drag switching ===== */
-  function codeForBtn(el){
-    if(!el) return null;
-    if(el === btnJump) return "Space";
-    if(el === btnA) return "KeyA";
-    if(el === btnS) return "KeyS";
-    if(el === btnD) return "KeyD";
-    return null;
-  }
-
-  // 각 버튼은 기본 탭(빠른 반응)
-  [
-    [btnJump,"Space"],
-    [btnA,"KeyA"],
-    [btnS,"KeyS"],
-    [btnD,"KeyD"],
-  ].forEach(([btn, code])=>{
-    if(!btn) return;
-    bindPress(btn, ()=>{
       tapKey(code);
-    });
-});
-
-  // 드래그로 버튼 전환(손가락을 떼지 않아도 됨)
-  (function bindActionDrag(){
-    if(!actionZone) return;
-    let activePointerId = null;
-    let lastBtn = null;
-    let lastFireAt = 0;
-
-    function pickBtnFromPoint(x,y){
-      const el = document.elementFromPoint(x,y);
-      if(!el) return null;
-      const b = el.closest && el.closest("button");
-      if(!b) return null;
-      if(b === btnJump || b === btnA || b === btnS || b === btnD) return b;
-      return null;
-    }
-
-    function fire(btn){
-      const now = Date.now();
-      // 너무 과한 연타 방지(드래그 이동 중 스팸 방지)
-      if (now - lastFireAt < 120) return;
-      lastFireAt = now;
-      const code = codeForBtn(btn);
-      if(code) tapKey(code);
-    }
-
-    actionZone.addEventListener("pointerdown", (e)=>{
-      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      activePointerId = e.pointerId;
-      try{ actionZone.setPointerCapture(activePointerId); }catch(_){}
-      lastBtn = pickBtnFromPoint(e.clientX, e.clientY);
-      if(lastBtn) fire(lastBtn);
-    }, { passive:false });
-
-    actionZone.addEventListener("pointermove", (e)=>{
-      if(activePointerId === null) return;
-      if(e.pointerId !== activePointerId) return;
-      const b = pickBtnFromPoint(e.clientX, e.clientY);
-      if(b && b !== lastBtn){
-        lastBtn = b;
-        fire(b);
-      }
-    }, { passive:true });
-
-    const end = (e)=>{
-      if(activePointerId === null) return;
-      if(e && e.pointerId !== activePointerId) return;
-      activePointerId = null;
-      lastBtn = null;
     };
+    el.addEventListener("pointerdown", onDown, {passive:false});
+    el.addEventListener("touchstart", onDown, {passive:false});
+    el.addEventListener("mousedown", onDown, {passive:false});
+  }
 
-    actionZone.addEventListener("pointerup", end, { passive:true });
-    actionZone.addEventListener("pointercancel", end, { passive:true });
-    actionZone.addEventListener("lostpointercapture", end, { passive:true });
-  })();
+  bindPress(bJump, "Space");
+  bindPress(bA, "KeyA");
+  bindPress(bS, "KeyS");
+  bindPress(bD, "KeyD");
+
+  // ===== Joystick (4-way + diagonals) =====
+  if(!pad) return;
+
+  let activePointerId = null;
+  let activeTouchId = null;
+  let cx=0, cy=0, radius=0;
+
+  function recalc(){
+    const r = pad.getBoundingClientRect();
+    cx = r.left + r.width/2;
+    cy = r.top  + r.height/2;
+    radius = Math.max(32, r.width * 0.38);
+  }
+
+  function setMove(dx, dy){
+    const dead = radius * 0.18;
+
+    keys["ArrowLeft"] = false;
+    keys["ArrowRight"] = false;
+    keys["ArrowUp"] = false;
+    keys["ArrowDown"] = false;
+
+    if(Math.abs(dx) < dead && Math.abs(dy) < dead){
+      return;
+    }
+    if(dx < -dead) keys["ArrowLeft"] = true;
+    if(dx >  dead) keys["ArrowRight"] = true;
+    if(dy < -dead) keys["ArrowUp"] = true;
+    if(dy >  dead) keys["ArrowDown"] = true;
+  }
+
+  function moveKnob(dx, dy){
+    if(!knob) return;
+    const d = Math.hypot(dx,dy) || 1;
+    const max = radius;
+    const k = (d > max) ? (max/d) : 1;
+    knob.style.transform = `translate3d(${(dx*k).toFixed(2)}px, ${(dy*k).toFixed(2)}px, 0)`;
+  }
+
+  function reset(){
+    activePointerId = null;
+    activeTouchId = null;
+    keys["ArrowLeft"] = keys["ArrowRight"] = keys["ArrowUp"] = keys["ArrowDown"] = false;
+    if(knob) knob.style.transform = "translate3d(0,0,0)";
+  }
+
+  // Pointer
+  pad.addEventListener("pointerdown", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+    activePointerId = e.pointerId;
+    try{ pad.setPointerCapture(activePointerId); }catch(_){}
+    recalc();
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    moveKnob(dx, dy);
+    setMove(dx, dy);
+  }, {passive:false});
+
+  pad.addEventListener("pointermove", (e)=>{
+    if(activePointerId === null) return;
+    if(e.pointerId !== activePointerId) return;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    moveKnob(dx, dy);
+    setMove(dx, dy);
+  }, {passive:true});
+
+  const pend = (e)=>{
+    if(activePointerId === null) return;
+    if(e && e.pointerId !== activePointerId) return;
+    reset();
+  };
+  pad.addEventListener("pointerup", pend, {passive:true});
+  pad.addEventListener("pointercancel", pend, {passive:true});
+  pad.addEventListener("lostpointercapture", pend, {passive:true});
+
+  // Touch fallback
+  pad.addEventListener("touchstart", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+    const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+    if(!t) return;
+    activeTouchId = t.identifier;
+    recalc();
+    const dx = t.clientX - cx;
+    const dy = t.clientY - cy;
+    moveKnob(dx, dy);
+    setMove(dx, dy);
+  }, {passive:false});
+
+  pad.addEventListener("touchmove", (e)=>{
+    if(activeTouchId === null) return;
+    const touches = e.changedTouches || e.touches;
+    if(!touches) return;
+    let t = null;
+    for(let i=0;i<touches.length;i++){
+      if(touches[i].identifier === activeTouchId){ t = touches[i]; break; }
+    }
+    if(!t) return;
+    const dx = t.clientX - cx;
+    const dy = t.clientY - cy;
+    moveKnob(dx, dy);
+    setMove(dx, dy);
+  }, {passive:false});
+
+  const tend = ()=>{
+    if(activeTouchId === null) return;
+    reset();
+  };
+  pad.addEventListener("touchend", tend, {passive:true});
+  pad.addEventListener("touchcancel", tend, {passive:true});
+
+  // keep center correct after rotate / resize
+  window.addEventListener("resize", ()=>{ try{ recalc(); }catch(e){} }, {passive:true});
+  try{ recalc(); }catch(e){}
 }
 
 bindMobileControls();
@@ -2168,13 +1821,6 @@ function resize(){
 
     // Actual screen size (CSS px)
     const {w:sw, h:sh} = _getViewportSize();
-    // ✅ VisualViewport bottom inset (addresses iOS/Android URL bar + safe-area clipping)
-    try{
-      const vv = window.visualViewport;
-      const vvb = vv ? Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop))) : 0;
-      document.documentElement.style.setProperty('--vvb', vvb + 'px');
-    }catch(e){}
-
 
     // ✅ Internal fixed render size (desktop-capture style)
     const BASE_W = 1920, BASE_H = 1080;
@@ -3318,8 +2964,8 @@ loop();
 (function(){
   const rotateOv = document.getElementById("rotateOverlay");
   const iosOv = document.getElementById("iphoneStandaloneOverlay");
-  const andFsOv = document.getElementById("androidFullscreenOverlay");
-  const andFsBtn = document.getElementById("btnAndroidFullscreen");
+  const andOv = document.getElementById("androidFullscreenOverlay");
+  const andBtn = document.getElementById("androidFsBtn");
   if (!rotateOv || !iosOv) return;
 
   const ua = navigator.userAgent || "";
@@ -3338,57 +2984,46 @@ loop();
     return false;
   }
 
-  async function tryEnterFullscreen(){
-    try{
-      const el = document.documentElement;
-      if (document.fullscreenElement) return true;
-      if (el.requestFullscreen) {
-        await el.requestFullscreen();
-        // try lock landscape (may fail depending on browser)
-        try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); }catch(_){ }
-        return !!document.fullscreenElement;
-      }
-    }catch(_){ }
-    return false;
-  }
-
   function updateGates(){
     const mobile = isMobile();
     const needRotate = mobile && isPortrait();
+    try{ document.documentElement.classList.toggle("is-iphone", !!isIPhone); document.documentElement.classList.toggle("is-android", !!isAndroid); }catch(_){ }
     rotateOv.style.display = needRotate ? "flex" : "none";
 
     // portrait 상태면 rotate가 우선
     const needIPhoneStandalone = mobile && !needRotate && isIPhone && !isStandalone();
-    iosOv.style.display = needIPhoneStandalone ? "flex" : "none";
+    if(iosOv) iosOv.style.display = needIPhoneStandalone ? "flex" : "none";
 
-    // ✅ Android: show fullscreen prompt (browser only)
-    try{
-      if(andFsOv){
-        const needAndroidFs = mobile && !needRotate && !needIPhoneStandalone && isAndroid && !isStandalone() && !document.fullscreenElement;
-        andFsOv.style.display = needAndroidFs ? 'flex' : 'none';
-      }
-    }catch(e){}
+    // ✅ Android: landscape면 "전체화면 버튼"을 먼저 보여주고 게임은 뒤에 가립니다.
+    const isFs = !!document.fullscreenElement || (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches);
+    const needAndroidFs = mobile && !needRotate && isAndroid && !isFs;
+    if(andOv) andOv.style.display = needAndroidFs ? "flex" : "none";
   }
 
-  // Android fullscreen button
-  if(andFsBtn){
-    andFsBtn.addEventListener('click', async ()=>{
-      andFsBtn.disabled = true;
-      andFsBtn.textContent = '전체화면 시도중...';
-      const ok = await tryEnterFullscreen();
-      // hide overlay regardless; if failed user can still play
-      try{ if(andFsOv) andFsOv.style.display = 'none'; }catch(e){}
-      // restore button for next time
-      setTimeout(()=>{ try{ andFsBtn.disabled=false; andFsBtn.textContent='전체화면 시작(FULLSCREEN)'; }catch(e){} }, 800);
-    }, {passive:true});
-  }
+async function requestFs(){
+  try{
+    const el = document.documentElement;
+    if(el && el.requestFullscreen){
+      await el.requestFullscreen();
+    }
+  }catch(e){}
+  // fullscreen 성공/실패와 무관하게 오버레이는 닫고 진행 (실패하면 사용자가 다시 누르면 됨)
+  try{ if(andOv) andOv.style.display = "none"; }catch(_){}
+  try{ updateGates(); }catch(_){}
+}
+if(andBtn){
+  andBtn.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+    requestFs();
+  }, {passive:false});
+}
+
 
   // 주기적으로도 체크(주소창/툴바 변화, iOS standalone 인식 타이밍 대응)
   updateGates();
   window.addEventListener("resize", updateGates, { passive:true });
   window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
   document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
-  document.addEventListener('fullscreenchange', ()=>setTimeout(updateGates, 60));
   setInterval(updateGates, 800);
 })();
 </script>
