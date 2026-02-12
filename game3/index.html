@@ -3028,5 +3028,72 @@ if(andBtn){
 })();
 </script>
 
+
+<!-- ANDROID LANDSCAPE FULLSCREEN OVERLAY -->
+<div id="androidFsOverlay" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  flex-direction:column;
+  color:white;
+  font-size:18px;
+">
+  <button id="androidFsBtn" style="
+    padding:16px 28px;
+    font-size:20px;
+    border-radius:12px;
+    border:none;
+  ">
+    전체화면으로 시작
+  </button>
+</div>
+
+<script>
+(function(){
+
+const ua = navigator.userAgent;
+const isAndroid = /Android/i.test(ua);
+
+const fsOverlay = document.getElementById("androidFsOverlay");
+const fsBtn = document.getElementById("androidFsBtn");
+
+function checkAndroidLandscape(){
+  if(!isAndroid) return;
+
+  const isLandscape = window.innerWidth > window.innerHeight;
+  const isFullscreen = document.fullscreenElement;
+
+  if(isLandscape && !isFullscreen){
+    fsOverlay.style.display = "flex";
+  }else{
+    fsOverlay.style.display = "none";
+  }
+}
+
+if(fsBtn){
+  fsBtn.onclick = async () => {
+    const el = document.documentElement;
+    if(el.requestFullscreen){
+      try{
+        await el.requestFullscreen();
+      }catch(e){}
+    }
+    fsOverlay.style.display = "none";
+  };
+}
+
+window.addEventListener("resize", checkAndroidLandscape);
+window.addEventListener("orientationchange", checkAndroidLandscape);
+document.addEventListener("fullscreenchange", checkAndroidLandscape);
+
+checkAndroidLandscape();
+
+})();
+</script>
+
 </body>
 </html>
