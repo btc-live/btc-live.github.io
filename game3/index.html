@@ -605,7 +605,9 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     position: fixed !important;
     left: calc(env(safe-area-inset-left) + 12px) !important;
     right: calc(env(safe-area-inset-right) + 12px) !important;
-    bottom: calc(env(safe-area-inset-bottom) + 10px) !important;
+    /* ✅ iPhone Safari(하단 바/홈 인디케이터)에서 공격키가 잘리는 문제 방지 */
+    bottom: calc(max(env(safe-area-inset-bottom), 18px) + 14px) !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
     z-index: 120 !important;
     display: flex !important;
     align-items: flex-end !important;
@@ -2148,6 +2150,12 @@ function resize(){
     // Actual screen size (CSS px)
     const {w:sw, h:sh} = _getViewportSize();
 
+    // ✅ CSS viewport vars (iOS URL bar / safe-area 안정화)
+    try{
+      document.documentElement.style.setProperty('--vw', sw+'px');
+      document.documentElement.style.setProperty('--vh', sh+'px');
+    }catch(e){}
+
     // ✅ Internal fixed render size (desktop-capture style)
     const BASE_W = 1920, BASE_H = 1080;
     viewW = BASE_W;
@@ -2190,6 +2198,42 @@ if(window.visualViewport){
   visualViewport.addEventListener("scroll", resize, {passive:true});
 }
 resize();
+
+ // ✅ Android 브라우저에서 "자동 전체화면" 시도 (첫 터치에서만)
+ let __tgDidTryFullscreen = false;
+ function tgTryEnterFullscreen(){
+   if(__tgDidTryFullscreen) return;
+   __tgDidTryFullscreen = true;
+
+   const ua = navigator.userAgent || "";
+   const isAndroid = /Android/i.test(ua);
+   if(!isAndroid) return; // iPhone Safari는 requestFullscreen이 사실상 불가/불안정
+
+   // 이미 standalone(PWA)면 굳이 전체화면 요청 안 함 (선택)
+   const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || !!window.navigator.standalone;
+   if(isStandalone) return;
+
+   const el = document.documentElement;
+   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+   if(req && !document.fullscreenElement){
+     try{ req.call(el); }catch(e){}
+   }
+
+   // 가능한 경우 가로 고정(실패해도 무시)
+   try{
+     if(screen.orientation && screen.orientation.lock){
+       screen.orientation.lock('landscape').catch(()=>{});
+     }
+   }catch(e){}
+
+   // 주소창 숨김 유도(안되면 무시)
+   setTimeout(()=>{ try{ window.scrollTo(0,1); }catch(e){} }, 80);
+ }
+
+ // 첫 입력에서만 실행 (버튼/패드 터치 포함)
+ document.addEventListener('pointerdown', tgTryEnterFullscreen, {once:true, passive:true});
+ document.addEventListener('touchstart',  tgTryEnterFullscreen, {once:true, passive:true});
+
 
 // prevent accidental zoom while playing (Android pinch / iOS double tap)
 document.addEventListener("gesturestart", (e)=>{ e.preventDefault(); }, {passive:false});
