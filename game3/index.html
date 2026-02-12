@@ -156,9 +156,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   font-weight:800;
   min-width:110px;
   text-align:center;
-
-  font-size:11px !important;
-  line-height:1.1 !important;}
+}
 #topBar .hpBox{
   flex:0 0 clamp(180px, 28vw, 360px);
   height:34px;
@@ -301,6 +299,12 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     min-width: 64px !important;
     padding: 4px 6px !important;
   }
+
+/* 👇 이것만 추가 */
+#uiNameTag{
+    font-size: 12px !important;
+  }
+
 
   /* HP바도 너무 길면 잘리니 약간 줄임 */
   #topBar .hpBox{
@@ -684,10 +688,10 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 
 <div id="androidFullscreenOverlay" style="display:none;">
   <div class="tgGateCard">
-    <div class="tgGateTitle">전체화면으로 실행해주세요</div>
-    <div class="tgGateDesc">안드로이드 브라우저는 <b>버튼을 눌러야</b> 전체화면 전환이 가능합니다.</div>
-    <button id="androidFsBtn" class="tgFsBtn" type="button">전체화면 시작 (FULLSCREEN)</button>
-    <div class="tgGateHint" style="margin-top:10px;">※ 전체화면 후 게임이 바로 시작됩니다.</div>
+    <div class="tgGateTitle"></div>
+    <div class="tgGateDesc"><b></b></div>
+    <button id="androidFsBtn" class="tgFsBtn" type="button"></button>
+    <div class="tgGateHint" style="margin-top:10px;"></div>
   </div>
 </div>
 
