@@ -5,30 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
 <title>Office Arena – Android Stable Build</title>
 <style>
-
-/* ✅ Android Fullscreen Floating Button (left-middle) */
-#androidFsFloat{
-  position: fixed;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 9999;
-  padding: 10px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(0,0,0,0.25);
-  background: #f3ba2f; /* yellow */
-  color: #111;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: 0.2px;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.35);
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-#androidFsFloat:active{ transform: translateY(-50%) scale(0.98); }
-
-
 html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none;height:100%}
 canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:var(--vh,100vh);touch-action:none}
 
@@ -387,8 +363,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   pointer-events:auto;
 }
 #miniStats{
-  flex:1 1 auto;
-  min-width:0;
   display:flex;
   flex-wrap:wrap;
   gap:8px;
@@ -399,29 +373,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 }
 #miniStats b{ font-weight:950; }
 #miniStats .sep{ opacity:0.55; font-weight:900; }
-#miniCenter{
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  pointer-events:auto;
-}
-#miniCenter #btnMiniFs{
-  height:30px;
-  padding:0 12px;
-  min-width: 96px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,0.28);
-  background:#d2262c;
-  color:#fff;
-  font-weight:950;
-  cursor:pointer;
-  line-height:1;
-  font-size:12px;
-  white-space:nowrap;
-}
-#miniCenter #btnMiniFs:active{ transform:translateY(1px); }
-#miniBtns{ flex:1 1 auto; display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+#miniBtns{ display:flex; gap:8px; align-items:center; }
 #miniBtns button{
   width:34px;
   height:30px;
@@ -446,7 +398,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 }
 @media (max-width: 420px){
   #miniStats{ font-size:11px; }
-  #miniCenter #btnMiniFs{ height:28px; padding:0 10px; min-width:88px; font-size:11px; }
   #miniBtns button{ width:32px; height:28px; border-radius:9px; }
 }
 
@@ -703,25 +654,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 }
 </style>
 
-
-
-<style id="__miniFsRedStyle">
-#btnMiniFs{
-  background:#e53935 !important;
-  color:#ffffff !important;
-  font-weight:600;
-  border:none;
-  border-radius:6px;
-  padding:4px 8px;
-  font-size:12px;
-  white-space:nowrap;
-}
-#btnMiniFs:active{
-  transform:scale(0.95);
-}
-</style>
-
-
 </head>
 <body>
 <div id="viewport"><div id="gameRoot"><canvas id="c"></canvas></div></div>
@@ -751,13 +683,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 <div id="androidFullscreenOverlay" style="display:none;">
   <div class="tgGateCard">
     <div class="tgGateTitle">전체화면으로 실행해주세요</div>
-    
-
-<button id="androidFsFloat" type="button" aria-label="전체화면" style="display:none;">
-  ⛶ 전체화면
-</button>
-
-<div class="tgGateDesc">안드로이드 브라우저는 <b>버튼을 눌러야</b> 전체화면 전환이 가능합니다.</div>
+    <div class="tgGateDesc">안드로이드 브라우저는 <b>버튼을 눌러야</b> 전체화면 전환이 가능합니다.</div>
     <button id="androidFsBtn" class="tgFsBtn" type="button">전체화면 시작 (FULLSCREEN)</button>
     <div class="tgGateHint" style="margin-top:10px;">※ 전체화면 후 게임이 바로 시작됩니다.</div>
   </div>
@@ -798,13 +724,10 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
       <span>Now <b id="miniTemp">0</b> sats</span><span class="sep">|</span>
       <span>Total <b id="miniTotal">0</b> sats</span>
     </div>
-
-    <!-- ✅ Center: Fullscreen button (Android users will actually notice it) -->
-    <div id="miniCenter" style="display:none;"></div>
-
     <div id="miniBtns">
       <button id="btnMiniPause" type="button" title="Pause/Resume">⏸</button>
       <button id="btnMiniMute" type="button" title="Mute/Unmute">🔇</button>
+      <button id="btnMiniFs" type="button" title="Fullscreen">⛶</button>
       <button id="btnMiniInfo" type="button" title="Info">i</button>
       <button id="btnMiniRefresh" type="button" title="Refresh">⟳</button>
       <button id="btnMiniMain" type="button" title="Main">⌂</button>
@@ -3052,7 +2975,6 @@ loop();
   const rotateOv = document.getElementById("rotateOverlay");
   const iosOv = document.getElementById("iphoneStandaloneOverlay");
   const andOv = document.getElementById("androidFullscreenOverlay");
-    const andFloat = document.getElementById("androidFsFloat");
   const andBtn = document.getElementById("androidFsBtn");
   if (!rotateOv || !iosOv) return;
 
@@ -3085,9 +3007,7 @@ loop();
     // ✅ Android: landscape면 "전체화면 버튼"을 먼저 보여주고 게임은 뒤에 가립니다.
     const isFs = !!document.fullscreenElement || (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches);
     const needAndroidFs = mobile && !needRotate && isAndroid && !isFs;
-    // ✅ 게임은 그대로 보여주고, 왼쪽 중간에 "전체화면" 버튼만 띄움
-    if(andOv) andOv.style.display = "none";
-    if(andFloat) andFloat.style.display = needAndroidFs ? "block" : "none";
+    if(andOv) andOv.style.display = needAndroidFs ? "flex" : "none";
   }
 
 async function requestFs(){
@@ -3098,8 +3018,7 @@ async function requestFs(){
     }
   }catch(e){}
   // fullscreen 성공/실패와 무관하게 오버레이는 닫고 진행 (실패하면 사용자가 다시 누르면 됨)
-  try{ if(andOv) andOv.style.display = "none"; }catch(_){ }
-  try{ const f=document.getElementById("androidFsFloat"); if(f) f.style.display="none"; }catch(_){ }
+  try{ if(andOv) andOv.style.display = "none"; }catch(_){}
   try{ updateGates(); }catch(_){}
 }
 if(andBtn){
