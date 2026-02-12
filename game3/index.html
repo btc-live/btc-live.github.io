@@ -1457,6 +1457,9 @@ let _lastFromXEnemy  = 0;
 
 function startKO(who, result){
   if(koMode || gameOver) return;
+
+  // LAST SFX: play once on KO start (final fly-away moment)
+  try{ if(window.TG_AUDIO) TG_AUDIO.playLast(); }catch(e){}
   koMode = true;
   koTimer = 52; // ~0.87s @60fps
   koResult = result;
@@ -1683,7 +1686,147 @@ function toggleMute(){
     if(b) b.textContent = next ? "오디오 켬(UNMUTE)" : "오디오 끔(MUTE)";
     try{ const bm=document.getElementById("btnMiniMute"); if(bm) bm.textContent = next ? "🔈" : "🔇"; }catch(e){}
   }catch(e){}
+
+
+  // apply mute to actual audio objects
+  try{ if(window.TG_AUDIO){ TG_AUDIO.applyMute(); if(next){ TG_AUDIO.stopAll(); } else { TG_AUDIO.resume(); } } }catch(e){}
 }
+
+// ===== Audio: random start BGM1/BGM2, then alternate forever + HIT SFX only on hit sprite =====
+window.TG_AUDIO = (function(){
+  const bgmSrcs = ["bgm1.mp3", "bgm2.mp3"];
+  const bgms = bgmSrcs.map(src => {
+    const a = new Audio(src);
+    a.preload = "auto";
+    a.loop = false;     // we alternate manually
+    a.volume = 0.55;
+    return a;
+  });
+
+  // small pool so rapid hits still play nicely
+  const hitPool = Array.from({length: 3}, () => {
+    const a = new Audio("hit.mp3");
+    a.preload = "auto";
+    a.loop = false;
+    a.volume = 0.90;
+    return a;
+  });
+  let hitPtr = 0;
+
+  // last/KO SFX (played once when someone gets finished & flies away)
+  const lastPool = Array.from({length: 2}, () => {
+    const a = new Audio("last.mp3");
+    a.preload = "auto";
+    a.loop = false;
+    a.volume = 0.95;
+    return a;
+  });
+  let lastPtr = 0;
+
+  let started = false;
+  let curIdx = 0;
+
+  function isMuted(){
+    return (localStorage.getItem("tg_muted") || "0") === "1";
+  }
+
+  function applyMute(){
+    const m = isMuted();
+    bgms.forEach(a => { try{ a.muted = m; }catch(e){} });
+    hitPool.forEach(a => { try{ a.muted = m; }catch(e){} });
+    lastPool.forEach(a => { try{ a.muted = m; }catch(e){} });
+  }
+
+  function stopAll(){
+    bgms.forEach(a => {
+      try{ a.pause(); a.currentTime = 0; }catch(e){}
+    });
+  }
+
+  function _safePlay(a){
+    try{
+      const p = a.play();
+      if(p && typeof p.catch === "function") p.catch(()=>{});
+    }catch(e){}
+  }
+
+  function playFrom(idx){
+    curIdx = idx;
+    applyMute();
+    if(isMuted()) return;
+    const a = bgms[curIdx];
+    try{ a.currentTime = 0; }catch(e){}
+    _safePlay(a);
+  }
+
+  function _bindEndedOnce(){
+    bgms.forEach(a => {
+      a.addEventListener("ended", () => {
+        if(isMuted()) return;
+        const next = 1 - curIdx;
+        playFrom(next);
+      });
+    });
+  }
+
+  function start(){
+    if(started) return;
+    started = true;
+
+    // random first track
+    curIdx = (Math.random() < 0.5) ? 0 : 1;
+
+    _bindEndedOnce();
+    playFrom(curIdx);
+  }
+
+  function resume(){
+    applyMute();
+    if(isMuted()) { stopAll(); return; }
+    if(!started){ start(); return; }
+
+    const a = bgms[curIdx];
+    if(!a) return;
+    if(a.paused){
+      _safePlay(a);
+    }
+  }
+
+  function playHit(){
+    applyMute();
+    if(isMuted()) return;
+    const a = hitPool[hitPtr++ % hitPool.length];
+    try{ a.currentTime = 0; }catch(e){}
+    _safePlay(a);
+  }
+  function playLast(){
+    applyMute();
+    if(isMuted()) return;
+    const a = lastPool[lastPtr++ % lastPool.length];
+    try{ a.currentTime = 0; }catch(e){}
+    _safePlay(a);
+  }
+
+
+  // Start audio on first user gesture (browser autoplay policy)
+  (function bindAutoStart(){
+    const onceStart = () => {
+      try{ start(); }catch(e){}
+      window.removeEventListener("pointerdown", onceStart);
+      window.removeEventListener("touchstart", onceStart);
+      window.removeEventListener("keydown", onceStart);
+    };
+    window.addEventListener("pointerdown", onceStart, {passive:true});
+    window.addEventListener("touchstart", onceStart, {passive:true});
+    window.addEventListener("keydown", onceStart);
+  })();
+
+  // reflect current storage setting immediately
+  applyMute();
+
+  return { start, resume, stopAll, applyMute, playHit, playLast };
+})();
+
 
 
 // ===== Info Overlay Toggle (i) =====
@@ -2117,6 +2260,9 @@ function enemyTakeHit(fromX){
   enemy.state = "hit";
   enemy.actionT = 14; // 히트 유지 프레임
 
+  // HIT SFX: only when hit sprite is shown
+  try{ if(window.TG_AUDIO) TG_AUDIO.playHit(); }catch(e){}
+
   const prevHP = enemyHP;
 
   // score/HP -1
@@ -2167,6 +2313,9 @@ function playerTakeHit(fromX, dmg=1){
 
   player.state="hit";
   player.actionT=14; // a bit longer so you can see it
+
+  // HIT SFX: only when hit sprite is shown
+  try{ if(window.TG_AUDIO) TG_AUDIO.playHit(); }catch(e){}
 
   const prevHP = playerHP;
 
