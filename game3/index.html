@@ -517,8 +517,9 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   position: fixed;
   left: calc(env(safe-area-inset-left) + 18px);
   right: calc(env(safe-area-inset-right) + 18px);
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
-  z-index: 80;
+  bottom: calc(var(--vvb, 0px) + max(env(safe-area-inset-bottom), 0px) + 14px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+z-index: 80;
   display: none;              /* 기본 숨김, 모바일에서만 표시 */
   align-items: flex-end;
   justify-content: space-between;
@@ -605,9 +606,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     position: fixed !important;
     left: calc(env(safe-area-inset-left) + 12px) !important;
     right: calc(env(safe-area-inset-right) + 12px) !important;
-    /* ✅ iPhone Safari(하단 바/홈 인디케이터)에서 공격키가 잘리는 문제 방지 */
-    bottom: calc(max(env(safe-area-inset-bottom), 18px) + 14px) !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 10px) !important;
     z-index: 120 !important;
     display: flex !important;
     align-items: flex-end !important;
@@ -925,6 +924,26 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     </div>
     <div class="tgGateHint">※ 갤럭시는 홈화면 추가는 권장(선택)이며, 가로모드만 필수입니다.</div>
   </div>
+
+<div id="androidFullscreenOverlay" style="display:none;">
+  <div class="tgGateCard">
+    <div class="tgGateTitle">전체화면으로 시작하기</div>
+    <div class="tgGateDesc">안드로이드 브라우저는 보안 때문에 <b>자동 전체화면</b>이 불가능합니다.<br>아래 버튼을 한 번 누르면 전체화면을 시도합니다.</div>
+    <div style="margin-top:14px;">
+      <button id="btnAndroidFullscreen" type="button" style="
+        font-size:16px; font-weight:900;
+        padding:12px 16px; border-radius:14px;
+        border:1px solid rgba(255,255,255,0.35);
+        background:rgba(255,255,255,0.12); color:#e9efff;
+        cursor:pointer;
+      ">전체화면 시작(FULLSCREEN)</button>
+    </div>
+    <div class="tgGateHint" style="margin-top:12px; opacity:0.85;">
+      ※ 홈 화면에 추가(A2HS)로 실행하면 더 안정적입니다.
+    </div>
+  </div>
+</div>
+
 </div>
 
 
@@ -2149,12 +2168,13 @@ function resize(){
 
     // Actual screen size (CSS px)
     const {w:sw, h:sh} = _getViewportSize();
-
-    // ✅ CSS viewport vars (iOS URL bar / safe-area 안정화)
+    // ✅ VisualViewport bottom inset (addresses iOS/Android URL bar + safe-area clipping)
     try{
-      document.documentElement.style.setProperty('--vw', sw+'px');
-      document.documentElement.style.setProperty('--vh', sh+'px');
+      const vv = window.visualViewport;
+      const vvb = vv ? Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop))) : 0;
+      document.documentElement.style.setProperty('--vvb', vvb + 'px');
     }catch(e){}
+
 
     // ✅ Internal fixed render size (desktop-capture style)
     const BASE_W = 1920, BASE_H = 1080;
@@ -2198,42 +2218,6 @@ if(window.visualViewport){
   visualViewport.addEventListener("scroll", resize, {passive:true});
 }
 resize();
-
- // ✅ Android 브라우저에서 "자동 전체화면" 시도 (첫 터치에서만)
- let __tgDidTryFullscreen = false;
- function tgTryEnterFullscreen(){
-   if(__tgDidTryFullscreen) return;
-   __tgDidTryFullscreen = true;
-
-   const ua = navigator.userAgent || "";
-   const isAndroid = /Android/i.test(ua);
-   if(!isAndroid) return; // iPhone Safari는 requestFullscreen이 사실상 불가/불안정
-
-   // 이미 standalone(PWA)면 굳이 전체화면 요청 안 함 (선택)
-   const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || !!window.navigator.standalone;
-   if(isStandalone) return;
-
-   const el = document.documentElement;
-   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-   if(req && !document.fullscreenElement){
-     try{ req.call(el); }catch(e){}
-   }
-
-   // 가능한 경우 가로 고정(실패해도 무시)
-   try{
-     if(screen.orientation && screen.orientation.lock){
-       screen.orientation.lock('landscape').catch(()=>{});
-     }
-   }catch(e){}
-
-   // 주소창 숨김 유도(안되면 무시)
-   setTimeout(()=>{ try{ window.scrollTo(0,1); }catch(e){} }, 80);
- }
-
- // 첫 입력에서만 실행 (버튼/패드 터치 포함)
- document.addEventListener('pointerdown', tgTryEnterFullscreen, {once:true, passive:true});
- document.addEventListener('touchstart',  tgTryEnterFullscreen, {once:true, passive:true});
-
 
 // prevent accidental zoom while playing (Android pinch / iOS double tap)
 document.addEventListener("gesturestart", (e)=>{ e.preventDefault(); }, {passive:false});
@@ -3334,10 +3318,13 @@ loop();
 (function(){
   const rotateOv = document.getElementById("rotateOverlay");
   const iosOv = document.getElementById("iphoneStandaloneOverlay");
+  const andFsOv = document.getElementById("androidFullscreenOverlay");
+  const andFsBtn = document.getElementById("btnAndroidFullscreen");
   if (!rotateOv || !iosOv) return;
 
   const ua = navigator.userAgent || "";
   const isIPhone = /iPhone|iPod/i.test(ua);        // ✅ iPhone만 강제
+  const isAndroid = /Android/i.test(ua);
   const isMobile = () => (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || (Math.min(window.innerWidth, window.innerHeight) <= 980);
   const isPortrait = () => window.innerHeight > window.innerWidth;
 
@@ -3351,6 +3338,20 @@ loop();
     return false;
   }
 
+  async function tryEnterFullscreen(){
+    try{
+      const el = document.documentElement;
+      if (document.fullscreenElement) return true;
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+        // try lock landscape (may fail depending on browser)
+        try{ if(screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); }catch(_){ }
+        return !!document.fullscreenElement;
+      }
+    }catch(_){ }
+    return false;
+  }
+
   function updateGates(){
     const mobile = isMobile();
     const needRotate = mobile && isPortrait();
@@ -3359,6 +3360,27 @@ loop();
     // portrait 상태면 rotate가 우선
     const needIPhoneStandalone = mobile && !needRotate && isIPhone && !isStandalone();
     iosOv.style.display = needIPhoneStandalone ? "flex" : "none";
+
+    // ✅ Android: show fullscreen prompt (browser only)
+    try{
+      if(andFsOv){
+        const needAndroidFs = mobile && !needRotate && !needIPhoneStandalone && isAndroid && !isStandalone() && !document.fullscreenElement;
+        andFsOv.style.display = needAndroidFs ? 'flex' : 'none';
+      }
+    }catch(e){}
+  }
+
+  // Android fullscreen button
+  if(andFsBtn){
+    andFsBtn.addEventListener('click', async ()=>{
+      andFsBtn.disabled = true;
+      andFsBtn.textContent = '전체화면 시도중...';
+      const ok = await tryEnterFullscreen();
+      // hide overlay regardless; if failed user can still play
+      try{ if(andFsOv) andFsOv.style.display = 'none'; }catch(e){}
+      // restore button for next time
+      setTimeout(()=>{ try{ andFsBtn.disabled=false; andFsBtn.textContent='전체화면 시작(FULLSCREEN)'; }catch(e){} }, 800);
+    }, {passive:true});
   }
 
   // 주기적으로도 체크(주소창/툴바 변화, iOS standalone 인식 타이밍 대응)
@@ -3366,6 +3388,7 @@ loop();
   window.addEventListener("resize", updateGates, { passive:true });
   window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
   document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
+  document.addEventListener('fullscreenchange', ()=>setTimeout(updateGates, 60));
   setInterval(updateGates, 800);
 })();
 </script>
