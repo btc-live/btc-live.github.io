@@ -727,6 +727,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     <div id="miniBtns">
       <button id="btnMiniPause" type="button" title="Pause/Resume">⏸</button>
       <button id="btnMiniMute" type="button" title="Mute/Unmute">🔇</button>
+      <button id="btnMiniFs" type="button" title="Fullscreen">⛶</button>
       <button id="btnMiniInfo" type="button" title="Info">i</button>
       <button id="btnMiniRefresh" type="button" title="Refresh">⟳</button>
       <button id="btnMiniMain" type="button" title="Main">⌂</button>
@@ -1742,6 +1743,7 @@ function tgBindInfoUI(){
   const bP = document.getElementById("btnMiniPause");
   const bM = document.getElementById("btnMiniMain");
   const bU = document.getElementById("btnMiniMute");
+  const bF = document.getElementById("btnMiniFs");
 
   if(bR) bR.addEventListener("click", ()=>location.reload());
   if(bP) bP.addEventListener("click", ()=>setPaused(!__paused));
@@ -1751,6 +1753,14 @@ function tgBindInfoUI(){
     }
   });
   if(bU) bU.addEventListener("click", toggleMute);
+  if(bF) bF.addEventListener("click", async (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){ }
+    try{
+      const el = document.documentElement;
+      if(document.fullscreenElement){ await document.exitFullscreen(); }
+      else if(el && el.requestFullscreen){ await el.requestFullscreen(); }
+    }catch(err){}
+  }, {passive:false});
 
   // init mute icon based on storage (optional)
   try{
@@ -3025,73 +3035,6 @@ if(andBtn){
   window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
   document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
   setInterval(updateGates, 800);
-})();
-</script>
-
-
-<!-- ANDROID LANDSCAPE FULLSCREEN OVERLAY -->
-<div id="androidFsOverlay" style="
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.85);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:99999;
-  flex-direction:column;
-  color:white;
-  font-size:18px;
-">
-  <button id="androidFsBtn" style="
-    padding:16px 28px;
-    font-size:20px;
-    border-radius:12px;
-    border:none;
-  ">
-    전체화면으로 시작
-  </button>
-</div>
-
-<script>
-(function(){
-
-const ua = navigator.userAgent;
-const isAndroid = /Android/i.test(ua);
-
-const fsOverlay = document.getElementById("androidFsOverlay");
-const fsBtn = document.getElementById("androidFsBtn");
-
-function checkAndroidLandscape(){
-  if(!isAndroid) return;
-
-  const isLandscape = window.innerWidth > window.innerHeight;
-  const isFullscreen = document.fullscreenElement;
-
-  if(isLandscape && !isFullscreen){
-    fsOverlay.style.display = "flex";
-  }else{
-    fsOverlay.style.display = "none";
-  }
-}
-
-if(fsBtn){
-  fsBtn.onclick = async () => {
-    const el = document.documentElement;
-    if(el.requestFullscreen){
-      try{
-        await el.requestFullscreen();
-      }catch(e){}
-    }
-    fsOverlay.style.display = "none";
-  };
-}
-
-window.addEventListener("resize", checkAndroidLandscape);
-window.addEventListener("orientationchange", checkAndroidLandscape);
-document.addEventListener("fullscreenchange", checkAndroidLandscape);
-
-checkAndroidLandscape();
-
 })();
 </script>
 
