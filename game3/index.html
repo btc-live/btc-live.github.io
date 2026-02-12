@@ -2,11 +2,36 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Office Arena – Player 8-way Shot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<title>Office Arena – Android Stable Build</title>
 <style>
-html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui}
-canvas{display:block;width:100vw;height:100vh}
+html,body{margin:0;padding:0;background:#000;color:#e9efff;font-family:system-ui;overflow:hidden;touch-action:none;overscroll-behavior:none;height:100%}
+canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:var(--vh,100vh);touch-action:none}
+
+/* ===== Desktop-fixed render (capture-style) =====
+   Internal game runs at 1920x1080 and we scale it to fit any screen.
+   This avoids Android viewport/vh quirks.
+*/
+#viewport{
+  position:fixed; inset:0;
+  overflow:hidden;
+  /* iOS/Android 모두에서 "진짜 화면 중앙" 기준으로 고정 */
+}
+#gameRoot{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:1920px;
+  height:1080px;
+  transform-origin:center center;
+  /* transform은 JS에서 translate(-50%,-50%) + scale()로 세팅 */
+}
+#gameRoot canvas{
+  position:absolute;
+  left:0; top:0;
+  width:1920px !important;
+  height:1080px !important;
+}
 
 /* ===== UI Overlay ===== */
 #resultOverlay{
@@ -447,10 +472,248 @@ canvas{display:block;width:100vw;height:100vh}
   }
 }
 
+
+/* ===== Mobile Gate Overlays (landscape / iPhone standalone) ===== */
+#rotateOverlay, #iphoneStandaloneOverlay{
+  position:fixed; inset:0;
+  display:none;
+  align-items:center; justify-content:center;
+  padding:24px;
+  background:rgba(0,0,0,0.86);
+  z-index:999999;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.tgGateCard{
+  width:min(560px, 92vw);
+  border-radius:18px;
+  padding:18px 16px;
+  background:rgba(20,20,20,0.88);
+  border:1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  color:#fff;
+  text-align:center;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+.tgGateTitle{ font-size:18px; font-weight:900; margin-bottom:8px; letter-spacing:-0.2px; }
+.tgGateDesc{ font-size:14px; opacity:0.92; line-height:1.4; }
+.tgGateHint{ font-size:12px; opacity:0.72; margin-top:10px; line-height:1.35; }
+.tgGateSteps{
+  margin-top:12px;
+  text-align:left;
+  display:inline-block;
+  font-size:13px;
+  opacity:0.92;
+  line-height:1.55;
+}
+
+
+/* =============================
+   📱 Mobile Controls (Game2-style, for Game3)
+   - Left: dpadZone swipe
+   - Right: Jump + A/S/D
+   ============================= */
+#mobileControls{
+  position: fixed;
+  left: calc(env(safe-area-inset-left) + 18px);
+  right: calc(env(safe-area-inset-right) + 18px);
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  z-index: 80;
+  display: none;              /* 기본 숨김, 모바일에서만 표시 */
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;         /* 스크롤/줌 방지 */
+  pointer-events: auto;
+}
+#mobileControls .mc-dpad{
+  flex: 0 0 auto;
+  min-width: 150px;           /* 히트박스 확대 */
+  height: 78px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#mobileControls .mc-dpad .mc-lr{
+  width: 100%;
+  display:flex;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-weight: 950;
+  opacity: 0.9;
+}
+#mobileControls .mc-dpad .mc-hint{
+  font-size: 18px;
+}
+
+#mobileControls .mc-actions{
+  flex: 0 0 auto;
+  display:flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+#mobileControls .mc-row{
+  display:flex;
+  gap: 10px;
+}
+#mobileControls .mc-btn{
+  width: 39px;
+  height: 39px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.42);
+  color: #fff;
+  font-weight: 950;
+  font-size: 18px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  padding: 0;
+  touch-action: none;
+}
+#mobileControls .mc-btn:active{ transform: translateY(1px); }
+
+#mobileControls .mc-jump{
+  width: 86px;
+  height: 39px;
+  font-size: 14px;
+  letter-spacing: 0.4px;
+}
+#mobileControls .mc-atk{
+  border-color: rgba(243,186,47,0.55);
+}
+
+@media (max-width: 980px){
+  #mobileControls{ display: flex; }
+}
+
+/* ==============================
+   ✅ ANDROID STABLE MODE (v1)
+   - Kill conflicting legacy mobile UI rules
+   - Use only Game2-style mobileControls
+   ============================== */
+@media (hover:none) and (pointer:coarse), (max-width: 980px){
+  /* Prevent any old scale-based mobileControls rules from messing layout */
+  #mobileControls{
+    position: fixed !important;
+    left: calc(env(safe-area-inset-left) + 12px) !important;
+    right: calc(env(safe-area-inset-right) + 12px) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 10px) !important;
+    z-index: 120 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    transform: none !important;
+  }
+
+  /* Make panels smaller & scrollable */
+  #leftPanel, #rightPanel{
+    width: 160px !important;
+    padding: 8px !important;
+    font-size: 11px !important;
+    border-radius: 12px !important;
+    top: 64px !important;
+    max-height: calc(100vh - 200px) !important;
+    overflow: auto !important;
+  }
+  #leftPanel{ left: 8px !important; }
+  #rightPanel{ right: 8px !important; }
+
+  /* Keep top bar centered */
+  #topBar{
+    left: 50% !important;
+    transform: translateX(-50%) scale(0.86) !important;
+    transform-origin: center top !important;
+    top: 8px !important;
+    width: calc(100% - 12px) !important;
+  }
+  #topBar .nameTag{ min-width: 72px !important; padding: 6px 8px !important; font-size: 11px !important; }
+
+  /* Disable hover styles (some Android browsers do weird things) */
+  #leftPanel button:hover, #rightPanel button:hover{ background: rgba(255,255,255,0.10) !important; }
+}
+
+
+/* =============================
+   📱 Smooth 4-way D-Pad (Joystick)
+   - Continuous pointer tracking (no stutter)
+   - Supports diagonals (Up+Left, etc.)
+   ============================= */
+#mobileControls .mc-dpad{
+  width: clamp(92px, 20vw, 119px);
+  height: clamp(92px, 20vw, 119px);
+  border-radius: 999px;
+  position: relative;
+  overflow: visible;
+}
+#mobileControls .mc-joyBase{
+  position:absolute; inset:0;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+}
+#mobileControls .mc-joyKnob{
+  position:absolute;
+  left:50%; top:50%;
+  width: 39px; height: 39px;
+  margin-left: -19.5px;
+  margin-top: -19.5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  transform: translate3d(0,0,0);
+  will-change: transform;
+}
+#mobileControls .mc-joyHint{
+  position:absolute;
+  left:50%; bottom:-22px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  opacity: 0.65;
+  font-weight: 900;
+  user-select:none;
+}
+
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<div id="viewport"><div id="gameRoot"><canvas id="c"></canvas></div></div>
+
+<!-- 📱 Mobile Gates: landscape required, iPhone requires Add to Home Screen (standalone) -->
+<div id="rotateOverlay" style="display:none;">
+  <div class="tgGateCard">
+    <div class="tgGateTitle">가로모드로 돌려주세요</div>
+    <div class="tgGateDesc">모바일은 <b>가로(landscape)</b>에서만 플레이 가능합니다.</div>
+    <div class="tgGateHint">휴대폰을 가로로 돌린 뒤 다시 시작해 주세요.</div>
+  </div>
+</div>
+
+<div id="iphoneStandaloneOverlay" style="display:none;">
+  <div class="tgGateCard">
+    <div class="tgGateTitle">아이폰은 홈화면에서만 플레이 가능</div>
+    <div class="tgGateDesc">아이폰 Safari 탭에서는 입력/화면이 불안정해서<br><b>“홈화면 추가(Add to Home Screen)”</b>로 실행해야 합니다.</div>
+    <div class="tgGateSteps">
+      <div>1) 공유(⬆︎) 버튼</div>
+      <div>2) <b>홈 화면에 추가</b></div>
+      <div>3) 홈화면 아이콘으로 실행</div>
+    </div>
+    <div class="tgGateHint">※ 갤럭시는 홈화면 추가는 권장(선택)이며, 가로모드만 필수입니다.</div>
+  </div>
+</div>
+
+
 
 <div id="mobileDebugOverlay" style="
   position:fixed; inset:0; display:none;
@@ -501,26 +764,24 @@ canvas{display:block;width:100vw;height:100vh}
   </div>
 
 
-  <div id="mobileControls">
-    <div id="dpad">
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-      <button data-hold="ArrowUp">▲</button>
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-
-      <button data-hold="ArrowLeft">◀</button>
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-      <button data-hold="ArrowRight">▶</button>
-
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
-      <button data-hold="ArrowDown">▼</button>
-      <button class="empty" tabindex="-1" aria-hidden="true"></button>
+  
+  <div id="mobileControls" aria-label="mobile controls">
+    <!-- LEFT: swipe D-pad zone -->
+    <div class="mc-dpad mc-left" id="joyPad" aria-label="move">
+      <div class="mc-joyBase" aria-hidden="true">
+        <div class="mc-joyKnob" id="joyKnob"></div>
+      </div>
+      <div class="mc-joyHint" aria-hidden="true">MOVE</div>
     </div>
 
-    <div id="mobileActions">
-      <button data-tap="Space">JUMP</button>
-      <button data-tap="KeyA">A</button>
-      <button data-tap="KeyS">S</button>
-      <button data-tap="KeyD">D</button>
+    <!-- RIGHT: actions -->
+    <div class="mc-actions mc-right" id="actionZone" aria-label="actions">
+      <button id="btnJump" type="button" class="mc-btn mc-jump" aria-label="jump">JUMP</button>
+      <div class="mc-row">
+        <button id="btnA" type="button" class="mc-btn mc-atk" aria-label="attack A">A</button>
+        <button id="btnS" type="button" class="mc-btn mc-atk" aria-label="attack S">S</button>
+        <button id="btnD" type="button" class="mc-btn mc-atk" aria-label="attack D">D</button>
+      </div>
     </div>
   </div>
 </div>
@@ -534,6 +795,10 @@ canvas{display:block;width:100vw;height:100vh}
 <script>
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
+
+// ===== Input state (must exist before mobile controls bind) =====
+let keys = {}, pressed = {};
+
 
 /* ===== Mobile character size reduction (20%) ===== */
 const __isMobileChar = matchMedia("(hover:none) and (pointer:coarse)").matches;
@@ -583,7 +848,7 @@ function mobileAssetTimeoutCheck(){
     ];
     const okPlayer = (playerImages && playerImages.idle && playerImages.idle.complete);
     const okBg = (typeof currentBg !== "undefined" && currentBg && currentBg.complete);
-    if(!okPlayer && !okBg){
+    if(!okPlayer){
       showMobileDebug(
         "아이폰에서 캐릭터가 안 보이는 이유",
         "아이폰 Safari가 PNG 로드를 막아서 <b>이미지가 로드되지 않았습니다</b>.<br><br>" +
@@ -659,45 +924,195 @@ ui.emailBtn.addEventListener("click", ()=>{
 });
 
 // 모바일 컨트롤 -> 기존 keys/pressed 시스템을 그대로 사용
+// 모바일 컨트롤(게임2 느낌):
+// - 왼쪽: 전체 영역(dpadZone)에서 손가락 위치로 좌/우 결정 (드래그 전환, 끊김 방지)
+// - 오른쪽: 점프/공격 버튼 + (드래그로 다른 버튼 위로 이동해도 인식)
 function bindMobileControls(){
   const root = document.getElementById("mobileControls");
   if(!root) return;
 
-  const setHold = (code, on)=>{
-    keys[code] = !!on;
-    // 방향키는 눌림 시작 순간에 pressed 처리도 해두면 UX 좋음
-    if(on && !keys[code]) pressed[code] = true;
-  };
+  const zone = document.getElementById("joyPad");
+  const actionZone = document.getElementById("actionZone");
+
+  const btnJump = document.getElementById("btnJump");
+  const btnA = document.getElementById("btnA");
+  const btnS = document.getElementById("btnS");
+  const btnD = document.getElementById("btnD");
+
   const tapKey = (code)=>{
-    pressed[code] = true;
-    keys[code] = true;
-    // 한 프레임 뒤에 해제 (연타 안정)
-    setTimeout(()=>{ keys[code] = false; }, 0);
+    try{
+      // "눌림 시작" 1회만 잡히게
+      pressed[code] = true;
+      keys[code] = true;
+      setTimeout(()=>{ keys[code] = false; }, 0);
+    }catch(e){}
   };
 
-  root.querySelectorAll("[data-hold]").forEach(btn=>{
-    const code = btn.getAttribute("data-hold");
-    const down = (e)=>{ e.preventDefault(); keys[code] = true; };
-    const up   = (e)=>{ e.preventDefault(); keys[code] = false; };
-    btn.addEventListener("pointerdown", down);
-    btn.addEventListener("pointerup", up);
-    btn.addEventListener("pointercancel", up);
-    btn.addEventListener("pointerleave", up);
-    btn.addEventListener("touchstart", down, {passive:false});
-    btn.addEventListener("touchend", up, {passive:false});
-    btn.addEventListener("touchcancel", up, {passive:false});
-    btn.addEventListener("mousedown", down);
-    btn.addEventListener("mouseup", up);
+  /* ===== Smooth Joystick D-pad (Up/Down/Left/Right + diagonals) ===== */
+  (function bindJoystick(){
+    const pad = document.getElementById("joyPad");
+    const knob = document.getElementById("joyKnob");
+    if(!pad) return;
 
-  });
+    let activePointerId = null;
+    let centerX = 0, centerY = 0, radius = 0;
 
-  root.querySelectorAll("[data-tap]").forEach(btn=>{
-    const code = btn.getAttribute("data-tap");
-    btn.addEventListener("click", (e)=>{
-      e.preventDefault();
+    function recalc(){
+      const r = pad.getBoundingClientRect();
+      centerX = r.left + r.width/2;
+      centerY = r.top  + r.height/2;
+      radius = Math.max(32, r.width * 0.38); // usable radius
+    }
+
+    function setKeysFromVec(dx, dy){
+      // deadzone + axis thresholds (tuned for "smooth" feel)
+      const dead = radius * 0.18;
+
+      // reset
+      keys["ArrowLeft"] = false;
+      keys["ArrowRight"] = false;
+      keys["ArrowUp"] = false;
+      keys["ArrowDown"] = false;
+
+      if(Math.abs(dx) < dead && Math.abs(dy) < dead){
+        return;
+      }
+
+      if(dx < -dead) keys["ArrowLeft"] = true;
+      if(dx >  dead) keys["ArrowRight"] = true;
+      if(dy < -dead) keys["ArrowUp"] = true;
+      if(dy >  dead) keys["ArrowDown"] = true;
+    }
+
+    function moveKnob(dx, dy){
+      if(!knob) return;
+      // clamp knob within radius
+      const d = Math.hypot(dx,dy) || 1;
+      const max = radius;
+      const k = (d > max) ? (max/d) : 1;
+      const tx = dx * k;
+      const ty = dy * k;
+      knob.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+    }
+
+    function reset(){
+      activePointerId = null;
+      keys["ArrowLeft"] = keys["ArrowRight"] = keys["ArrowUp"] = keys["ArrowDown"] = false;
+      if(knob) knob.style.transform = "translate3d(0,0,0)";
+    }
+
+    pad.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      activePointerId = e.pointerId;
+      try{ pad.setPointerCapture(activePointerId); }catch(_){}
+      recalc();
+      const dx = e.clientX - centerX;
+      const dy = e.clientY - centerY;
+      moveKnob(dx, dy);
+      setKeysFromVec(dx, dy);
+    }, {passive:false});
+
+    pad.addEventListener("pointermove", (e)=>{
+      if(activePointerId === null) return;
+      if(e.pointerId !== activePointerId) return;
+      const dx = e.clientX - centerX;
+      const dy = e.clientY - centerY;
+      moveKnob(dx, dy);
+      setKeysFromVec(dx, dy);
+    }, {passive:true});
+
+    const end = (e)=>{
+      if(activePointerId === null) return;
+      if(e && e.pointerId !== activePointerId) return;
+      reset();
+    };
+
+    pad.addEventListener("pointerup", end, {passive:true});
+    pad.addEventListener("pointercancel", end, {passive:true});
+    pad.addEventListener("lostpointercapture", end, {passive:true});
+
+    // initial
+    recalc();
+  })();
+
+/* ===== Actions: tap + drag switching ===== */
+  function codeForBtn(el){
+    if(!el) return null;
+    if(el === btnJump) return "Space";
+    if(el === btnA) return "KeyA";
+    if(el === btnS) return "KeyS";
+    if(el === btnD) return "KeyD";
+    return null;
+  }
+
+  // 각 버튼은 기본 탭(빠른 반응)
+  [
+    [btnJump,"Space"],
+    [btnA,"KeyA"],
+    [btnS,"KeyS"],
+    [btnD,"KeyD"],
+  ].forEach(([btn, code])=>{
+    if(!btn) return;
+    btn.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       tapKey(code);
-    });
+    }, { passive:false });
   });
+
+  // 드래그로 버튼 전환(손가락을 떼지 않아도 됨)
+  (function bindActionDrag(){
+    if(!actionZone) return;
+    let activePointerId = null;
+    let lastBtn = null;
+    let lastFireAt = 0;
+
+    function pickBtnFromPoint(x,y){
+      const el = document.elementFromPoint(x,y);
+      if(!el) return null;
+      const b = el.closest && el.closest("button");
+      if(!b) return null;
+      if(b === btnJump || b === btnA || b === btnS || b === btnD) return b;
+      return null;
+    }
+
+    function fire(btn){
+      const now = Date.now();
+      // 너무 과한 연타 방지(드래그 이동 중 스팸 방지)
+      if (now - lastFireAt < 120) return;
+      lastFireAt = now;
+      const code = codeForBtn(btn);
+      if(code) tapKey(code);
+    }
+
+    actionZone.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      activePointerId = e.pointerId;
+      try{ actionZone.setPointerCapture(activePointerId); }catch(_){}
+      lastBtn = pickBtnFromPoint(e.clientX, e.clientY);
+      if(lastBtn) fire(lastBtn);
+    }, { passive:false });
+
+    actionZone.addEventListener("pointermove", (e)=>{
+      if(activePointerId === null) return;
+      if(e.pointerId !== activePointerId) return;
+      const b = pickBtnFromPoint(e.clientX, e.clientY);
+      if(b && b !== lastBtn){
+        lastBtn = b;
+        fire(b);
+      }
+    }, { passive:true });
+
+    const end = (e)=>{
+      if(activePointerId === null) return;
+      if(e && e.pointerId !== activePointerId) return;
+      activePointerId = null;
+      lastBtn = null;
+    };
+
+    actionZone.addEventListener("pointerup", end, { passive:true });
+    actionZone.addEventListener("pointercancel", end, { passive:true });
+    actionZone.addEventListener("lostpointercapture", end, { passive:true });
+  })();
 }
 
 bindMobileControls();
@@ -843,8 +1258,9 @@ function pickRandomBg(){
 pickRandomBg();
 
 // ===== Sprite scale =====
-const PLAYER_SPRITE_SCALE = 2.0; // 주인공 100% 더 크게 (2.0x) // 주인공 70% 크게 (1.7x) // 주인공 70%
-const ENEMY_SPRITE_SCALE  = 2.6; // 적 160% 더 크게 (2.6x) // 적 100% 크게 (2.0x) // 적 100%
+const __isMobileScale = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
+const PLAYER_SPRITE_SCALE = __isMobileScale ? 1.6 : 2.0;
+const ENEMY_SPRITE_SCALE  = __isMobileScale ? 2.1 : 2.6;
 
 // ===== Sprites =====
 const playerImages = {
@@ -1289,7 +1705,7 @@ const MAX_SPECIAL_PER_STAGE = 5; // 단계(스테이지)당 서류 사용 가능
 let specialLeft = MAX_SPECIAL_PER_STAGE;
 
 // ===== Input =====
-let keys={}, pressed={};
+// (moved) let keys={}, pressed={};
 addEventListener("keydown",e=>{
   if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code)) e.preventDefault();
   if(!keys[e.code]) pressed[e.code]=true;
@@ -1298,25 +1714,77 @@ addEventListener("keydown",e=>{
 addEventListener("keyup",e=>keys[e.code]=false);
 
 // ===== Canvas sizing =====
+
+// ===== Canvas sizing (stable on Android/iOS) =====
 let viewW=0, viewH=0, dpr=1;
-function resize(){
-  dpr = devicePixelRatio || 1;
-  viewW = innerWidth;
-  viewH = innerHeight;
-  canvas.width  = viewW * dpr;
-  canvas.height = viewH * dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+let __didFirstLayoutInit = false;
 
-  // ✅ 모바일일 때만 스테이지 폴리곤을 화면에 맞게 변환
-  computeStagePolyActive();
-
-  // 스테이지가 바뀌면 캐릭터가 밖으로 나갈 수 있으니 즉시 클램프
-  try{ clampIntoPoly(player); }catch(e){}
-  try{ clampIntoPoly(enemy); }catch(e){}
+function _getViewportSize(){
+  // Use visualViewport when available (Android URL bar / keyboard issues)
+  const vv = window.visualViewport;
+  const w = Math.round((vv && vv.width)  ? vv.width  : window.innerWidth);
+  const h = Math.round((vv && vv.height) ? vv.height : window.innerHeight);
+  return {w,h};
 }
-addEventListener("resize", resize);
+
+let _resizePending = false;
+function resize(){
+  if(_resizePending) return;
+  _resizePending = true;
+  requestAnimationFrame(()=>{
+    _resizePending = false;
+
+    // Actual screen size (CSS px)
+    const {w:sw, h:sh} = _getViewportSize();
+
+    // ✅ Internal fixed render size (desktop-capture style)
+    const BASE_W = 1920, BASE_H = 1080;
+    viewW = BASE_W;
+    viewH = BASE_H;
+
+    // Scale the whole gameRoot to fit screen
+    const s = Math.min(sw / BASE_W, sh / BASE_H);
+    const root = document.getElementById("gameRoot");
+    // ✅ Always center on real screen
+    if(root) root.style.transform = `translate(-50%, -50%) scale(${s})`;
+
+    // For maximum stability on mobile, force DPR = 1
+    dpr = 1;
+
+    canvas.width  = BASE_W * dpr;
+    canvas.height = BASE_H * dpr;
+
+    // draw in CSS pixels
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    // Stage polygon is already designed for 1920x1080
+    STAGE_POLY_ACTIVE = STAGE_POLY_BASE;
+
+    // First layout init
+    if(!__didFirstLayoutInit){
+      __didFirstLayoutInit = true;
+      try{ init(); }catch(e){}
+    }
+
+    // Clamp after any relayout
+    try{ clampIntoPoly(player); }catch(e){}
+    try{ clampIntoPoly(enemy); }catch(e){}
+  });
+}
+
+addEventListener("resize", resize, {passive:true});
+addEventListener("orientationchange", resize, {passive:true});
+if(window.visualViewport){
+  visualViewport.addEventListener("resize", resize, {passive:true});
+  visualViewport.addEventListener("scroll", resize, {passive:true});
+}
 resize();
 
+// prevent accidental zoom while playing (Android pinch / iOS double tap)
+document.addEventListener("gesturestart", (e)=>{ e.preventDefault(); }, {passive:false});
+document.addEventListener("touchmove", (e)=>{
+  if(e.scale && e.scale !== 1) e.preventDefault();
+}, {passive:false});
 // ===== Polygon helpers =====
 function pointInPolygon(px,py,poly){
   let inside=false;
@@ -1393,7 +1861,8 @@ function init(){
   }
   enemy.x=e.x; enemy.y=e.y;
 }
-init();
+// ✅ init() is called after first resize() so mobile stage poly is ready
+// init();
 
 // ===== Movement & actions =====
 function movePlayer(){
@@ -1710,6 +2179,9 @@ function enemyMeleeResolve(){
 }
 
 function enemyAI(){
+  // ✅ Always face the player (even while telegraph/attack/hit)
+  try{ enemy.face = (player.x - enemy.x) >= 0 ? 1 : -1; }catch(e){}
+
   // cooldown tick
   if(enemy.shootCD > 0) enemy.shootCD--;
   if(enemy.meleeCD > 0) enemy.meleeCD--;
@@ -2004,35 +2476,58 @@ function drawBursts(){
 // ===== Drawing =====
 function drawSprite(obj, images){
   const img = images[obj.state] || images.idle;
-  if(!img || !img.complete){
+
+  // ✅ Safety: if coords are NaN/Infinity, snap to screen center
+  if(!isFinite(obj.x) || !isFinite(obj.y)){
+    obj.x = viewW * 0.5;
+    obj.y = viewH * 0.62;
+  }
+  if(!isFinite(obj.z)) obj.z = 0;
+
+  const isMobile = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
+
+  // ✅ Android/iOS 안정: Z는 데스크탑만 반영
+  const drawX = obj.x;
+  const drawY = isMobile ? obj.y : (obj.y - (obj.z||0));
+
+  // KO alpha
+  let alpha = 1;
+  if(koMode && ((koWho==="player" && obj===player) || (koWho==="enemy" && obj===enemy))){
+    alpha = Math.max(0, Math.min(1, koAlpha));
+  }
+
+  // scale
+  const sBase = obj.scale || 1;
+  const s = isMobile ? (sBase * 0.95) : sBase;
+  const w = obj.w * s;
+  const h = obj.h * s;
+
+  // If sprite not ready -> draw obvious fallback box
+  if(!img || !img.complete || !img.naturalWidth){
     ctx.save();
-    ctx.globalAlpha = 0.92;
-    ctx.translate(obj.x, obj.y - (obj.z||0));
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    ctx.strokeStyle = "rgba(255,255,255,0.75)";
-    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.strokeStyle = "rgba(255,255,255,0.85)";
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.rect(-26, -34, 52, 68);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,0.90)";
-    ctx.font = "700 11px system-ui";
-    ctx.textAlign = "center";
-    ctx.fillText("IMG", 0, 4);
+    ctx.rect(drawX-30, drawY-42, 60, 84);
+    ctx.fill(); ctx.stroke();
     ctx.restore();
     return;
   }
-  const s = obj.scale || 1;
+
+  // ✅ 가장 안정적인 좌우 반전: translate + scale(-1,1)
+  const f = (obj.face || 1) >= 0 ? 1 : -1;
+
   ctx.save();
-  // KO 대상이면 점점 투명해짐
-  if(koMode && ((koWho==="player" && obj===player) || (koWho==="enemy" && obj===enemy))){
-    ctx.globalAlpha = Math.max(0, Math.min(1, koAlpha));
-  }
-  ctx.translate(obj.x, obj.y - (obj.z||0));
-  ctx.scale(obj.face * s, s);
-  ctx.drawImage(img, -obj.w/2, -obj.h/2, obj.w, obj.h);
+  ctx.globalAlpha = alpha;
+  ctx.translate(drawX, drawY);
+  ctx.scale(f, 1);
+  ctx.drawImage(img, -w/2, -h/2, w, h);
   ctx.restore();
 }
+
+
 
 
 
@@ -2146,8 +2641,11 @@ function drawHUD(){
 
 function draw(){
   // 카메라 흔들림은 '월드'만 흔들고, HUD는 고정
+  const __isMobileDraw = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
   ctx.save();
-  ctx.translate(camShakeX, camShakeY);
+  if(!__isMobileDraw){
+    ctx.translate(camShakeX, camShakeY);
+  }
 
   // 흔들릴 때 가장자리 잔상(검은 테두리) 방지용으로 넓게 클리어
   ctx.clearRect(-80, -80, viewW + 160, viewH + 160);
@@ -2160,6 +2658,10 @@ function draw(){
   for(const p of enemyShots){ drawPaper(p, "rgba(255,160,160,0.98)"); }
 
   drawSprite(player, playerImages);
+
+  // ✅ Always face player for rendering (prevents wrong-facing during any state)
+  enemy.face = (player.x - enemy.x) >= 0 ? 1 : -1;
+  
   drawSprite(enemy, enemyImages);
 
   // sparks on top
@@ -2272,6 +2774,16 @@ function loop(){
     }
   }
 
+  // ✅ Safety clamps (Android): prevent NaN/negative Z from hiding characters
+  if(!isFinite(player.z) || player.z < 0){ player.z = 0; player.vz = 0; player.onGround = true; }
+  if(!isFinite(enemy.z)  || enemy.z  < 0){ enemy.z  = 0; enemy.vz  = 0; enemy.onGround  = true; }
+  if(!isFinite(player.x) || !isFinite(player.y) || player.x < -200 || player.x > viewW+200 || player.y < -200 || player.y > viewH+200){
+    try{ init(); }catch(e){}
+  }
+  if(!isFinite(enemy.x) || !isFinite(enemy.y) || enemy.x < -200 || enemy.x > viewW+200 || enemy.y < -200 || enemy.y > viewH+200){
+    try{ init(); }catch(e){}
+  }
+
   // enemy logic
   enemyAI();
   moveEnemy();
@@ -2336,5 +2848,47 @@ function loop(){
 setTimeout(mobileAssetTimeoutCheck, 1500);
 loop();
 </script>
+
+<script>
+/* ===== Mobile Gate Logic (Game3) ===== */
+(function(){
+  const rotateOv = document.getElementById("rotateOverlay");
+  const iosOv = document.getElementById("iphoneStandaloneOverlay");
+  if (!rotateOv || !iosOv) return;
+
+  const ua = navigator.userAgent || "";
+  const isIPhone = /iPhone|iPod/i.test(ua);        // ✅ iPhone만 강제
+  const isMobile = () => (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || (Math.min(window.innerWidth, window.innerHeight) <= 980);
+  const isPortrait = () => window.innerHeight > window.innerWidth;
+
+  function isStandalone(){
+    try{
+      if (window.navigator && window.navigator.standalone === true) return true; // iOS A2HS
+      if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true;
+      if (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches) return true;
+      if (window.matchMedia && window.matchMedia("(display-mode: minimal-ui)").matches) return true;
+    }catch(_){}
+    return false;
+  }
+
+  function updateGates(){
+    const mobile = isMobile();
+    const needRotate = mobile && isPortrait();
+    rotateOv.style.display = needRotate ? "flex" : "none";
+
+    // portrait 상태면 rotate가 우선
+    const needIPhoneStandalone = mobile && !needRotate && isIPhone && !isStandalone();
+    iosOv.style.display = needIPhoneStandalone ? "flex" : "none";
+  }
+
+  // 주기적으로도 체크(주소창/툴바 변화, iOS standalone 인식 타이밍 대응)
+  updateGates();
+  window.addEventListener("resize", updateGates, { passive:true });
+  window.addEventListener("orientationchange", () => setTimeout(updateGates, 60), { passive:true });
+  document.addEventListener("visibilitychange", () => setTimeout(updateGates, 60));
+  setInterval(updateGates, 800);
+})();
+</script>
+
 </body>
 </html>
