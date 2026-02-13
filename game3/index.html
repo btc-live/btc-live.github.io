@@ -2148,7 +2148,24 @@ function movePlayer(){
   const len=Math.hypot(dx,dy);
   if(len){
     dx/=len; dy/=len;
-    const nx=player.x+dx*player.speed, ny=player.y+dy*player.speed;
+
+    // ✅ 모바일(아이폰+안드로이드)에서만: 근접 구간 살짝 감속(타점 잡기 안정)
+    // - 난이도/데미지/AI 공식은 전혀 안 건드림
+    // - 이동속도만 "가까울 때" 아주 조금만 낮춤
+    let sp = player.speed;
+    try{
+      const IS_MOBILE_ALL = matchMedia("(hover:none) and (pointer:coarse)").matches;
+      if(IS_MOBILE_ALL && enemy){
+        const d = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+        // 160px 안으로 들어오면 0~12% 감속(부드럽게)
+        if(d < 160){
+          const t = Math.max(0, Math.min(1, (160 - d) / 60)); // 0..1
+          sp *= (1 - 0.12 * t); // 최대 12% 감속
+        }
+      }
+    }catch(e){}
+
+    const nx=player.x+dx*sp, ny=player.y+dy*sp;
     if(canStand(nx,ny,player.r)){ player.x=nx; player.y=ny; }
     if(dx>0.1) player.face=1;
     else if(dx<-0.1) player.face=-1;
