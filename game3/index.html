@@ -531,37 +531,6 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   box-shadow: 0 10px 28px rgba(0,0,0,0.22);
   overflow: hidden;
 }
-
-/* ✅ Mobile D-Pad (arrow buttons) */
-#mobileControls .mc-hidden{ display:none !important; }
-
-#mobileControls .mc-dpad{
-  width: clamp(118px, 28vw, 140px);
-  height: clamp(118px, 28vw, 140px);
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-  gap: 10px;
-  align-items: center;
-  justify-items: center;
-}
-
-#mobileControls .mc-dpad .dpad-btn{
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  font-size: 18px;
-  line-height: 1;
-}
-
-#mobileControls .mc-dpad .dpad-center{
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  opacity: 0;
-  pointer-events: none;
-}
-
 #mobileControls .mc-knob{
   position:absolute;
   left:50%; top:50%;
@@ -797,21 +766,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 
   
     <div id="mobileControls" aria-label="mobile controls">
-    <div class="mc-dpad" id="mcDpad" aria-label="direction">
-      <div class="dpad-center" aria-hidden="true"></div>
-      <button class="dpad-btn" id="mcUp" type="button" aria-label="up">↑</button>
-      <div class="dpad-center" aria-hidden="true"></div>
-
-      <button class="dpad-btn" id="mcLeft" type="button" aria-label="left">←</button>
-      <div class="dpad-center" aria-hidden="true"></div>
-      <button class="dpad-btn" id="mcRight" type="button" aria-label="right">→</button>
-
-      <div class="dpad-center" aria-hidden="true"></div>
-      <button class="dpad-btn" id="mcDown" type="button" aria-label="down">↓</button>
-      <div class="dpad-center" aria-hidden="true"></div>
-    </div>
-
-    <div class="mc-move mc-hidden" id="mcMove" aria-label="move">
+    <div class="mc-move" id="mcMove" aria-label="move">
       <div class="mc-knob" id="mcKnob" aria-hidden="true"></div>
     </div>
 
@@ -861,7 +816,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 
       <div class="infoSub">📱 Mobile</div>
       <ul>
-        <li>방향키(←→↑↓) : 이동(Move)</li>
+        <li>왼쪽 패드 : 이동(Move)</li>
         <li>JUMP : 점프(Jump)</li>
         <li>A : 펀치(Punch)</li>
         <li>S : 킥(Kick)</li>
@@ -1028,12 +983,6 @@ function bindMobileControls(){
 
   const pad  = document.getElementById("mcMove");
   const knob = document.getElementById("mcKnob");
-  const dpad = document.getElementById("mcDpad");
-  const bUp = document.getElementById("mcUp");
-  const bDown = document.getElementById("mcDown");
-  const bLeft = document.getElementById("mcLeft");
-  const bRight = document.getElementById("mcRight");
-
 
   const bJump = document.getElementById("mcJump");
   const bA = document.getElementById("mcA");
@@ -1060,45 +1009,13 @@ function bindMobileControls(){
     el.addEventListener("mousedown", onDown, {passive:false});
   }
 
-  // 방향키(D-Pad): 누르고 있는 동안 이동, 떼면 멈춤
-  function bindHold(el, code){
-    if(!el) return;
-    const down = (e)=>{
-      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      keys[code] = true;
-    };
-    const up = (e)=>{
-      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      keys[code] = false;
-    };
-    el.addEventListener("pointerdown", down, {passive:false});
-    el.addEventListener("pointerup", up, {passive:false});
-    el.addEventListener("pointercancel", up, {passive:false});
-    el.addEventListener("pointerleave", up, {passive:false});
-    el.addEventListener("touchstart", down, {passive:false});
-    el.addEventListener("touchend", up, {passive:false});
-    el.addEventListener("touchcancel", up, {passive:false});
-  }
-
-
-
   bindPress(bJump, "Space");
   bindPress(bA, "KeyA");
   bindPress(bS, "KeyS");
   bindPress(bD, "KeyD");
 
-  // ✅ 조이스틱은 "삭제"가 아니라 숨김(비활성화) 처리하고,
-  //    대신 D-Pad(←→↑↓) 버튼을 사용합니다.
-  if (dpad){
-    try{ if(pad) pad.classList.add("mc-hidden"); }catch(e){}
-    bindHold(bUp, "ArrowUp");
-    bindHold(bDown, "ArrowDown");
-    bindHold(bLeft, "ArrowLeft");
-    bindHold(bRight, "ArrowRight");
-  }
-
   // ===== Joystick (4-way + diagonals) =====
-  if(!pad || pad.classList.contains("mc-hidden")) return;
+  if(!pad) return;
 
   let activePointerId = null;
   let activeTouchId = null;
