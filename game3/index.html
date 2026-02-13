@@ -315,7 +315,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 
 
 /* ===== Mobile Gate Overlays (landscape / iPhone standalone) ===== */
-#rotateOverlay, #iphoneStandaloneOverlay{
+#rotateOverlay, #iphoneStandaloneOverlay, #androidFullscreenOverlay{
   position:fixed; inset:0;
   display:none;
   align-items:center; justify-content:center;
@@ -3125,7 +3125,31 @@ loop();
 </script>
 
 <script>
-/* ===== Mobile Gate Logic (Game3) ===== */
+/* ===== Mobile Gate Logic (Game3) =====
+[목표]
+- Android: 페이지 진입 시 '가로모드(landscape) + 전체화면(fullscreen)'을 최대한 유도
+- iPhone: Safari 탭에서 불안정한 경우가 있어 '홈화면 추가(A2HS) / standalone' 실행을 유도
+
+[중요: 브라우저 정책 한계]
+- ❌ 자동으로 가로 회전을 강제로 시키는 것은 대부분 불가능합니다.
+- ❌ 자동으로 fullscreen을 '즉시' 켜는 것도 불가능합니다.
+  -> fullscreen / orientation lock 은 "사용자 터치(클릭)" 같은 제스처 이후에만 허용됩니다.
+
+[동작 흐름]
+1) 모바일 + 세로(포트레이트)면: rotateOverlay를 띄워서 "가로로 돌리세요" 안내
+2) iPhone + Safari 탭(standalone 아님)이면: iphoneStandaloneOverlay로 "홈화면 추가" 안내
+3) Android + 가로(landscape) + fullscreen 아님이면: androidFullscreenOverlay로 "전체화면 버튼" 안내
+   - 버튼/오버레이를 누르면 requestFs() 실행:
+     a) requestFullscreen (표준 + webkit) 시도
+     b) 가능하면 screen.orientation.lock('landscape')도 시도 (실패해도 정상)
+     c) 실패 시 짧은 안내 메시지를 띄우고, 사용자가 다시 누를 수 있게 유지
+
+[재사용 팁]
+- 다른 파일에서도 그대로 복붙해서 쓰려면:
+  - HTML에 #rotateOverlay, #iphoneStandaloneOverlay, #androidFullscreenOverlay 3개를 넣고
+  - CSS에서 세 오버레이가 fixed/inset/z-index를 가지도록 하고
+  - 아래 JS IIFE 블록을 마지막에 붙이면 됩니다.
+*/
 (function(){
   const rotateOv = document.getElementById("rotateOverlay");
   const iosOv = document.getElementById("iphoneStandaloneOverlay");
@@ -3152,29 +3176,94 @@ loop();
   function updateGates(){
     const mobile = isMobile();
     const needRotate = mobile && isPortrait();
-    try{ document.documentElement.classList.toggle("is-iphone", !!isIPhone); document.documentElement.classList.toggle("is-android", !!isAndroid); }catch(_){ }
-    rotateOv.style.display = needRotate ? "flex" : "none";
 
-    // portrait 상태면 rotate가 우선
+    try{
+      document.documentElement.classList.toggle("is-iphone", !!isIPhone);
+      document.documentElement.classList.toggle("is-android", !!isAndroid);
+    }catch(_){}
+
+    // 1) Mobile Portrait => rotate overlay (가로모드 유도)
+    if(rotateOv) rotateOv.style.display = (mobile && needRotate) ? "flex" : "none";
+
+    // 2) iPhone Safari tab => standalone overlay (홈화면 추가 유도)
     const needIPhoneStandalone = mobile && !needRotate && isIPhone && !isStandalone();
     if(iosOv) iosOv.style.display = needIPhoneStandalone ? "flex" : "none";
 
-    // ✅ Android: landscape면 "전체화면 버튼"을 먼저 보여주고 게임은 뒤에 가립니다.
-    const isFs = !!document.fullscreenElement || (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches);
-    const needAndroidFs = mobile && !needRotate && isAndroid && !isFs;
-    if(andOv) andOv.style.display = needAndroidFs ? "flex" : "none";
+    // 3) Android (landscape) => fullscreen 유도
+    const fs = !!(document.fullscreenElement || document.webkitFullscreenElement) || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+    const needAndroidFs = mobile && !needRotate && isAndroid && !fs;
+
+    if(andOv){
+      // 텍스트는 여기서 매번 세팅(나중에 복붙해도 항상 맞음)
+      try{
+        const t = andOv.querySelector(".tgGateTitle");
+        const d = andOv.querySelector(".tgGateDesc b");
+        const h = andOv.querySelector(".tgGateHint");
+        if(t) t.textContent = "안드로이드는 전체화면으로 플레이하세요";
+        if(d) d.textContent = "아래 버튼을 누르면 전체화면으로 전환됩니다.";
+        if(andBtn) andBtn.textContent = "전체화면으로 시작";
+        if(h) h.textContent = "※ 전체화면은 ‘사용자 터치’ 후에만 가능합니다. (브라우저 정책)";
+      }catch(_){}
+      andOv.style.display = needAndroidFs ? "flex" : "none";
+    }
   }
 
 async function requestFs(){
+  const now = Date.now();
+  if(window.__tgFsTriedAt && (now - window.__tgFsTriedAt) < 800) return;
+  window.__tgFsTriedAt = now;
+
+  // Debug overlay (optional)
+  const dbgOv  = document.getElementById("mobileDebugOverlay");
+  const dbgMsg = document.getElementById("mobileDebugMsg");
+
   try{
     const el = document.documentElement;
-    if(el && el.requestFullscreen){
-      await el.requestFullscreen();
+
+    // 1) Fullscreen request (standard + webkit)
+    const req = (el && (el.requestFullscreen || el.webkitRequestFullscreen));
+    if (req) await req.call(el);
+
+    // 2) Try to lock orientation to landscape (may fail silently)
+    try{
+      if (screen && screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    }catch(_){}
+  }catch(_){}
+
+  // 조금 기다렸다가 판정 (일부 브라우저는 반영이 늦음)
+  setTimeout(()=>{
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement) ||
+                 (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+
+    // 성공하면 안내/디버그를 닫음
+    if (isFs){
+      try{ if(andOv) andOv.style.display = "none"; }catch(_){}
+      try{ if(dbgOv) dbgOv.style.display = "none"; }catch(_){}
+      try{ updateGates(); }catch(_){}
+      return;
     }
-  }catch(e){}
-  // fullscreen 성공/실패와 무관하게 오버레이는 닫고 진행 (실패하면 사용자가 다시 누르면 됨)
-  try{ if(andOv) andOv.style.display = "none"; }catch(_){}
-  try{ updateGates(); }catch(_){}
+
+    // 실패하면: 오버레이는 유지 + 사용자에게 이유 안내(브라우저 정책/설정)
+    try{
+      if(dbgOv && dbgMsg){
+        dbgMsg.innerHTML =
+          "전체화면 전환이 차단되었습니다.<br><br>" +
+          "✅ 해결 방법:<br>" +
+          "1) 화면을 <b>가로모드</b>로 돌린 뒤<br>" +
+          "2) 아래 <b>전체화면 버튼</b>을 다시 눌러주세요.<br><br>" +
+          "그래도 안 되면,<br>" +
+          "• 크롬: 메뉴(⋮) → <b>전체화면</b><br>" +
+          "• 삼성인터넷: 메뉴 → <b>전체화면</b><br>" +
+          "을 사용해보세요.";
+        dbgOv.style.display = "flex";
+        setTimeout(()=>{ try{ dbgOv.style.display = 'none'; }catch(_){} }, 2200);
+      }
+    }catch(_){}
+
+    try{ updateGates(); }catch(_){}
+  }, 80);
 }
 if(andBtn){
   andBtn.addEventListener("click", (e)=>{
@@ -3182,6 +3271,15 @@ if(andBtn){
     requestFs();
   }, {passive:false});
 }
+
+// ✅ 버튼 말고 카드/배경을 눌러도 전체화면 시도 (사용자 입장에서 더 직관적)
+if(andOv){
+  const _try = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch(_){} requestFs(); };
+  andOv.addEventListener("click", _try, {passive:false});
+  andOv.addEventListener("pointerdown", _try, {passive:false});
+  andOv.addEventListener("touchstart", _try, {passive:false});
+}
+
 
 
   // 주기적으로도 체크(주소창/툴바 변화, iOS standalone 인식 타이밍 대응)
