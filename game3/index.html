@@ -1021,6 +1021,11 @@ function bindMobileControls(){
   let activeTouchId = null;
   let cx=0, cy=0, radius=0;
 
+  // ✅ Android는 터치/포인터 반응이 과하게 "날카롭게" 느껴질 수 있어서,
+  //    이동패드 입력만 살짝 둔하게(=데드존↑ + 스무딩) 보정합니다.
+  const IS_ANDROID = /Android/i.test(navigator.userAgent || "");
+  let fx = 0, fy = 0; // filtered dx/dy
+
   function recalc(){
     const r = pad.getBoundingClientRect();
     cx = r.left + r.width/2;
@@ -1029,7 +1034,7 @@ function bindMobileControls(){
   }
 
   function setMove(dx, dy){
-    const dead = radius * 0.18;
+    const dead = radius * (IS_ANDROID ? 0.26 : 0.18);
 
     keys["ArrowLeft"] = false;
     keys["ArrowRight"] = false;
@@ -1045,6 +1050,32 @@ function bindMobileControls(){
     if(dy >  dead) keys["ArrowDown"] = true;
   }
 
+  // ✅ 입력을 한 번에 적용하지 말고(특히 Android), 살짝 부드럽게 따라오게 해서
+  //    "과하게 튀는 느낌"을 줄입니다.
+  function applyInput(rawDx, rawDy){
+    // 1) 패드 반경 밖으로 나간 입력은 반경에 맞춰 클램프
+    const d = Math.hypot(rawDx, rawDy) || 0;
+    let dx = rawDx, dy = rawDy;
+    if (d > radius && d > 0){
+      const k = radius / d;
+      dx *= k; dy *= k;
+    }
+
+    // 2) Android만 스무딩(필터)
+    if (IS_ANDROID){
+      const alpha = 0.22; // 0~1 (작을수록 더 둔함)
+      fx = fx + (dx - fx) * alpha;
+      fy = fy + (dy - fy) * alpha;
+      dx = fx; dy = fy;
+    }else{
+      // 다른 기기에서는 필터값을 즉시 맞춰서 지연감 없게
+      fx = dx; fy = dy;
+    }
+
+    moveKnob(dx, dy);
+    setMove(dx, dy);
+  }
+
   function moveKnob(dx, dy){
     if(!knob) return;
     const d = Math.hypot(dx,dy) || 1;
@@ -1056,6 +1087,7 @@ function bindMobileControls(){
   function reset(){
     activePointerId = null;
     activeTouchId = null;
+    fx = 0; fy = 0;
     keys["ArrowLeft"] = keys["ArrowRight"] = keys["ArrowUp"] = keys["ArrowDown"] = false;
     if(knob) knob.style.transform = "translate3d(0,0,0)";
   }
@@ -1068,8 +1100,7 @@ function bindMobileControls(){
     recalc();
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
-    moveKnob(dx, dy);
-    setMove(dx, dy);
+    applyInput(dx, dy);
   }, {passive:false});
 
   pad.addEventListener("pointermove", (e)=>{
@@ -1077,8 +1108,7 @@ function bindMobileControls(){
     if(e.pointerId !== activePointerId) return;
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
-    moveKnob(dx, dy);
-    setMove(dx, dy);
+    applyInput(dx, dy);
   }, {passive:true});
 
   const pend = (e)=>{
@@ -1099,8 +1129,7 @@ function bindMobileControls(){
     recalc();
     const dx = t.clientX - cx;
     const dy = t.clientY - cy;
-    moveKnob(dx, dy);
-    setMove(dx, dy);
+    applyInput(dx, dy);
   }, {passive:false});
 
   pad.addEventListener("touchmove", (e)=>{
@@ -1114,8 +1143,7 @@ function bindMobileControls(){
     if(!t) return;
     const dx = t.clientX - cx;
     const dy = t.clientY - cy;
-    moveKnob(dx, dy);
-    setMove(dx, dy);
+    applyInput(dx, dy);
   }, {passive:false});
 
   const tend = ()=>{
