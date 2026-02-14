@@ -2019,6 +2019,8 @@ function getProgressIndex(){ return (rankIndex * 10) + (stage - 1); }
 // ✅ 적 공격(피해량)은 직급(승급)마다 +0.2: 1.2, 1.4, 1.6 ...
 let enemyDamagePerHit = 1.2;
 
+let playerDamagePerHit = 1.0; // player -> enemy damage (rank-scaled)
+
 // ===== Knockback milestones (50% / finish) =====
 let playerHalfTriggered = false;
 let enemyHalfTriggered = false;
@@ -2126,6 +2128,8 @@ function applyDifficulty(){
   enemyDamagePerHit = +(1.2 + rankIndex * 0.2).toFixed(1);
   enemyShotDamage  = enemyDamagePerHit;
   enemyMeleeDamage = enemyDamagePerHit;
+  // ✅ player hit damage: from Senior Manager(부장, rankIndex=3) +0.1 each rank (1.0, 1.0, 1.0, 1.1, 1.2 ...)
+  playerDamagePerHit = +(1.0 + Math.max(0, (rankIndex - 2)) * 0.1).toFixed(1);
 }
 
 // 초기 난이도 1회 적용 (첫 로딩)
@@ -2929,11 +2933,9 @@ function enemyTakeHit(fromX){
   const prevHP = enemyHP;
 
   // score/HP -1
-  decHP("enemy", 1);
+  decHP("enemy", playerDamagePerHit);
 
-  // ✅ Step1 적용: 3히트마다 "이번 판 급여 사토시" +1
-  onPlayerLandedHit();
-
+  // ✅ Step1 적
   // ===== Knockback rules =====
   // 기본 넉백(작게)
   let knock = 22;
