@@ -1370,19 +1370,25 @@ function submitLoginModal(){
     try{ alert("이메일 형식이 아닌 것 같아요. (Invalid email) 예: name@gmail.com"); }catch(e){}
     return;
   }
+
+  // 1) close modal first (so even if later code errors, UI is not stuck)
+  try{ input.blur(); }catch(e){}
   closeLoginModal();
-  saveEmail(email);
-  refreshIdentityUI();
 
-  // if Stage 6+ gate was blocking, unlock after login
-  try{
-    if(__emailGateActive){ closeEmailGate(); setPaused(false); }
-  }catch(e){}
+  // 2) save + UI refresh
+  try{ saveEmail(email); }catch(e){}
+  try{ refreshIdentityUI(); }catch(e){}
 
+  // 3) ✅ IMPORTANT: ALWAYS release any gate/pause/locks (prevents “freeze until refresh”)
+  try{ if(typeof closeEmailGate === "function") closeEmailGate(); }catch(e){}
+  try{ if(typeof setPaused === "function") setPaused(false); }catch(e){}
+  try{ window.__tgCenterMsg = ""; }catch(e){}
+  try{ window.__startLocked = false; }catch(e){}
 
+  // 4) background registration/sync (never block gameplay)
   Promise.resolve()
-    .then(()=>game3RegisterToSheet(email))
-    .then(()=>game3InitSyncIfEmailExists())
+    .then(()=> (typeof game3RegisterToSheet==="function" ? game3RegisterToSheet(email) : null))
+    .then(()=> (typeof game3InitSyncIfEmailExists==="function" ? game3InitSyncIfEmailExists() : null))
     .catch(()=>{});
 }
 
@@ -4302,10 +4308,10 @@ if(andOv){
 
   // bind first, then auto-unlock after 2s
   const startTimers = ()=>{
-    setTimeout(unlock, 2000);
-    // 혹시 DOM/폰 환경에서 타이밍 꼬이면 0.5초 더 뒤에 한 번 더
-    setTimeout(()=>{ if(window.__startLocked) requestStart("LOADING...");
-      }, 2500);
+    // ✅ AUTO START: show the start screen briefly, then start automatically
+    setTimeout(()=>{ requestStart("LOADING..."); }, 1700);
+    // safety: if something blocked it, try once more
+    setTimeout(()=>{ if(window.__startLocked) requestStart("LOADING..."); }, 2600);
   };
 
   if (document.readyState === "loading"){
