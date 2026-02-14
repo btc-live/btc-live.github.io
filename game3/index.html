@@ -394,6 +394,28 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 }
 #miniBtns button:active{ transform:translateY(1px); }
 
+#btnMiniLogin, #btnMiniLogout{
+  width:auto !important;
+  padding:0 10px !important;
+  font-size:11px !important;
+  letter-spacing:0.2px;
+}
+#emailBtn, #btnMiniLogin, #btnMiniLogout{
+  line-height:1.05;
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+#emailBtn .loginSub, #btnMiniLogin .loginSub{
+  display:block;
+  font-size:9px;
+  opacity:0.85;
+  margin-top:1px;
+}
+
+
 @media (hover:none) and (pointer:coarse), (max-width: 980px){
   /* Hide the big side panels on mobile */
   #leftPanel, #rightPanel{ display:none !important; }
@@ -589,6 +611,57 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   #mcJump{ height: 40px; }
 }
 
+
+/* ---- Login Modal (Email Only) ---- */
+#loginModal{
+  position:fixed; left:0; top:0; width:100vw; height:100vh;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.72); z-index:9999;
+  padding:16px; box-sizing:border-box;
+}
+.loginModalCard{
+  width:min(420px, 92vw);
+  background:#101622;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  padding:14px 14px 12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.loginModalTitle{font-weight:800;font-size:18px;line-height:1.2}
+.loginModalSub{opacity:.75;font-size:12px;margin-top:2px}
+.loginModalInput{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  display:block;
+
+  margin-top:12px;
+  padding:10px 10px;
+
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#0b0f18;
+  color:#e9efff;
+  outline:none;
+
+  /* 긴 이메일이 박스 밖으로 "밀어내지" 않도록 */
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.loginModalHelp{margin-top:10px; font-size:12px; opacity:.9; line-height:1.35}
+.loginModalTipOnce{margin-top:6px; font-size:11px; opacity:.7}
+.loginModalBtns{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
+.loginModalBtn{
+  padding:9px 12px; border-radius:10px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#141c2b; color:#e9efff;
+}
+.loginModalBtn.primary{
+  border-color:rgba(255,255,255,.22);
+  background:#1c2a45;
+  font-weight:700;
+}
+
 </style>
 
 <style id="__desktopSlimPanels">
@@ -735,7 +808,9 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
       <button id="btnMiniMute" type="button" title="Mute/Unmute">🔇</button>
       <button id="btnMiniFs" type="button" title="Fullscreen">⛶</button>
       <button id="btnMiniInfo" type="button" title="Info">i</button>
-      <button id="btnMiniRefresh" type="button" title="Refresh">⟳</button>
+            <button id="btnMiniLogin" type="button" title="Login / Register">Login<span class="loginSub">(only email)</span></button>
+            <button id="btnMiniLogout" type="button" title="Logout" style="display:none;">Logout</button>
+<button id="btnMiniRefresh" type="button" title="Refresh">⟳</button>
       <button id="btnMiniMain" type="button" title="Main">⌂</button>
     </div>
   </div>
@@ -749,7 +824,8 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     <div class="row"><span class="muted">현재 사토시(Current Sats)</span><strong id="uiTemp">0</strong></div>
     <div class="row"><span class="muted">누적 사토시(Total Sats)</span><strong id="uiTotal">0</strong></div>
 
-    <button id="emailBtn" type="button" style="display:none;">이메일 등록(Register Email)</button>
+    <button id="emailBtn" type="button" style="display:none;">Login<span class="loginSub">(only email)</span></button>
+    <button id="logoutBtn" type="button" style="display:none; margin-left:8px;">Logout</button>
     <div class="muted" id="emailHint" style="margin-top:8px; display:none;">
       누적 저장을 위해 이메일이 필요합니다. (Email is required to save total.)
     </div>
@@ -839,6 +915,27 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 <div id="resultOverlay" role="dialog" aria-modal="true">
   <div class="resultText" id="resultText">승리(VICTORY)(VICTORY)</div>
   <button id="restartBtn" type="button">다시 시작(RESTART)</button>
+
+<div id="emailGateOverlay" role="dialog" aria-modal="true" style="
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center; flex-direction:column;
+  background:rgba(0,0,0,0.72); z-index:9999; text-align:center; padding:18px;
+  font-family:system-ui; color:#e9efff;">
+  <div style="font-size:22px; font-weight:900; margin-bottom:10px;">6단계부터는 이메일이 필요합니다</div>
+  <div style="max-width:760px; font-size:14px; line-height:1.5; opacity:0.95; margin-bottom:14px;">
+    게스트(Guest)는 1~5단계까지만 플레이 가능합니다.<br>
+    계속하려면 이메일을 등록해주세요.
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+    <button id="emailGateLoginBtn" type="button" style="pointer-events:auto; font-size:16px; padding:12px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.16); color:#e9efff; font-weight:900; cursor:pointer;">
+      이메일 입력하고 계속
+    </button>
+    <button id="emailGateBackBtn" type="button" style="pointer-events:auto; font-size:16px; padding:12px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.10); color:#e9efff; font-weight:900; cursor:pointer;">
+      싫어요 → 1단계로(사토시 0)
+    </button>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -943,35 +1040,322 @@ function saveEmail(v){
   localStorage.setItem("user_email", v);
 }
 
+function clearEmail(){
+  try{
+    for(const k of EMAIL_KEYS){ localStorage.removeItem(k); }
+    localStorage.removeItem("tg_email");
+    localStorage.removeItem("user_email");
+  }catch(e){}
+}
+function doLogout(){
+  if(!getSavedEmail()) return;
+  if(!confirm("Logout? (로그아웃)")) return;
+  clearEmail();
+  // guest 기본값으로
+  try{
+    rankIndex = 0;
+    stage = 1;
+    totalSalarySatoshi = 0;
+    winsThisRank = 0;
+  }catch(e){}
+  try{ refreshIdentityUI(); }catch(e){}
+  try{ updateUI(); }catch(e){}
+}
+
+// ===== Guest until Stage 5 (Stage 6+ requires Email) =====
+const EMAIL_REQUIRED_STAGE = 6;
+let __emailGateActive = false;
+
+function openEmailGate(){
+  if(__emailGateActive) return;
+  __emailGateActive = true;
+  const ov = document.getElementById("emailGateOverlay");
+  if(ov) ov.style.display = "flex";
+  try{ setPaused(true); }catch(e){}
+}
+function closeEmailGate(){
+  __emailGateActive = false;
+  const ov = document.getElementById("emailGateOverlay");
+  if(ov) ov.style.display = "none";
+}
+
+function resetToGuestStage1(){
+  // 게스트로 1단계 + 사토시 0
+  try{ clearEmail(); }catch(e){}
+  try{
+    rankIndex = 0;
+    stage = 1;
+    seasonComplete = false;
+    tempSalarySatoshi = 0;
+    totalSalarySatoshi = 0;
+    winsThisRank = 0;
+  }catch(e){}
+  try{
+    const ro = document.getElementById("resultOverlay");
+    if(ro) ro.style.display = "none";
+  }catch(e){}
+  try{ refreshIdentityUI(); }catch(e){}
+  try{ updateUI(); }catch(e){}
+  try{ closeEmailGate(); }catch(e){}
+  try{ setPaused(false); }catch(e){}
+  try{ resetGame(); }catch(e){}
+}
+
+// bind gate overlay buttons
+function bindEmailGateButtons(){
+  const bLogin = document.getElementById("emailGateLoginBtn");
+  const bBack  = document.getElementById("emailGateBackBtn");
+  if(bLogin){
+    bLogin.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      openLoginModal(getSavedEmail() || "");
+    });
+  }
+  if(bBack){
+    bBack.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      resetToGuestStage1();
+    });
+  }
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", bindEmailGateButtons);
+} else {
+  setTimeout(bindEmailGateButtons, 0);
+}
+
+
+
+// ===============================
+// GAME3 <-> Google Apps Script Sync
+// ===============================
+// ✅ 너가 배포한 Web App URL
+const GAME3_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
+
+async function game3GetUserFromSheet(email){
+  try{
+    const url = GAME3_WEB_APP_URL + "?action=getgame3&email=" + encodeURIComponent(email);
+    const r = await fetch(url, { method:"GET", cache:"no-store" });
+    // CORS 때문에 막히면 콘솔에 에러가 뜸. (그때는 fetch mode:'no-cors'로는 JSON을 읽을 수 없음)
+    const j = await r.json();
+    return j;
+  }catch(e){
+    console.warn("[GAME3] getgame3 failed:", e);
+    return null;
+  }
+}
+
+function game3PostToSheet(payload){
+  // ✅ CORS preflight를 피하기 위해 "단순 폼 전송" 형태로 보냅니다.
+  // - body: URLSearchParams  => Content-Type: application/x-www-form-urlencoded
+  // - custom header 없음     => preflight 없음(대부분 브라우저)
+  // - 응답은 읽지 않음(서버 처리만 목적)
+  try{
+    const fd = new URLSearchParams();
+    fd.append("action", String(payload.action || "game3_save"));
+    fd.append("email", String(payload.email || ""));
+    if(payload.rank !== undefined) fd.append("rank", String(payload.rank));
+    if(payload.stage !== undefined) fd.append("stage", String(payload.stage));
+    if(payload.totalSats !== undefined) fd.append("totalSats", String(payload.totalSats));
+
+    return fetch(GAME3_WEB_APP_URL, {
+      method:"POST",
+      // 기본 mode:'cors' (응답은 못 읽어도 요청은 서버에 도달)
+      body: fd,
+      keepalive: true
+    }).catch(()=>null);
+  }catch(e){
+    console.warn("[GAME3] post failed:", e);
+    return Promise.resolve(null);
+  }
+}
+
+
+function game3RegisterToSheet(email){
+  // row 생성 또는 lastSeen 갱신
+  return game3PostToSheet({ action:"game3_register", email });
+}
+
+async function game3InitSyncIfEmailExists(){
+  const email = getSavedEmail();
+  if(!email) return;
+
+  const j = await game3GetUserFromSheet(email);
+  if(!j) return;
+
+  // 서버 응답 예: { ok:true, email, createdAt, lastSeen, rank, stage, totalSats, exists }
+  if(j.ok){
+    if(j.exists === false){
+      // 시트에 row 없으면 기본값으로 1번 저장(=row 생성)
+      await game3PostToSheet({
+        email,
+        rank: 1,
+        stage: 1,
+        totalSats: 0
+      });
+    } else {
+      // 시트 값으로 로컬 진행도 덮어쓰기
+      rankIndex = Math.max(0, Math.min(RANKS.length-1, (Number(j.rank)||1) - 1));
+      stage = Math.max(1, Math.min(10, Math.floor(Number(j.stage)||1)));
+      totalSalarySatoshi = Math.max(0, Math.floor(Number(j.totalSats)||0));
+    }
+    try{ updateUI(); }catch(e){}
+  }
+}
+
+function game3SaveProgressIfEmailExists(){
+  const email = getSavedEmail();
+  if(!email) return;
+  // rank는 시트에서 1~8로 저장 (rankIndex는 0~7)
+  game3PostToSheet({
+    email,
+    rank: rankIndex + 1,
+    stage,
+    totalSats: totalSalarySatoshi
+  });
+}
+
 function refreshIdentityUI(){
   const email = getSavedEmail();
+  const btnLogout = document.getElementById("logoutBtn");
+  const bLogin = document.getElementById("btnMiniLogin");
+  const bLogout = document.getElementById("btnMiniLogout");
+
   if(email){
-    ui.user.textContent = email;
-    ui.nameTag.textContent = email;
+    ui.user.textContent = maskEmail(email);
+    ui.nameTag.textContent = maskEmail(email);
+
+    // desktop
     ui.emailBtn.style.display = "none";
     ui.emailHint.style.display = "none";
+    if(btnLogout) btnLogout.style.display = "inline-block";
+
+    // mobile
+    if(bLogin) bLogin.style.display = "none";
+    if(bLogout) bLogout.style.display = "inline-flex";
   }else{
     ui.user.textContent = "Guest";
     ui.nameTag.textContent = "게스트(Guest)";
-    ui.emailBtn.style.display = "block";
+
+    // desktop
+    ui.emailBtn.style.display = "inline-block";
     ui.emailHint.style.display = "block";
+    if(btnLogout) btnLogout.style.display = "none";
+
+    // mobile
+    if(bLogin) bLogin.style.display = "inline-flex";
+    if(bLogout) bLogout.style.display = "none";
   }
 }
 
 // 버튼 클릭 -> 이메일 입력(최소 기능)
 ui.emailBtn.addEventListener("click", ()=>{
   const cur = getSavedEmail();
-  const v = prompt("이메일(아이디)을 입력해주세요. (Enter your email (ID).)", cur || "");
-  if(v === null) return; // cancel
-  const email = (v||"").trim();
-  // 아주 가벼운 검증(완전 엄격할 필요 X)
+  openLoginModal(cur || "");
+});
+
+function openLoginModal(prefill){
+  const modal = document.getElementById("loginModal");
+  const input = document.getElementById("loginEmailInput");
+  if(!modal || !input) return;
+  // 세션 1회 안내(모바일에서도 안정적으로 보이도록 모달 내부에 표시)
+  try{
+    if(!sessionStorage.getItem("tg_login_tip_shown")){
+      document.getElementById("loginTipOnce").style.display = "block";
+      sessionStorage.setItem("tg_login_tip_shown","1");
+    } else {
+      document.getElementById("loginTipOnce").style.display = "none";
+    }
+  }catch(e){}
+  input.value = prefill || "";
+  modal.style.display = "flex";
+  setTimeout(()=>{ try{ input.focus(); input.select(); }catch(e){} }, 50);
+}
+
+function closeLoginModal(){
+  const modal = document.getElementById("loginModal");
+  if(modal) modal.style.display = "none";
+}
+
+function submitLoginModal(){
+  const input = document.getElementById("loginEmailInput");
+  if(!input) return;
+  const email = (input.value||"").trim();
   if(!email || !email.includes("@") || !email.includes(".")){
-    alert("이메일 형식이 아닌 것 같아요. (Invalid email) 예: name@gmail.com");
+    try{ alert("이메일 형식이 아닌 것 같아요. (Invalid email) 예: name@gmail.com"); }catch(e){}
     return;
   }
+  closeLoginModal();
   saveEmail(email);
   refreshIdentityUI();
-});
+
+  // if Stage 6+ gate was blocking, unlock after login
+  try{
+    if(__emailGateActive){ closeEmailGate(); setPaused(false); }
+  }catch(e){}
+
+
+  Promise.resolve()
+    .then(()=>game3RegisterToSheet(email))
+    .then(()=>game3InitSyncIfEmailExists())
+    .catch(()=>{});
+}
+
+// ===== Login Modal Buttons Binding (fix: buttons not working) =====
+function bindLoginModalButtons(){
+  const modal  = document.getElementById("loginModal");
+  const ok     = document.getElementById("loginModalOk");
+  const cancel = document.getElementById("loginModalCancel");
+  if(!modal || !ok || !cancel) return;
+
+  const stop = (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+  };
+
+  const bind = (el, fn)=>{
+    const handler = (e)=>{ stop(e); try{ fn(); }catch(_){} };
+    el.addEventListener("click", handler);
+    el.addEventListener("pointerup", handler, {passive:false});
+    el.addEventListener("touchend", handler, {passive:false});
+  };
+
+  bind(ok, submitLoginModal);
+  bind(cancel, closeLoginModal);
+
+  // backdrop click to close
+  modal.addEventListener("click", (e)=>{
+    if(e.target === modal) closeLoginModal();
+  }, {passive:true});
+
+  // keyboard shortcuts (desktop)
+  document.addEventListener("keydown", (e)=>{
+    try{
+      if(!modal || modal.style.display === "none") return;
+      if(e.key === "Escape") closeLoginModal();
+      if(e.key === "Enter") submitLoginModal();
+    }catch(_){}
+  });
+}
+
+// bind after DOM is ready (modal markup is below the script)
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", bindLoginModalButtons);
+} else {
+  setTimeout(bindLoginModalButtons, 0);
+}
+
+
+// Logout button (desktop)
+(function(){
+  const b = document.getElementById("logoutBtn");
+  if(!b) return;
+  b.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+    doLogout();
+  });
+})();
+
 
 // 모바일 컨트롤 -> 기존 keys/pressed 시스템을 그대로 사용
 // 모바일 컨트롤(게임2 느낌):
@@ -1160,6 +1544,8 @@ function bindMobileControls(){
 
 bindMobileControls();
 refreshIdentityUI();
+// ✅ 이메일이 있으면 시트 진행도 불러오기
+try{ game3InitSyncIfEmailExists(); }catch(e){}
 
 function updateUI(){
   try{
@@ -1196,6 +1582,13 @@ function updateUI(){
     ui.eHP.style.width = ePct.toFixed(1)+"%";
     ui.eHP.textContent = Math.round(ePct)+"%";
   }catch(e){}
+
+    // ===== Guest gate: Stage 6+ requires Email =====
+    try{
+      if(!getSavedEmail() && Number(stage) >= EMAIL_REQUIRED_STAGE){
+        openEmailGate();
+      }
+    }catch(e){}
 }
 
 
@@ -1635,6 +2028,9 @@ function endGame(result){
     // (이번 판 급여는 다음 판에서 resetGame() 때 0으로 리셋)
   }
 
+
+  // ✅ 이메일 등록 유저면, 승/패 처리 직후 진행도를 시트에 저장 (Guest는 저장 안 함)
+  try{ game3SaveProgressIfEmailExists(); }catch(e){}
   // show centered text + restart button
   try{
     resultTextEl.textContent = overlayText;
@@ -1921,30 +2317,61 @@ function tgBindInfoUI(){
   const bM = document.getElementById("btnMiniMain");
   const bU = document.getElementById("btnMiniMute");
   const bF = document.getElementById("btnMiniFs");
+  const bLogin  = document.getElementById("btnMiniLogin");
+  const bLogout = document.getElementById("btnMiniLogout");
 
-  if(bR) bR.addEventListener("click", ()=>location.reload());
-  if(bP) bP.addEventListener("click", ()=>setPaused(!__paused));
-  if(bM) bM.addEventListener("click", ()=>{
+  // 모바일에서 click이 안 먹는 케이스 대비: touchend / pointerup도 같이 바인딩
+  function bindTap(el, fn){
+    if(!el) return;
+    let fired = false;
+    const run = (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      if(fired) return;
+      fired = true;
+      try{ fn(); }catch(_){}
+      setTimeout(()=>{ fired = false; }, 250);
+    };
+    el.addEventListener("click", run, { passive:false });
+    el.addEventListener("touchend", run, { passive:false });
+    el.addEventListener("pointerup", run, { passive:false });
+  }
+
+  bindTap(bR, ()=>location.reload());
+  bindTap(bP, ()=>setPaused(!__paused));
+  bindTap(bM, ()=>{
     if(confirm("Go to MAIN? (progress in this tab may be lost)")){
       location.href = "https://btcliveapp.com";
     }
   });
-  if(bU) bU.addEventListener("click", toggleMute);
-  if(bF) bF.addEventListener("click", async (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch(_){ }
+  bindTap(bU, ()=>toggleMute());
+
+  bindTap(bLogin, ()=>{
+    // 기존 이메일 버튼 로직 재사용(모달 열기)
+    try{
+      if(ui && ui.emailBtn) ui.emailBtn.click();
+      else openLoginModal(getSavedEmail() || "");
+    }catch(_){}
+  });
+
+  bindTap(bLogout, ()=>{
+    doLogout();
+  });
+
+  bindTap(bF, async ()=>{
     try{
       const el = document.documentElement;
       if(document.fullscreenElement){ await document.exitFullscreen(); }
       else if(el && el.requestFullscreen){ await el.requestFullscreen(); }
-    }catch(err){}
-  }, {passive:false});
+    }catch(_){}
+  });
 
   // init mute icon based on storage (optional)
   try{
     const cur = (localStorage.getItem("tg_muted") || "0") === "1";
     if(bU) bU.textContent = cur ? "🔈" : "🔇";
-  }catch(e){}
+  }catch(_){}
 })()
+
   try{ tgBindInfoUI(); }catch(e){}
 })();
 
@@ -2818,6 +3245,111 @@ function drawSprite(obj, images){
 }
 
 
+// ===== Floating Rank Tags (above head, follows character) =====
+// - 적: 빨강 고정
+// - 우리: 직급별 색상
+// - 텍스트: 영어 직급만(짧게)
+const RANK_EN_SHORT = ["STAFF","AM","MGR","SM","DIR","VP","PRES","CHAIR"]; // 0~7
+const RANK_COLOR = [
+  "#ffffff", // STAFF
+  "#4aa3ff", // AM
+  "#2f7cff", // MGR
+  "#b56bff", // SM
+  "#4de38a", // DIR
+  "#ff9a3c", // VP
+  "#ff4d4d", // PRES
+  "#ffd34a"  // CHAIR
+];
+
+function getRankLabel(i){
+  const idx = Math.max(0, Math.min(RANK_EN_SHORT.length-1, (i|0)));
+  return RANK_EN_SHORT[idx];
+}
+
+function getRankColor(i){
+  const idx = Math.max(0, Math.min(RANK_COLOR.length-1, (i|0)));
+  return RANK_COLOR[idx];
+}
+
+function drawNameTag(obj, text, color){
+  if(!obj || !text) return;
+
+  // ✅ 직급 옆에 HP% 붙이기 (AM 87% / VR 62% 같은 형태)
+  // - 기준: 이번 판 시작 HP(=playerStageMaxHP/enemyStageMaxHP). 없으면 MaxHP로 fallback
+  let displayText = String(text);
+  try{
+    let cur = null, mx = null;
+    if (typeof player !== "undefined" && obj === player){
+      cur = (typeof playerHP === "number") ? playerHP : null;
+      mx  = (typeof playerStageMaxHP === "number" && playerStageMaxHP > 0) ? playerStageMaxHP
+           : ((typeof playerMaxHP === "number" && playerMaxHP > 0) ? playerMaxHP : null);
+    } else if (typeof enemy !== "undefined" && obj === enemy){
+      cur = (typeof enemyHP === "number") ? enemyHP : null;
+      mx  = (typeof enemyStageMaxHP === "number" && enemyStageMaxHP > 0) ? enemyStageMaxHP
+           : ((typeof enemyMaxHP === "number" && enemyMaxHP > 0) ? enemyMaxHP : null);
+    }
+    if (typeof cur === "number" && typeof mx === "number" && mx > 0){
+      let pct = Math.round((cur / mx) * 100);
+      pct = Math.max(0, Math.min(100, pct));
+      displayText = `${displayText} ${pct}%`;
+    }
+  }catch(e){}
+
+  // drawSprite와 같은 좌표/스케일 규칙
+  const isMobile = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
+  const sBase = obj.scale || 1;
+  const s = isMobile ? (sBase * 0.95) : sBase;
+  const h = (obj.h || 120) * s;
+
+  const x = isFinite(obj.x) ? obj.x : (viewW*0.5);
+  const y = (isFinite(obj.y) ? obj.y : (viewH*0.62)) - (obj.z||0);
+
+  // 머리 위 위치(스프라이트 상단에서 조금 띄움)
+  const tagX = x;
+  const tagY = y - (h/2) - Math.max(14, Math.min(26, h*0.18));
+
+  // 폰트: 화면 크기에 따라 살짝 가변
+  const fs = Math.max(11, Math.min(16, Math.round(viewW * 0.0105)));
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `900 ${fs}px system-ui, -apple-system, Segoe UI, Roboto`;
+
+  // 텍스트 측정 후 박스
+  const padX = 8;
+  const padY = 5;
+  const tw = ctx.measureText(displayText).width;
+  const bw = Math.max(42, tw + padX*2);
+  const bh = fs + padY*2;
+  const r = 8;
+  const bx = tagX - bw/2;
+  const by = tagY - bh/2;
+
+  // round rect
+  ctx.beginPath();
+  ctx.moveTo(bx + r, by);
+  ctx.arcTo(bx + bw, by, bx + bw, by + bh, r);
+  ctx.arcTo(bx + bw, by + bh, bx, by + bh, r);
+  ctx.arcTo(bx, by + bh, bx, by, r);
+  ctx.arcTo(bx, by, bx + bw, by, r);
+  ctx.closePath();
+
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = color;
+  ctx.stroke();
+
+  // 텍스트: 외곽(검정) + 본문(색)
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(0,0,0,0.75)";
+  ctx.strokeText(displayText, tagX, tagY);
+  ctx.fillStyle = color;
+  ctx.fillText(displayText, tagX, tagY);
+  ctx.restore();
+}
+
+
 
 
 
@@ -2949,10 +3481,24 @@ function draw(){
 
   drawSprite(player, playerImages);
 
+  // ✅ 머리 위 직급 태그(우리)
+  try{
+    const myLabel = getRankLabel(rankIndex);
+    const myColor = getRankColor(rankIndex);
+    drawNameTag(player, myLabel, myColor);
+  }catch(_){ }
+
   // ✅ Always face player for rendering (prevents wrong-facing during any state)
   enemy.face = (player.x - enemy.x) >= 0 ? 1 : -1;
   
   drawSprite(enemy, enemyImages);
+
+  // ✅ 머리 위 직급 태그(적은 빨강 고정)
+  try{
+    // 적은 한 단계 위 직급으로 보여주되, 범위 밖이면 마지막 고정
+    const eIdx = Math.min(rankIndex + 1, RANK_EN_SHORT.length - 1);
+    drawNameTag(enemy, getRankLabel(eIdx), "#ff4d4d");
+  }catch(_){ }
 
   // sparks on top
   drawSparks();
@@ -3159,6 +3705,15 @@ function loop(ts){
 }
 setTimeout(mobileAssetTimeoutCheck, 1500);
 loop();
+
+
+function maskEmail(email){
+  if(!email) return "";
+  const parts = String(email).split("@");
+  const local = parts[0] || "";
+  if(local.length < 3) return local ? (local + "***") : "";
+  return local.substring(0,3) + "***";
+}
 </script>
 
 <script>
@@ -3327,6 +3882,26 @@ if(andOv){
   setInterval(updateGates, 800);
 })();
 </script>
+
+
+<!-- Login Modal (Email Only) -->
+<div id="loginModal" style="display:none;">
+  <div class="loginModalCard" role="dialog" aria-modal="true">
+    <div class="loginModalTitle">Login</div>
+    <div class="loginModalSub">(only email)</div>
+
+    <input id="loginEmailInput" type="email" inputmode="email" autocomplete="email"
+           placeholder="name@gmail.com" class="loginModalInput"/>
+
+    <div class="loginModalHelp">Login을 누르면 이메일 입력만으로 자동 등록됩니다.</div>
+    <div class="loginModalTipOnce" id="loginTipOnce" style="display:none;">※ 이 안내는 처음 1번만 보여요.</div>
+
+    <div class="loginModalBtns">
+      <button type="button" class="loginModalBtn" id="loginModalCancel">취소</button>
+      <button type="button" class="loginModalBtn primary" id="loginModalOk">확인</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
