@@ -413,7 +413,7 @@ canvas{display:block; background:#000;}
       border-radius: 12px;
     }
 
-    /* 세로(포트레이트) 안내 오버레이 */
+    /* Portrait(포트레이트) 안내 오버레이 */
     .rotate-overlay{
       position: fixed;
       inset: 0;
@@ -695,7 +695,7 @@ canvas{display:block; background:#000;}
 
 /* =============================
    MOBILE HUD FORCE COMPACT
-   (아이폰/아이패드 가로에서 width가 900px을 넘는 경우가 많아서
+   (아이폰/아이DEFEAT드 Landscape에서 width가 900px을 넘는 경우가 많아서
     max-width를 넉넉히 + pointer:coarse(터치) 조건으로 적용)
    ============================= */
 @media (pointer: coarse) and (max-width: 1366px){
@@ -780,6 +780,91 @@ canvas{display:block; background:#000;}
 }
 
 </style>
+
+<style>
+/* === Increase ONLY Right Vertical Menu Buttons (Mobile) === */
+@media (pointer: coarse) {
+
+  /* Target Restart / Resume / Save / Home / Sound */
+  #rightMenu button {
+    font-size: 16px !important;   /* ~ +30% */
+    padding: 10px 16px !important;
+    min-height: 42px !important;
+    border-radius: 10px !important;
+  }
+
+}
+</style>
+
+
+<style>
+/* === Adjust Right Menu Button Spacing (Mobile) === */
+@media (pointer: coarse) {
+  #rightMenu {
+    gap: 6px !important;
+  }
+}
+</style>
+
+
+<style>
+/* === Force Right Menu Button Spacing Fix (Mobile) === */
+@media (pointer: coarse) {
+
+  #rightMenu button {
+    margin-bottom: 6px !important;
+  }
+
+  #rightMenu button:last-child {
+    margin-bottom: 0 !important;
+  }
+
+}
+</style>
+
+
+<style>
+/* === FINAL RIGHT MENU SPACING OVERRIDE (Mobile) ===
+   This menu already uses flex GAP. Previous margin-bottom overrides can DOUBLE the spacing.
+   We force:
+   - gap = 6px (both containers)
+   - button margins = 0
+*/
+@media (pointer: coarse) {
+  #rightMenu,
+  #rightMenu .right-menu-items {
+    gap: 6px !important;
+  }
+  #rightMenu button,
+  #rightMenu .right-menu-items > * {
+    margin: 0 !important;
+  }
+}
+</style>
+
+
+<style>
+/* === COMPACT RIGHT MENU (Mobile Definitive Fix) === */
+@media (pointer: coarse) {
+
+  #rightMenu {
+    justify-content: flex-start !important;
+    gap: 0 !important;
+  }
+
+  #rightMenu .right-menu-items {
+    gap: 0 !important;
+  }
+
+  #rightMenu button {
+    margin: 0 !important;
+    padding: 6px 12px !important;
+    min-height: auto !important;
+  }
+
+}
+</style>
+
 </head>
 <body>
   <!-- 📱 iOS Auto-Mute Banner (shown only on iPhone/iPad) -->
@@ -848,12 +933,12 @@ canvas{display:block; background:#000;}
 </div>
 
 
-<!-- 📱 Portrait(세로)일 때 가로 전환 안내 -->
+<!-- 📱 Portrait(Portrait)일 때 Landscape 전환 안내 -->
 <div id="rotateOverlay" class="rotate-overlay">
   <div class="rotate-card">
-    <div style="font-weight:950; font-size:20px;">가로 모드로 돌려주세요</div>
+    <div style="font-weight:950; font-size:20px;">Landscape 모드로 돌려주세요</div>
     <div style="margin-top:10px; color:rgba(255,255,255,0.88); font-weight:800; line-height:1.45;">
-      이 게임은 모바일에서 <b>가로 화면</b>에 최적화되어 있어요.<br/>
+      이 게임은 모바일에서 <b>Landscape 화면</b>에 최적화되어 있어요.<br/>
       휴대폰을 옆으로 돌리면 자동으로 시작됩니다.
     </div>
     <div style="margin-top:14px; font-weight:900; opacity:0.9;">↻ Rotate</div>
@@ -866,7 +951,7 @@ canvas{display:block; background:#000;}
     <div class="season-sub">
       <b>100단계</b>를 클리어했습니다.<br/>
       다음 시즌 업데이트를 기다려주세요 🙏<br/><br/>
-      (Restart를 누르면 1단계부터 다시 시작합니다.)
+      (Restart를 누르면 1단계부터 Restart합니다.)
     </div>
     <button class="season-btn" onclick="location.reload()">🔄 1단계부터 다시</button>
   </div>
@@ -875,14 +960,14 @@ canvas{display:block; background:#000;}
 <!-- =============================
      ✉️ Email Gate (Game2)
      - 캐시가 없을 때만 입력
-     - 이메일 = 유저의 유일한 ID
+     - Email = 유저의 유일한 ID
      ============================= -->
 <div id="emailGate" style="position:fixed; inset:0; z-index:10000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.72); backdrop-filter: blur(6px); padding:18px;">
   <div style="width:min(440px, 94vw); background:rgba(17,17,17,0.96); border:1px solid rgba(255,255,255,0.16); border-radius:18px; padding:16px; color:#fff; box-shadow:0 16px 60px rgba(0,0,0,0.55); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;">
-    <div style="font-weight:950; font-size:18px; margin-bottom:6px;">📩 이메일 입력</div>
+    <div style="font-weight:950; font-size:18px; margin-bottom:6px;">📩 Email 입력</div>
     <div style="opacity:0.9; font-size:10px; line-height:1.45; margin-bottom:12px;">
-      기기 변경 시에도 누적 사토시를 유지하기 위해 이메일이 필요합니다.<br/>
-      (스팸 발송용이 아닙니다. 6단계부터는 이메일을 등록해야 게임을 계속할 수 있습니다.)
+      기기 변경 시에도 Total Sats를 유지하기 위해 Email이 필요합니다.<br/>
+      (스팸 발송용이 아닙니다. 6단계부터는 Email을 등록해야 게임을 Continue할 수 있습니다.)
     </div>
     <input id="emailInput" type="email" inputmode="email" placeholder="example@email.com"
            style="width:100%; box-sizing:border-box; padding:12px 12px; border-radius:14px; border:1px solid rgba(255,255,255,0.18); background:#0c0c0c; color:#fff; font-weight:800; font-size:14px; outline:none;" />
@@ -895,24 +980,24 @@ canvas{display:block; background:#000;}
       나중에 (1단계로)
     </button>
     <div style="margin-top:10px; opacity:0.75; font-size:11px; line-height:1.45;">
-      ✅ 캐시(localStorage)가 살아있으면 다음엔 자동으로 이메일을 재사용합니다.
+      ✅ 캐시(localStorage)가 살아있으면 다음엔 자동으로 Email을 재사용합니다.
     </div>
   </div>
 </div>
 
 <div class="hud" id="hud">
-  <div>🎚️ 단계: <span id="levelText">1</span> / 100</div>
-  <div>❤️ 에너지: <span id="energyText">10</span></div>
-  <div>🪙 현재 사토시: <span id="scoreText">0</span></div>
-  <div>🏆 누적 사토시: <span id="totalText">0</span></div>
-  <div style="margin-top:4px; font-size:11px; font-weight:800; opacity:0.85;">💾 저장: <span id="saveStatus">-</span></div>
+  <div>🎚️ Stage: <span id="levelText">1</span> / 100</div>
+  <div>❤️ Energy: <span id="energyText">10</span></div>
+  <div>🪙 Current Sats: <span id="scoreText">0</span></div>
+  <div>🏆 Total Sats: <span id="totalText">0</span></div>
+  <div style="margin-top:4px; font-size:11px; font-weight:800; opacity:0.85;">💾 Save: <span id="saveStatus">-</span></div>
   <div class="hud-email-row" style="margin-top:6px; font-size:11px; font-weight:800; opacity:0.92;">
     👤 <span id="emailMask">-</span>
     <button id="btnChangeEmail" type="button" style="margin-left:6px; font-size:11px; font-weight:900; border-radius:10px; border:1px solid rgba(255,255,255,0.22); background:rgba(0,0,0,0.35); color:#fff; padding:4px 8px; cursor:pointer;">Change</button>
-    <button id="btnReauthEmail" type="button" style="margin-left:6px; font-size:11px; font-weight:900; border-radius:10px; border:1px solid rgba(255,255,255,0.22); background:rgba(0,0,0,0.35); color:#fff; padding:4px 8px; cursor:pointer; display:none;">이메일 입력</button>
+    <button id="btnReauthEmail" type="button" style="margin-left:6px; font-size:11px; font-weight:900; border-radius:10px; border:1px solid rgba(255,255,255,0.22); background:rgba(0,0,0,0.35); color:#fff; padding:4px 8px; cursor:pointer; display:none;">Email 입력</button>
   </div>
   <div style="margin-top:4px; font-size:8px; font-weight:800; opacity:0.78;">
-  현재 사토시는 게임 종료 시<br>초기화 (누적 사토시은 저장)
+  Current Sats reset when the game ends.<br>Total Sats are saved.
   </div>
 </div>
 
@@ -948,7 +1033,7 @@ canvas{display:block; background:#000;}
   <div class="right-menu-items">
     <button class="btn-restart" onclick="location.reload()">🔄 Restart</button>
     <button class="btn-pause" id="pauseBtn" type="button">⏸ Pause</button>
-    <button class="btn-save" id="btnSave" type="button">💾 저장</button>
+    <button class="btn-save" id="btnSave" type="button">💾 Save</button>
     <button class="btn-exit" id="btnExitMain" type="button">🏠 메인</button>
     <button id="btnSound" type="button">🔊 Sound</button>
   </div>
@@ -1055,7 +1140,7 @@ const isMobile = () => (window.matchMedia && window.matchMedia("(max-width: 900p
 
       if (!overlay || !btnExit) return;
 
-      // ✅ 홈화면 앱(A2HS/standalone)에서는 Fullscreen 버튼이 동작하지 않는 게 정상
+      // ✅ Home화면 앱(A2HS/standalone)에서는 Fullscreen 버튼이 동작하지 않는 게 정상
       //    -> Enter Fullscreen 안내는 숨기고, ⤫ 나가기만 항상 노출
       if (mobile && standalone){
         overlay.style.display = "none";
@@ -1117,7 +1202,7 @@ function exitGame(){
   btn.addEventListener("pointerdown", handler, {passive:false});
   btn.addEventListener("touchstart", handler, {passive:false});
 })();
-// ✅ 탭/브라우저 닫기 시: 브라우저 기본 경고(커스텀 문구 불가) + best-effort 자동 저장
+// ✅ 탭/브라우저 닫기 시: 브라우저 기본 경고(커스텀 문구 불가) + best-effort 자동 Save
 window.addEventListener("beforeunload", (e)=>{
   try{
     if (!window.__TG_SUPPRESS_EXIT_SAVE && typeof _dirty !== "undefined" && _dirty){
@@ -1147,7 +1232,7 @@ window.addEventListener("beforeunload", (e)=>{
     helpBtn.style.top = top + "px";
     helpPanel.style.top = (top + 32) + "px"; // 버튼 아래로
   }
-  // DOM 준비되면 1회 + 리사이즈/회전 때 갱신
+  // DOM 준비되면 1회 + 리사이즈/Rotate 때 갱신
   window.addEventListener("load", place);
   window.addEventListener("resize", ()=>{ clearTimeout(window.__tgHelpPlaceT); window.__tgHelpPlaceT=setTimeout(place, 80); }, {passive:true});
   window.addEventListener("orientationchange", ()=>{ setTimeout(place, 120); }, {passive:true});
@@ -1172,13 +1257,13 @@ window.addEventListener("beforeunload", (e)=>{
     try{
       if (typeof window.tgGame2ManualSave === "function"){
         const ok = await window.tgGame2ManualSave();
-        if (ok) alert("저장 완료!");
-        else alert("저장 실패(네트워크/권한 문제). 잠시 후 다시 시도해주세요.");
+        if (ok) alert("Save 완료!");
+        else alert("Save 실DEFEAT(네트워크/권한 문제). 잠시 후 다시 시도해주세요.");
       }else{
-        alert("저장 기능이 아직 준비되지 않았습니다. 게임이 시작된 뒤 다시 눌러주세요.");
+        alert("Save 기능이 아직 준비되지 않았습니다. 게임이 시작된 뒤 다시 눌러주세요.");
       }
     }catch(_){
-      alert("저장 실패. 잠시 후 다시 시도해주세요.");
+      alert("Save 실DEFEAT. 잠시 후 다시 시도해주세요.");
     }
   }
 
@@ -1574,9 +1659,9 @@ canvas.style.height = Math.round(getVH()) + "px";
 
 
   // =============================
-  // 📱 모바일은 가로(landscape) 권장/강제 흐름
-  //  - 브라우저가 자동 회전을 '강제'하는 건 제한이 있어서,
-  //    세로(포트레이트)일 때는 오버레이를 띄우고 게임 진행을 멈춥니다.
+  // 📱 모바일은 Landscape(landscape) 권장/강제 흐름
+  //  - 브라우저가 자동 Rotate을 '강제'하는 건 제한이 있어서,
+  //    Portrait(포트레이트)일 때는 오버레이를 띄우고 게임 진행을 멈춥니다.
   // =============================
   const rotateOverlay = document.getElementById("rotateOverlay");
   function isSmallScreen(){ return window.matchMedia("(max-width: 980px)").matches; }
@@ -1590,12 +1675,12 @@ canvas.style.height = Math.round(getVH()) + "px";
     return !needRotate;
   }
 
-  // 첫 실행 + 화면 회전/리사이즈에 대응
+  // 첫 실행 + 화면 Rotate/리사이즈에 대응
   updateRotateOverlay();
   window.addEventListener("orientationchange", updateRotateOverlay);
   window.addEventListener("resize", updateRotateOverlay);
 
-  // 가능하면(지원 브라우저) 가로 잠금 시도: 실패해도 무시
+  // 가능하면(지원 브라우저) Landscape 잠금 시도: 실DEFEAT해도 무시
   function tryLockLandscape(){
     try{
       if (screen && screen.orientation && screen.orientation.lock){
@@ -1687,7 +1772,7 @@ canvas.style.height = Math.round(getVH()) + "px";
     // 기본 '잔잔한 흔들림'
     let sway = Math.sin(t * 1.25) * 10;
 
-    // 플레이어/적 움직임에 반응하는 흔들림(한쪽으로 계속 밀리지 않게 '작게'만)
+    // 플레이어/적 움직임에 반응하는 흔들림(한쪽으로 Continue 밀리지 않게 '작게'만)
     const pvx = (player && typeof player.vx === "number") ? player.vx : 0;
     sway += clamp(pvx * 1.4, -18, 18);
 
@@ -1707,9 +1792,9 @@ if (LOW_POWER_STRICT) sway *= 0.55;
   }
 
 // =============================
-// 프로시저럴(그려지는) 배경 + 패럴랙스(입체감)
+// 프로시저럴(그려지는) 배경 + DEFEAT럴랙스(입체감)
 //  - 이미지 없어도 동작
-//  - 시간이 지나면 '도시 낮→노을→밤'처럼 계속 변함
+//  - 시간이 지나면 '도시 낮→노을→밤'처럼 Continue 변함
 // =============================
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 function lerp(a,b,t){ return a + (b-a)*t; }
@@ -2000,7 +2085,7 @@ function drawRoadAndSidewalk(stage){
   const hudEnergy = document.getElementById("energyText");
   const hudScore = document.getElementById("scoreText");
 
-  // ✅ 누적 사토시 사토시(HOF) 표시
+  // ✅ Total Sats 사토시(HOF) 표시
   const hudTotal = document.getElementById("totalText");
   const hudEmailMask = document.getElementById("emailMask");
   const btnChangeEmail = document.getElementById("btnChangeEmail");
@@ -2015,7 +2100,7 @@ function drawRoadAndSidewalk(stage){
   // =============================
   const GAME2_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJPlMspnCMdvrgdqdlfQfEkWjs_2YaxmJxJtDPkud3ky668nIV1C1N3aN-1TY5eKItcA/exec";
   const LS_GAME2_EMAIL = "game2_email";
-  const GUEST_MAX_LEVEL = 5; // 1~5단계는 게스트 가능, 6단계부터 이메일 필요
+  const GUEST_MAX_LEVEL = 5; // 1~5단계는 게스트 가능, 6단계부터 Email 필요
   let _emailGateMode = "startup";
   let _pendingNextLevel = null;
 
@@ -2071,7 +2156,7 @@ function drawRoadAndSidewalk(stage){
         if (typeof j.energy === "number" && isFinite(j.energy)) energy = clamp(Math.round(j.energy), 0, ENERGY_CAP);
       }
     }catch(e){
-      // 불러오기 실패해도 게임은 그냥 진행
+      // 불러오기 실DEFEAT해도 게임은 그냥 진행
       console.warn("Game2 GET failed:", e);
     }
   }
@@ -2093,9 +2178,9 @@ function drawRoadAndSidewalk(stage){
       fd.append("mode", "game2");
       fd.append("email", currentEmail);
 
-      // 저장 데이터
-      fd.append("run_satoshi", String(score)); // 현재 사토시
-      fd.append("total_satoshi", String(totalSatoshi)); // 누적 사토시
+      // Save 데이터
+      fd.append("run_satoshi", String(score)); // Current Sats
+      fd.append("total_satoshi", String(totalSatoshi)); // Total Sats
       fd.append("level", String(level));
       fd.append("energy", String(energy));
       fd.append("reason", String(reason||""));
@@ -2117,15 +2202,15 @@ function drawRoadAndSidewalk(stage){
     }
   }
 
-  // ✅ 외부(버튼)에서 호출 가능한 수동 저장 함수
+  // ✅ 외부(버튼)에서 호출 가능한 수동 Save 함수
   //  - 내부 상태(_saving/_dirty/saveStatus)를 그대로 사용
   window.tgGame2ManualSave = async function(){
     try{
       if (!currentEmail){
-        alert("이메일이 아직 설정되지 않았습니다.");
+        alert("Email이 아직 설정되지 않았습니다.");
         return false;
       }
-      // 진행 중 저장이 있으면 강제로 한 번 더 시도
+      // 진행 중 Save이 있으면 강제로 한 번 더 시도
       const ok = await tgGame2Post("manual_save", { force:true });
       return !!ok;
     }catch(_){
@@ -2156,13 +2241,13 @@ function drawRoadAndSidewalk(stage){
 
 function tgGame2Save(reason, force){
     if (force) {
-      _dirty = false; // 강제 저장 직후엔 dirty를 서버 응답으로 다시 맞추지만, 우선 false 처리
+      _dirty = false; // 강제 Save 직후엔 dirty를 서버 응답으로 다시 맞추지만, 우선 false 처리
       tgGame2Post(reason);
       return;
     }
     _dirty = true;
 
-    // 너무 자주 저장하지 않게 900ms 디바운스
+    // 너무 자주 Save하지 않게 900ms 디바운스
     const now = Date.now();
     if (now - _lastSaveAt < 600) return;
 
@@ -2211,7 +2296,7 @@ function tgGame2Save(reason, force){
     function submit(){
       const v = normEmail(inp ? inp.value : "");
       if (!v || !v.includes("@")){
-        alert("이메일을 올바르게 입력해주세요.");
+        alert("Email을 올바르게 입력해주세요.");
         return;
       }
       currentEmail = v;
@@ -2221,7 +2306,7 @@ function tgGame2Save(reason, force){
       try{ syncEmailHudButtons(); }catch(_){ }
       if (gate) gate.style.display = "none";
 
-      // ✅ 6단계 진입용 게이트에서 이메일을 받은 경우: 바로 다음 단계로 진행 + 즉시 저장
+      // ✅ 6단계 진입용 게이트에서 Email을 받은 경우: 바로 다음 단계로 진행 + 즉시 Save
       if (_emailGateMode === "level6" && _pendingNextLevel){
         const goLv = _pendingNextLevel;
         _pendingNextLevel = null;
@@ -2236,8 +2321,8 @@ function tgGame2Save(reason, force){
       tgGame2Get().then(()=>{
         try{ if (hudSaveStatus) hudSaveStatus.textContent="loaded"; }catch(_){ }
 
-        // ✅ 재인증/초기 로드 후: 저장된 레벨/에너지 상태에 맞게 게임을 다시 시작
-        // - 에너지가 0이면(죽은 상태로 저장됨) 1단계 새 런으로 리셋해서 바로 플레이 가능하게
+        // ✅ 재인증/초기 로드 후: Save된 레벨/에너지 상태에 맞게 게임을 Restart
+        // - 에너지가 0이면(죽은 상태로 Save됨) 1단계 새 런으로 리셋해서 바로 플레이 가능하게
         try{
           userPaused = false;
           if (energy <= 0){
@@ -2273,7 +2358,7 @@ function tgGame2Save(reason, force){
   }
 
   // =============================
-  // 🧑‍🚀 Guest reset (Level6에서 이메일 거절 시)
+  // 🧑‍🚀 Guest reset (Level6에서 Email 거절 시)
   // =============================
   function resetGuestToLevel1(){
     try{ localStorage.removeItem(LS_GAME2_EMAIL); }catch(_){ }
@@ -2282,13 +2367,13 @@ function tgGame2Save(reason, force){
     syncEmailHudButtons();
     try{ if (hudSaveStatus) hudSaveStatus.textContent = "guest"; }catch(_){ }
 
-    // 점수/에너지/레벨 초기화
+    // 점수/에너지/레벨 reset
     score = 0;
     totalSatoshi = 0;
     level = 1;
     energy = ENERGY_START;
 
-    // 엔티티/이펙트 초기화
+    // 엔티티/이펙트 reset
     try{ papers.length = 0; }catch(_){ }
     try{ enemies.length = 0; }catch(_){ }
     try{ enemyShots.length = 0; }catch(_){ }
@@ -2320,7 +2405,7 @@ function tgGame2Save(reason, force){
     _pendingNextLevel = null;
     _emailGateMode = "startup";
 
-    // 1단계로 재시작
+    // 1단계로 Restart
     try{ startLevel(1); }catch(_){ }
     userPaused = false;
   }
@@ -2332,7 +2417,7 @@ function tgGame2Save(reason, force){
   if (btnChangeEmail){
     btnChangeEmail.addEventListener("pointerdown", (e)=>{
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      if (!confirm("이메일을 변경하시겠습니까?\n(다음에 다시 입력해야 합니다)")) return;
+      if (!confirm("Email을 변경하시겠습니까?\n(다음에 다시 입력해야 합니다)")) return;
       try{ localStorage.removeItem(LS_GAME2_EMAIL); }catch(_){}
       // Game1 registeredEmail은 건드리지 않음
       location.reload();
@@ -2376,7 +2461,7 @@ let level = 1;
 let levelStartedAt = performance.now();
 let levelDurationSec = 60;
 
-// 단계 전환 연출(일시정지/멘트)
+// 단계 전환 연출(Pause/멘트)
 let levelPauseUntil = 0;      // 이 시간 전까지 update()는 멈춤
 let showLevelTextUntil = 0;   // 이 시간 전까지 "N단계 시작" 멘트 표시
 
@@ -2400,15 +2485,15 @@ function getLevelDurationSec(lv){
 // - 시작: 15
 // - 단계가 올라가도 자동 리셋/증가 없음 (현재 에너지 그대로 유지)
 // - 최대: 20
-// - 에너지 0이면 GAME OVER → Restart로 1단계부터(에너지 15) 재시작
-// - 단계 클리어 시 '평균 에너지 공급량'을 누적 사토시(소수점 누적 사토시)해서 가끔 +1 지급
+// - 에너지 0이면 GAME OVER → Restart로 1단계부터(에너지 15) Restart
+// - 단계 클리어 시 '평균 에너지 공급량'을 Total Sats(소수점 Total Sats)해서 가끔 +1 지급
 //   * 1~5단계:  +1.0
 //   * 6~15단계: +0.6
 //   * 16단계~:  +0.3
 // =============================
 // (ENERGY_START/ENERGY_CAP moved above score/energy init)
 
-let _stageEnergyFrac = 0;      // 소수점 누적 사토시용(예: 0.6+0.6=1.2 → +1 지급 후 0.2 남김)
+let _stageEnergyFrac = 0;      // 소수점 Total Sats용(예: 0.6+0.6=1.2 → +1 지급 후 0.2 남김)
 let _runStartedOnce  = false;  // 첫 런 시작 여부
 
 function getStageEnergyRate(lv){
@@ -2417,12 +2502,12 @@ function getStageEnergyRate(lv){
   return 0.3;
 }
 
-// 단계(스테이지) 클리어 보상: 누적 사토시해서 +1씩 지급(캡 20)
-// 에너지가 이미 15면, 누적 사토시은 유지했다가 나중에 에너지가 깎였을 때 반영될 수 있음
+// 단계(스테이지) 클리어 보상: Total Sats해서 +1씩 지급(캡 20)
+// 에너지가 이미 15면, Total Sats은 유지했다가 나중에 에너지가 깎였을 때 반영될 수 있음
 function grantStageEnergyOnClear(lv){
   _stageEnergyFrac += getStageEnergyRate(lv);
 
-  // 에너지가 모자랄 때만 실제 +1로 변환 (캡 도달 시 누적 사토시만 유지)
+  // 에너지가 모자랄 때만 실제 +1로 변환 (캡 도달 시 Total Sats만 유지)
   while (_stageEnergyFrac >= 1 && energy < ENERGY_CAP){
     energy = Math.min(ENERGY_CAP, energy + 1);
     _stageEnergyFrac -= 1;
@@ -2432,14 +2517,14 @@ function grantStageEnergyOnClear(lv){
 function startLevel(lv){
   level = clamp(lv, 1, SEASON_MAX);
 
-  // ✅ Run 시작(1단계 진입)일 때만 에너지 초기화
+  // ✅ Run 시작(1단계 진입)일 때만 에너지 reset
   // - 중간 단계로 넘어갈 땐 에너지를 그대로 유지합니다.
   if (level === 1 && (!_runStartedOnce || energy <= 0 || !isFinite(energy))){
     energy = ENERGY_START;
     _stageEnergyFrac = 0;
     _runStartedOnce = true;
 
-    // ✅ 새 런(1단계) 시작이면 게임오버 저장 플래그도 리셋
+    // ✅ 새 런(1단계) 시작이면 게임오버 Save 플래그도 리셋
     _gameOverSaved = false;
   }
 
@@ -2592,7 +2677,7 @@ const btnAtkUp = document.getElementById("btnAtkUp");
       });
     }
 
-    // 패널 바깥 클릭하면 닫기
+    // DEFEAT널 바깥 클릭하면 닫기
     window.addEventListener("pointerdown", (e)=>{
       if (!helpOpen) return;
       const t = e.target;
@@ -3015,7 +3100,7 @@ function tryThrowPaperUp(){
         mode
       });
     } else {
-      // 하늘로 날아가며 회전/페이드
+      // 하늘로 날아가며 Rotate/페이드
       deathFx.push({
         x: e.x, y: e.y, w: e.w, h: e.h, img: e.img,
         vy: -(10 + Math.random()*6),
@@ -3068,7 +3153,7 @@ function tryThrowPaperUp(){
     if (!dtScale) dtScale = 1;
     const now = performance.now();
 
-    // 모바일 세로 모드면 진행 중지(가로로 돌리면 자동 재개)
+    // 모바일 Portrait 모드면 진행 중지(Landscape로 돌리면 자동 재개)
     if (!updateRotateOverlay()) return;
 
     // 시즌 클리어면 더 이상 진행/스폰 없음
@@ -3081,7 +3166,7 @@ function tryThrowPaperUp(){
     const elapsedSec = (now - levelStartedAt) / 1000;
     if (elapsedSec >= levelDurationSec){
       if (level < SEASON_MAX){
-        // ✅ 단계 클리어 시 저장(1회)  ← Game2 탭 row 생성 트리거
+        // ✅ 단계 클리어 시 Save(1회)  ← Game2 탭 row 생성 트리거
         tgGame2Save("stage_clear");
 
         // ✅ 단계 클리어 보상(평균 공급량 적용)
@@ -3089,7 +3174,7 @@ function tryThrowPaperUp(){
         if (hudEnergy) hudEnergy.textContent = String(energy);
 
         const nextLv = level + 1;
-        // ✅ 1~5단계는 게스트 플레이 OK, 6단계부터는 이메일 필요
+        // ✅ 1~5단계는 게스트 플레이 OK, 6단계부터는 Email 필요
         if (!currentEmail && nextLv === (GUEST_MAX_LEVEL + 1)){
           _pendingNextLevel = nextLv;
           tgGame2EnsureEmail({ promptIfMissing: true, mode: "level6" });
@@ -3438,7 +3523,7 @@ for (let di = drones.length - 1; di >= 0; di--){
 
       // ✅ 발사 직전 💥 경고(소음 표시)
       if (alive() && e.warnUntil === 0 && nowT2 > (e.nextShotAt - WARN_MS) && nowT2 <= e.nextShotAt && e.x < CW() - 120 && e.x > -40){
-        e.warnUntil = e.nextShotAt; // "발사 예정 시각" 저장
+        e.warnUntil = e.nextShotAt; // "발사 예정 시각" Save
       }
 
       if (alive() && nowT2 > e.nextShotAt && e.x < CW() - 120 && e.x > -40){
@@ -3583,15 +3668,15 @@ for (let di = drones.length - 1; di >= 0; di--){
     hudScore.textContent = String(score);
     if (hudTotal) hudTotal.textContent = String(totalSatoshi);
 
-    // Game Over 저장(1회)
-    // ✅ 죽으면 다음 런은 무조건 1단계부터 시작되도록 level을 1로 리셋해서 저장합니다.
-    // (에너지를 0으로 저장해두면, 다음 시작(startLevel(1))에서 ENERGY_START로 자동 리셋됩니다.)
+    // Game Over Save(1회)
+    // ✅ 죽으면 다음 런은 무조건 1단계부터 시작되도록 level을 1로 리셋해서 Save합니다.
+    // (에너지를 0으로 Save해두면, 다음 시작(startLevel(1))에서 ENERGY_START로 자동 리셋됩니다.)
     if (energy <= 0 && !_gameOverSaved){
       _gameOverSaved = true;
 
       level = 1;
       energy = 0;
-      score = 0; // 현재 사토시 사토시(점수)는 리셋 (누적 사토시 totalSatoshi는 그대로)
+      score = 0; // Current Sats 사토시(점수)는 리셋 (Total Sats totalSatoshi는 그대로)
 
       try{ if (hudLevel) hudLevel.textContent = "1"; }catch(_){ }
       try{ if (hudEnergy) hudEnergy.textContent = "0"; }catch(_){ }
@@ -3620,7 +3705,7 @@ for (let di = drones.length - 1; di >= 0; di--){
     ctx.fillStyle = "#000";
     ctx.fillRect(0,0,CW(),CH());
 // =============================
-// 배경(입체감 패럴랙스) + 도로/보도
+// 배경(입체감 DEFEAT럴랙스) + 도로/보도
 // =============================
 // ✅ 배경: 단계(level)마다 10개 중 랜덤으로 선택(=startLevel에서 pickRandomBg)
 //    배경은 스크롤하지 않고, 플레이어/적 움직임에 맞춰 좌우로 살짝 흔들리게
@@ -3677,7 +3762,7 @@ drawRoadAndSidewalk(bgState.theme);
     const breathe = 0; // ✅ keep feet grounded (no vertical bob)
     const runBob  = 0; // ✅ keep feet grounded (no vertical bob)
 
-    // 점프 중이면 세로로 늘리고, 가로로 살짝 줄이기(스쿼시/스트레치)
+    // 점프 중이면 Portrait로 늘리고, Landscape로 살짝 줄이기(스쿼시/스트레치)
     let scaleX = 1, scaleY = 1;
     if (!player.onGround) { scaleX = 0.95; scaleY = 1.06; }
     else if (player.vx !== 0) { scaleX = 1.02; scaleY = 0.98; }
@@ -3870,7 +3955,7 @@ drawRoadAndSidewalk(bgState.theme);
       ctx.fillText("GAME OVER", CW()/2, CH()/2 - 20);
 
       ctx.font = "900 18px system-ui, sans-serif";
-      ctx.fillText("사토시: " + score + "  |  Restart 버튼을 누르세요", CW()/2, CH()/2 + 28);
+      ctx.fillText("Sats: " + score + "  |  Restart Press the button", CW()/2, CH()/2 + 28);
       ctx.restore();
     }
 
@@ -3936,7 +4021,7 @@ drawRoadAndSidewalk(bgState.theme);
     // 탭 전환/렉으로 dt가 너무 커지면 물리 튐 방지 (최대 2프레임치로 제한)
     if (dtScale > 2.0) dtScale = 2.0;
 
-    // ✅ 시간 기반으로 '프레임 카운터' 누적 사토시 (기존 t=프레임 느낌 유지)
+    // ✅ 시간 기반으로 '프레임 카운터' Total Sats (기존 t=프레임 느낌 유지)
     t += dtScale;
 
     if (alive() && !userPaused) update(dtScale);
@@ -3946,7 +4031,7 @@ drawRoadAndSidewalk(bgState.theme);
   }
 // 시작
   (async function(){
-    // ✅ 이메일은 6단계부터 받기: 저장된 이메일이 있을 때만 자동 로드
+    // ✅ Email은 6단계부터 받기: Save된 Email이 있을 때만 자동 로드
     currentEmail = getAnyEmail();
     syncEmailHudButtons();
     if (currentEmail){
@@ -3984,6 +4069,73 @@ drawRoadAndSidewalk(bgState.theme);
   src="//gc.zgo.at/count.js">
 </script>
 
+
+<script>
+/* SAFE_ENGLISH_UI_TEXT_PATCH_V1 */
+document.addEventListener('DOMContentLoaded', function(){
+  // HUD labels: change only the leading text node, keep spans/ids intact
+  function setHudPrefix(rowIndex, prefix){
+    var row = document.querySelector('#hud > div:nth-child(' + rowIndex + ')');
+    if(!row) return;
+    // find first TEXT node
+    for(var i=0;i<row.childNodes.length;i++){ 
+      if(row.childNodes[i].nodeType === Node.TEXT_NODE){
+        row.childNodes[i].textContent = prefix;
+        return;
+      }
+    }
+  }
+  setHudPrefix(1, '🎚️ Stage: ');
+  setHudPrefix(2, '❤️ Energy: ');
+  setHudPrefix(3, '🪙 Current: ');
+  setHudPrefix(4, '🏆 Total: ');
+
+  // Menu buttons (id-based; safe)
+  function setBtn(id, text){ var el=document.getElementById(id); if(el) el.textContent=text; }
+  setBtn('pauseBtn','Pause');
+  setBtn('btnSave','Save');
+  setBtn('btnExitMain','Home');
+  setBtn('helpBtn','Help');
+  setBtn('btnToggleSound','Sound');
+  setBtn('btnReauthEmail','Enter Email');
+
+  // Rotate overlay (textContent only)
+  var rotTitle = document.querySelector('#rotateOverlay .rotate-card > div:first-child');
+  if(rotTitle) rotTitle.textContent = 'Rotate to Landscape';
+  var rotDesc = document.querySelector('#rotateOverlay .rotate-card > div:nth-child(2)');
+  if(rotDesc) rotDesc.textContent = 'This game works best in landscape on mobile.';
+
+  // Email gate (buttons only; keep inputs/handlers intact)
+  setBtn('emailBtn','Start');
+  setBtn('emailLaterBtn','Later');
+  setBtn('emailCloseBtn','Cancel');
+
+  // Help panel: update visible lines if they exist (textContent only)
+  // Try common patterns without breaking structure.
+  var hpTitle = document.querySelector('#helpPanel .hp-title');
+  if(hpTitle) hpTitle.textContent = 'Quick Help';
+  var hpBody = document.querySelector('#helpPanel .hp-body');
+  if(hpBody){
+    // If the help body is plain text / simple lines, rewrite safely using textContent blocks.
+    // We'll only do this if it doesn't contain form controls/buttons.
+    if(!hpBody.querySelector('input,button,textarea,select')){
+      hpBody.textContent = '';
+      var lines = [
+        'PC: Move ← → (A/D) · Jump Space · Throw Q · Throw Up W',
+        'Mobile: Use on-screen buttons (D-pad + Jump + Paper)',
+        'Tip: Throw Up helps avoid enemy shots.',
+        'Tip: Hearts restore +1 Energy.'
+      ];
+      for(var i=0;i<lines.length;i++){ 
+        var div=document.createElement('div');
+        div.style.marginTop = (i===0? '0px':'6px');
+        div.textContent = lines[i];
+        hpBody.appendChild(div);
+      }
+    }
+  }
+});
+</script>
 
 </body>
 </html>
