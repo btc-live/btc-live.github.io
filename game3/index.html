@@ -338,7 +338,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
 }
 .tgGateTitle{ font-size:18px; font-weight:900; margin-bottom:8px; letter-spacing:-0.2px; }
 .tgGateDesc{ font-size:14px; opacity:0.92; line-height:1.4; }
-.tgGateHint{ font-size:12px; opacity:0.72; margin-top:10px; line-height:1.35; }
+.tgGateHint{ font-size:12px; opacity:0.72; margin-top:10px; line-height:1.5; }
 .tgGateSteps{
   margin-top:12px;
   text-align:left;
@@ -648,7 +648,7 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.loginModalHelp{margin-top:10px; font-size:12px; opacity:.9; line-height:1.35}
+.loginModalHelp{margin-top:10px; font-size:12px; opacity:.9; line-height:1.5}
 .loginModalTipOnce{margin-top:6px; font-size:11px; opacity:.7}
 .loginModalBtns{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
 .loginModalBtn{
@@ -1996,7 +1996,7 @@ let seasonComplete = false; // 회장 10단계까지 클리어하면 true
 // - rankMultiplier: 직급별 기준 난이도 배율
 // - stageMultiplier: 같은 직급 내 1~10단계 난이도 곡선
 // 이 값으로 '적 체력/속도/공격 빈도/예고 시간' 등을 스케일링
-const RANK_MULTIPLIER = [1.00, 1.08, 1.16, 1.25, 1.35, 1.46, 1.58, 1.72]; // 평사원~회장
+const RANK_MULTIPLIER = [1.00, 1.08, 1.16, 1.25, 1.5, 1.46, 1.58, 1.72]; // 평사원~회장
 function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
 // base enemy tuning (Stage1/Rank=평사원 기준)
@@ -3555,16 +3555,21 @@ function drawNameTag(obj, text, color){
   const tagY0 = y - (h/2) - Math.max(14, Math.min(26, h*0.18));
 
   // 폰트: 화면 크기에 따라 살짝 가변
-  const fs = Math.max(11, Math.min(16, Math.round(viewW * 0.0105)));
-  const fs2 = Math.max(9, Math.min(13, Math.round(fs * 0.82))); // 아이디 줄은 살짝 작게
+  const __isMobileTag = (window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || (typeof IS_MOBILE !== "undefined" ? IS_MOBILE : false) || (window.innerWidth <= 900);
+  const __tagScale = __isMobileTag ? 1.5 : 1;
+
+  // 기본 폰트 크기(기존 로직) → 모바일에서만 35% 키움
+  const fsBase = Math.max(11, Math.min(16, Math.round(viewW * 0.0105)));
+  const fs = Math.max(11, Math.min(24, Math.round(fsBase * __tagScale)));
+  const fs2 = Math.max(9, Math.min(20, Math.round(fs * 0.82))); // 아이디 줄은 살짝 작게
 
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   // 텍스트 측정 후 박스(2줄이면 더 크게)
-  const padX = 8;
-  const padY = 5;
+  const padX = Math.round(8 * (__isMobileTag ? 1.25 : 1));
+  const padY = Math.round(5 * (__isMobileTag ? 1.25 : 1));
 
   ctx.font = `900 ${fs}px system-ui, -apple-system, Segoe UI, Roboto`;
   const tw1 = ctx.measureText(displayText).width;
@@ -3584,7 +3589,7 @@ function drawNameTag(obj, text, color){
   // 2줄이면 박스가 커지니까, 머리 위로 살짝 더 올려서 겹침 방지
   const tagY = tagY0 - (lines === 2 ? (bh * 0.18) : 0);
 
-  const r = 8;
+  const r = Math.round(8 * (__isMobileTag ? 1.2 : 1));
   const bx = tagX - bw/2;
   const by = tagY - bh/2;
 
