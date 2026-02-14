@@ -731,6 +731,53 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
     border-radius: 8px !important;
   }
 }
+
+/* ===== START SCREEN ===== */
+#startScreen{
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.startCard{
+  text-align: center;
+  color: #fff;
+  padding: 24px;
+}
+
+.startTitle{
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+}
+
+.startSub{
+  font-size: 18px;
+  opacity: 0.85;
+  margin-bottom: 28px;
+  line-height: 1.55;
+}
+
+#startBtn{
+  padding: 14px 36px;
+  font-size: 18px;
+  background: #111;
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#startBtn:hover{
+  background: #fff;
+  color: #000;
+}
 </style>
 
 </head>
@@ -775,6 +822,13 @@ canvas{position:fixed;left:0;top:0;display:block;width:var(--vw,100vw);height:va
   font-family:system-ui; color:#e9efff;">
   <div id="mobileDebugTitle" style="font-size:18px; font-weight:900; margin-bottom:10px;">문제 감지</div>
   <div id="mobileDebugMsg" style="max-width:760px; font-size:14px; line-height:1.45; opacity:0.97;"></div>
+  <button id="mobileDebugClose" type="button" style="
+    margin-top:14px; padding:10px 14px; border-radius:12px;
+    border:1px solid rgba(255,255,255,0.35);
+    background:rgba(255,255,255,0.12);
+    color:#e9efff; font-weight:800; cursor:pointer; pointer-events:auto;">
+    닫기
+  </button>
 </div>
 
 
@@ -964,9 +1018,37 @@ function showMobileDebug(title, msg){
     }
   }catch(e){}
 }
+
+// 닫기 버튼 (항상 동작) - 한 번만 바인딩
+try{
+  const _c = document.getElementById("mobileDebugClose");
+  if(_c && !_c.__bound){
+    _c.__bound = true;
+    _c.addEventListener("click", ()=>{ 
+      const ov = document.getElementById("mobileDebugOverlay");
+      if(ov) ov.style.display = "none";
+    });
+  }
+}catch(_){}
+
+// ===== Debug Overlay Gate =====
+// 기본은 OFF. (개발 중에만 localStorage.setItem('tg_debug','1')로 켜세요)
+const TG_DEBUG = (function(){
+  try{ return localStorage.getItem('tg_debug') === '1'; }catch(_){ return false; }
+})();
+
 window.addEventListener("error", (e)=>{
+  // 운영모드에서는 화면 중앙에 "자바스크립트 오류"를 띄우지 않음 (사용자 혼란 방지)
+  if(!TG_DEBUG) return;
   const msg = (e && e.message) ? e.message : "오류가 발생했습니다.";
   showMobileDebug("자바스크립트 오류", msg);
+});
+
+window.addEventListener("unhandledrejection", (e)=>{
+  if(!TG_DEBUG) return;
+  let msg = "";
+  try{ msg = (e && e.reason && (e.reason.message || String(e.reason))) || "Promise 오류"; }catch(_){ msg="Promise 오류"; }
+  showMobileDebug("Promise 오류", msg);
 });
 
 const _assetFails = [];
@@ -1201,6 +1283,8 @@ async function game3InitSyncIfEmailExists(){
       totalSalarySatoshi = Math.max(0, Math.floor(Number(j.totalSats)||0));
     }
     try{ updateUI(); }catch(e){}
+    // ✅ sync 직후에도 적(스프라이트/머리위 직급)이 즉시 맞게 보이도록 1회 리셋
+    try{ if(typeof resetGame === "function"){ resetGame(); } }catch(e){}
   }
 }
 
@@ -1734,6 +1818,10 @@ playerImages.hit.src="main-hit.png";
 const enemyImages = {
   idle:new Image(), move:new Image(), attack:new Image(), special:new Image(), hit:new Image()
 };
+// ✅ Enemy sprite readiness flag (prevents temporary fallback rectangle)
+enemyImages.__ready = false;
+enemyImages.__pending = 0;
+
 watchImg(enemyImages.idle,"enemy-idle.png");
 watchImg(enemyImages.move,"enemy-move.png");
 watchImg(enemyImages.attack,"enemy-attack.png");
@@ -1754,6 +1842,44 @@ const ENEMY_SPRITE_SETS = [
   { idle:"C-idle.png",  move:"C-move.png",  attack:"C-attack.png",  special:"C-special.png",  hit:"C-hit.png"  }, // 7 Chairman ✅
 ];
 
+// ===== Enemy sprite preloader (prevents "transparent box" flash) =====
+const __spritePreloadCache = new Map(); // src -> Promise<boolean>
+function __preloadImage(src){
+  if(!src) return Promise.resolve(false);
+  if(__spritePreloadCache.has(src)) return __spritePreloadCache.get(src);
+  const im = new Image();
+  const p = new Promise((resolve)=>{
+    im.onload = ()=>resolve(true);
+    im.onerror = ()=>resolve(false);
+  });
+  im.src = src;
+  __spritePreloadCache.set(src, p);
+  return p;
+}
+function __unique(arr){ return Array.from(new Set(arr)); }
+function __getEnemySpriteSetByRankIndex(idx){
+  return ENEMY_SPRITE_SETS[Math.max(0, Math.min(idx, ENEMY_SPRITE_SETS.length-1))] || ENEMY_SPRITE_SETS[0];
+}
+function __getCurrentEnemySet(){
+  return __getEnemySpriteSetByRankIndex(getEnemyRankIndex());
+}
+function __preloadEnemySet(set){
+  try{
+    const list = __unique(Object.values(set||{}).filter(Boolean));
+    return Promise.all(list.map(__preloadImage));
+  }catch(e){
+    return Promise.resolve([]);
+  }
+}
+// Preload all enemy sprite assets once, as soon as possible.
+(function __kickEnemyPreload(){
+  try{
+    const all = __unique(ENEMY_SPRITE_SETS.flatMap(s=>Object.values(s||{})).filter(Boolean));
+    Promise.all(all.map(__preloadImage));
+  }catch(e){}
+})();
+let __skipEnemyDrawUntilReady = false;
+
 function getEnemyRankIndex(){
   // 적은 항상 주인공보다 1직급 위 (최대 회장으로 clamp)
   return Math.min(rankIndex + 1, ENEMY_SPRITE_SETS.length - 1);
@@ -1762,16 +1888,51 @@ function getEnemyRankIndex(){
 function loadEnemySprites(){
   const idx = getEnemyRankIndex();
   const set = ENEMY_SPRITE_SETS[idx] || ENEMY_SPRITE_SETS[0];
+
+  // ✅ Mark enemy sprites as "not ready" while swapping src.
+  // This avoids the brief fallback rectangle flash on slow networks / first load.
+  enemyImages.__ready = false;
+  enemyImages.__pending = 5;
+
+  const markDone = ()=>{
+    enemyImages.__pending = Math.max(0, (enemyImages.__pending||0) - 1);
+    if(enemyImages.__pending === 0) enemyImages.__ready = true;
+  };
+
+  const bindOnce = (img)=>{
+    try{
+      img.addEventListener("load",  markDone, { once:true });
+      img.addEventListener("error", markDone, { once:true });
+    }catch(e){}
+  };
+
+  bindOnce(enemyImages.idle);
+  bindOnce(enemyImages.move);
+  bindOnce(enemyImages.attack);
+  bindOnce(enemyImages.special);
+  bindOnce(enemyImages.hit);
+
   watchImg(enemyImages.idle, set.idle);
   watchImg(enemyImages.move, set.move);
   watchImg(enemyImages.attack, set.attack);
   watchImg(enemyImages.special, set.special);
   watchImg(enemyImages.hit, set.hit);
+
   enemyImages.idle.src    = set.idle;
   enemyImages.move.src    = set.move;
   enemyImages.attack.src  = set.attack;
   enemyImages.special.src = set.special;
   enemyImages.hit.src     = set.hit;
+
+  // if everything is already cached and complete, mark ready immediately
+  try{
+    if(enemyImages.idle.complete && enemyImages.move.complete && enemyImages.attack.complete && enemyImages.special.complete && enemyImages.hit.complete){
+      if(enemyImages.idle.naturalWidth && enemyImages.move.naturalWidth && enemyImages.attack.naturalWidth && enemyImages.special.naturalWidth && enemyImages.hit.naturalWidth){
+        enemyImages.__ready = true;
+        enemyImages.__pending = 0;
+      }
+    }
+  }catch(e){}
 }
 
 // ===== Entities =====
@@ -1970,6 +2131,16 @@ function applyDifficulty(){
 // 초기 난이도 1회 적용 (첫 로딩)
 applyDifficulty();
 loadEnemySprites(); // ✅ 적 스프라이트 로딩(주인공 rankIndex+1)
+
+// ✅ Warm-up(첫 로딩): 적 스프라이트 로딩 전 잠깐 보이는 대체 사각형을 숨깁니다.
+__skipEnemyDrawUntilReady = true;
+try{
+  const __set0 = __getCurrentEnemySet();
+  const __t0 = setTimeout(()=>{ __skipEnemyDrawUntilReady = false; }, 1500);
+  __preloadEnemySet(__set0).then(()=>{ clearTimeout(__t0); __skipEnemyDrawUntilReady = false; });
+}catch(e){
+  __skipEnemyDrawUntilReady = false;
+}
 playerHP = playerMaxHP;
 enemyHP  = enemyMaxHP;
 
@@ -2039,6 +2210,14 @@ function endGame(result){
 }
 
 function resetGame(){
+  // ===== RESTART LOADING LOCK =====
+  try{
+    window.__startLocked = true;          // freeze updates
+    window.__tgCenterMsg = "RESTARTING...";
+    window.__tgStartRequested = true;     // do not reopen start screen
+    const startScreen = document.getElementById("startScreen");
+    if(startScreen) startScreen.style.display = "none";
+  }catch(e){}
   gameOver = false;
   gameResult = "";
   koMode = false; koTimer = 0; koResult = ""; koWho = ""; koAlpha = 1; koVX = 0;
@@ -2053,7 +2232,36 @@ function resetGame(){
 
   // (난이도 적용 후 체력 재설정)
   applyDifficulty();
-  loadEnemySprites(); // ✅ 적 스프라이트 로딩(주인공 rankIndex+1)
+  loadEnemySprites();
+  // ===== wait enemy sprites ready, then unlock gameplay =====
+  try{
+    const prom = (typeof __preloadEnemySet === "function" && typeof __getCurrentEnemySet === "function")
+      ? __preloadEnemySet(__getCurrentEnemySet())
+      : null;
+    let done = false;
+    const finish = ()=>{
+      if(done) return;
+      done = true;
+      window.__tgCenterMsg = "";
+      window.__startLocked = false;
+    };
+    Promise.resolve(prom).then(finish).catch(finish);
+    setTimeout(finish, 2500);
+  }catch(e){
+    try{ window.__tgCenterMsg = ""; window.__startLocked = false; }catch(_){}
+  }
+ // ✅ 적 스프라이트 로딩(주인공 rankIndex+1)
+
+  // ✅ Warm-up: 적 스프라이트가 아직 로딩 전이면 잠깐 "투명 사각형(대체 박스)"가 보일 수 있어요.
+  // 그래서 적 스프라이트가 준비될 때까지는 적을 아예 그리지 않도록 막습니다(1.5초 안전 타임아웃 포함).
+  __skipEnemyDrawUntilReady = true;
+  try{
+    const __set = __getCurrentEnemySet();
+    const __t = setTimeout(()=>{ __skipEnemyDrawUntilReady = false; }, 1500);
+    __preloadEnemySet(__set).then(()=>{ clearTimeout(__t); __skipEnemyDrawUntilReady = false; });
+  }catch(e){
+    __skipEnemyDrawUntilReady = false;
+  }
   playerHP = playerMaxHP;
   enemyHP  = enemyMaxHP;
 
@@ -3215,18 +3423,29 @@ function drawSprite(obj, images){
   const w = obj.w * s;
   const h = obj.h * s;
 
-  // If sprite not ready -> draw obvious fallback box
+  // If sprite not ready:
+  // - Enemy: never show fallback rectangle. If action sprite isn't ready yet, fall back to idle (if ready),
+  //          otherwise skip drawing this frame.
+  // - Player/others: show fallback rectangle (debug).
   if(!img || !img.complete || !img.naturalWidth){
-    ctx.save();
-    ctx.globalAlpha = 0.95;
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.strokeStyle = "rgba(255,255,255,0.85)";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.rect(drawX-30, drawY-42, 60, 84);
-    ctx.fill(); ctx.stroke();
-    ctx.restore();
-    return;
+    if(obj === enemy){
+      if(images && images.idle && images.idle.complete && images.idle.naturalWidth){
+        img = images.idle; // ✅ safe fallback
+      }else{
+        return; // ✅ nothing drawn until at least idle is ready
+      }
+    }else{
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.strokeStyle = "rgba(255,255,255,0.85)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.rect(drawX-30, drawY-42, 60, 84);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+      return;
+    }
   }
 
   // ✅ 가장 안정적인 좌우 반전: translate + scale(-1,1)
@@ -3295,6 +3514,31 @@ function drawNameTag(obj, text, color){
     }
   }catch(e){}
 
+  // ✅ 우리(플레이어)만: 아래에 아이디(roa*** 형태) 한 줄 추가
+  // - 적(enemy)은 기존처럼 "직급 XX%"만 유지
+  function __maskId(raw){
+    raw = String(raw || "").trim();
+    if(!raw) return "";
+    const base = raw.includes("@") ? raw.split("@")[0] : raw;
+    if(base.length <= 3) return base + "***";
+    return base.slice(0, 3) + "***";
+  }
+  let idLine = "";
+  try{
+    if (typeof player !== "undefined" && obj === player){
+      // (게임3 파일에 이미 있는 이메일 저장 로직을 그대로 재사용)
+      const keys = (typeof EMAIL_KEYS !== "undefined" && Array.isArray(EMAIL_KEYS)) ? EMAIL_KEYS : ["tg_email","tg_user_email","user_email","userEmail","email"];
+      let email = "";
+      for(const k of keys){
+        const v = (localStorage.getItem(k) || "").trim();
+        if(v){ email = v; break; }
+      }
+      idLine = __maskId(email);
+      // 게스트면 표시 안 함
+      if(!email) idLine = "Guest";
+    }
+  }catch(e){ idLine = ""; }
+
   // drawSprite와 같은 좌표/스케일 규칙
   const isMobile = (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) || false;
   const sBase = obj.scale || 1;
@@ -3306,21 +3550,38 @@ function drawNameTag(obj, text, color){
 
   // 머리 위 위치(스프라이트 상단에서 조금 띄움)
   const tagX = x;
-  const tagY = y - (h/2) - Math.max(14, Math.min(26, h*0.18));
+  const tagY0 = y - (h/2) - Math.max(14, Math.min(26, h*0.18));
 
   // 폰트: 화면 크기에 따라 살짝 가변
   const fs = Math.max(11, Math.min(16, Math.round(viewW * 0.0105)));
+  const fs2 = Math.max(9, Math.min(13, Math.round(fs * 0.82))); // 아이디 줄은 살짝 작게
+
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = `900 ${fs}px system-ui, -apple-system, Segoe UI, Roboto`;
 
-  // 텍스트 측정 후 박스
+  // 텍스트 측정 후 박스(2줄이면 더 크게)
   const padX = 8;
   const padY = 5;
-  const tw = ctx.measureText(displayText).width;
-  const bw = Math.max(42, tw + padX*2);
-  const bh = fs + padY*2;
+
+  ctx.font = `900 ${fs}px system-ui, -apple-system, Segoe UI, Roboto`;
+  const tw1 = ctx.measureText(displayText).width;
+
+  let tw2 = 0;
+  if(idLine){
+    ctx.font = `800 ${fs2}px system-ui, -apple-system, Segoe UI, Roboto`;
+    tw2 = ctx.measureText(idLine).width;
+  }
+
+  const bw = Math.max(42, Math.max(tw1, tw2) + padX*2);
+
+  const lines = idLine ? 2 : 1;
+  const innerH = (lines === 2) ? (fs + fs2 + 6) : fs; // 2줄일 때 줄간격 약간
+  const bh = innerH + padY*2 + (lines === 2 ? 2 : 0);
+
+  // 2줄이면 박스가 커지니까, 머리 위로 살짝 더 올려서 겹침 방지
+  const tagY = tagY0 - (lines === 2 ? (bh * 0.18) : 0);
+
   const r = 8;
   const bx = tagX - bw/2;
   const by = tagY - bh/2;
@@ -3340,12 +3601,26 @@ function drawNameTag(obj, text, color){
   ctx.strokeStyle = color;
   ctx.stroke();
 
-  // 텍스트: 외곽(검정) + 본문(색)
+  // 1) 첫 줄 (직급 + %)
+  const y1 = tagY + (lines === 2 ? (-fs2 * 0.55) : 0);
+  ctx.font = `900 ${fs}px system-ui, -apple-system, Segoe UI, Roboto`;
   ctx.lineWidth = 4;
   ctx.strokeStyle = "rgba(0,0,0,0.75)";
-  ctx.strokeText(displayText, tagX, tagY);
+  ctx.strokeText(displayText, tagX, y1);
   ctx.fillStyle = color;
-  ctx.fillText(displayText, tagX, tagY);
+  ctx.fillText(displayText, tagX, y1);
+
+  // 2) 둘째 줄 (아이디)
+  if(idLine){
+    const y2 = tagY + (fs * 0.58);
+    ctx.font = `800 ${fs2}px system-ui, -apple-system, Segoe UI, Roboto`;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(0,0,0,0.65)";
+    ctx.strokeText(idLine, tagX, y2);
+    ctx.fillStyle = "rgba(235,240,255,0.92)";
+    ctx.fillText(idLine, tagX, y2);
+  }
+
   ctx.restore();
 }
 
@@ -3510,6 +3785,25 @@ function draw(){
 
   // HUD on top (고정) - 캔버스 HUD 대신 HTML UI 사용
   updateUI();
+  // ===== CENTER MESSAGE (loading / restarting) =====
+  try{
+    const msg = window.__tgCenterMsg;
+    if(msg){
+      ctx.save();
+      // darken background a bit for readability
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "900 34px Arial";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(String(msg), canvas.width/2, canvas.height/2);
+
+      ctx.restore();
+    }
+  }catch(e){}
+
   // drawHUD();
 }
 
@@ -3518,6 +3812,17 @@ function draw(){
 let __lastTS = 0;
 let __dt = 1; // 60fps 기준 (1.0 = 1프레임)
 function loop(ts){
+
+// ===== START SCREEN: freeze updates until user taps START =====
+if (window.__startLocked){
+  draw();
+  pressed = {};
+  requestAnimationFrame(loop);
+  return;
+}
+
+
+
   updateCameraShake();
 
   // dt 계산 (requestAnimationFrame timestamp 기반)
@@ -3714,6 +4019,8 @@ function maskEmail(email){
   if(local.length < 3) return local ? (local + "***") : "";
   return local.substring(0,3) + "***";
 }
+
+
 </script>
 
 <script>
@@ -3904,7 +4211,106 @@ if(andOv){
 </div>
 
 <script data-goatcounter="https://bit-model-123.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+        async src="//gc.zgo.at/count.js">
+</script>
 
+<!-- ===== START SCREEN ===== -->
+<div id="startScreen">
+  <div class="startCard">
+    <div class="startTitle">OFFICE ARENA</div>
+    <div class="startSub">
+      Office is a battlefield.<br>
+      Only one reaches the top.
+    </div>
+    <button id="startBtn" type="button">TAP TO START</button>
+  </div>
+</div>
+
+<script>
+/* ===== START LOCK (Tap to start) ===== */
+(function(){
+  // global so loop() can see it
+  window.__startLocked = true;
+
+  function requestStart(msg){
+    if(window.__tgStartRequested) return;
+    window.__tgStartRequested = true;
+
+    const startScreen = document.getElementById("startScreen");
+    if(startScreen) startScreen.style.display = "none";
+
+    // show center message while we keep __startLocked = true
+    window.__tgCenterMsg = msg || "LOADING...";
+
+    // audio may still require a user gesture; try safely.
+    try{
+      if(window.tgAudio && typeof window.tgAudio.start === "function"){
+        window.tgAudio.start();
+      }
+    }catch(e){}
+
+    // ensure correct enemy sprite set for current rank
+    try{ if(typeof loadEnemySprites === "function") loadEnemySprites(); }catch(e){}
+
+    let prom = null;
+    try{
+      if(typeof __preloadEnemySet === "function" && typeof __getCurrentEnemySet === "function"){
+        prom = __preloadEnemySet(__getCurrentEnemySet());
+      }
+    }catch(e){ prom = null; }
+
+    let done = false;
+    const finish = ()=>{
+      if(done) return;
+      done = true;
+      window.__tgCenterMsg = "";
+      window.__startLocked = false;
+    };
+
+    Promise.resolve(prom).then(finish).catch(finish);
+    // safety timeout: never lock forever
+    setTimeout(finish, 2500);
+  }
+
+  function bind(){
+    const startScreen = document.getElementById("startScreen");
+    const startBtn = document.getElementById("startBtn");
+    if(!startScreen || !startBtn) return;
+
+    // prevent double-binding
+    if(startScreen.__tgBound) return;
+    startScreen.__tgBound = true;
+
+    // 가장 강력한 조합: pointerdown + click
+    startBtn.addEventListener("pointerdown", (e)=>{ try{ e.preventDefault(); }catch(_){} requestStart("LOADING...");
+      }, {passive:false});
+    startBtn.addEventListener("click", ()=>requestStart("LOADING..."));
+
+    // 화면 아무 데나 탭해도 시작되게
+    startScreen.addEventListener("pointerdown", (e)=>{
+      try{ e.preventDefault(); }catch(_){}
+      requestStart("LOADING...");
+      }, {passive:false});
+  }
+
+  // bind first, then auto-unlock after 2s
+  const startTimers = ()=>{
+    setTimeout(unlock, 2000);
+    // 혹시 DOM/폰 환경에서 타이밍 꼬이면 0.5초 더 뒤에 한 번 더
+    setTimeout(()=>{ if(window.__startLocked) requestStart("LOADING...");
+      }, 2500);
+  };
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", ()=>{ bind(); startTimers(); });
+  }else{
+    bind();
+    startTimers();
+  }
+
+  // 혹시 DOM 타이밍 꼬임 대비 안전망(한 번 더)
+  setTimeout(bind, 0);
+})();
+</script>
 </body>
 </html>
