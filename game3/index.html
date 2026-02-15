@@ -1721,6 +1721,47 @@ function updateCameraShake(){
   }
 }
 
+// ===== Screen Flash (HP milestone feedback) =====
+let screenFlashT = 0;
+let screenFlashMax = 0;
+let screenFlashRGBA = "rgba(255,255,255,0.25)";
+
+function flash(color="white", frames=18){
+  const c = String(color||"").toLowerCase();
+  if(c === "orange") screenFlashRGBA = "rgba(255,140,0,0.35)";
+  else if(c === "red") screenFlashRGBA = "rgba(255,60,60,0.35)";
+  else if(c === "yellow") screenFlashRGBA = "rgba(255,220,80,0.30)";
+  else screenFlashRGBA = "rgba(255,255,255,0.25)";
+
+  frames = Math.max(1, frames|0);
+  if(frames > screenFlashT){
+    screenFlashT = frames;
+    screenFlashMax = frames;
+  }
+}
+
+function updateScreenFlash(){
+  if(screenFlashT > 0){
+    screenFlashT--;
+    if(screenFlashT <= 0){
+      screenFlashT = 0;
+      screenFlashMax = 0;
+    }
+  }
+}
+
+function drawScreenFlash(){
+  if(screenFlashT <= 0) return;
+  const denom = (screenFlashMax || 1);
+  const p = screenFlashT / denom; // 1 -> 0
+  const a = 0.10 + 0.35 * p; // fade out
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = screenFlashRGBA;
+  ctx.fillRect(-80, -80, viewW + 160, viewH + 160);
+  ctx.restore();
+}
+
 
 
 
@@ -2031,6 +2072,7 @@ let playerDamagePerHit = 1.0; // player -> enemy damage (rank-scaled)
 // ===== Knockback milestones (50% / finish) =====
 let playerHalfTriggered = false;
 let enemyHalfTriggered = false;
+let enemyTenTriggered = false;
 
 // ✅ 50% 트리거 기준은 '해당 판 시작 HP'로 고정 (난이도/승급으로 max 값이 변해도 안정)
 let playerStageMaxHP = 0;
@@ -2287,6 +2329,7 @@ function resetGame(){
   // reset knockback milestone flags
   playerHalfTriggered = false;
   enemyHalfTriggered = false;
+  enemyTenTriggered = false;
 
 
   // reset salary satoshi counters (이번 판)
@@ -2946,6 +2989,32 @@ function enemyTakeHit(fromX){
   // score/HP -1
   decHP("enemy", playerDamagePerHit);
 
+// ===== 10% HP Flash (every 10% drop) =====
+// Trigger exactly when enemy crosses a 10% boundary: 100→90→80...→10
+try{
+  if(typeof enemyStageMaxHP === "number" && enemyStageMaxHP > 0){
+    const prevBucket = Math.max(0, Math.min(10, Math.floor((prevHP / enemyStageMaxHP) * 10)));
+    const newBucket  = Math.max(0, Math.min(10, Math.floor((enemyHP / enemyStageMaxHP) * 10)));
+    if(newBucket < prevBucket){
+      if(enemyHP > 0){
+        if(newBucket === 5) flash("orange", 90);      // 50%
+        else if(newBucket === 1) flash("red", 90);    // 10%
+        else flash("white", 70);                      // normal 10% steps
+
+        // ✅ Milestone shake: 80 / 60 / 40 / 20 / 10 (%)
+        if(newBucket === 8 || newBucket === 6 || newBucket === 4 || newBucket === 2 || newBucket === 1){
+          const mag = (newBucket === 1) ? 8 : 6;
+          triggerCamShake(mag, 12);
+        }
+      } else {
+        // ✅ KO moment (0%): bigger shake + flash
+        triggerCamShake(12, 22);
+        flash("yellow", 120);
+      }
+    }
+  }
+}catch(e){}
+
   // ✅ Step1 적용: 3히트마다 "이번 판 급여 사토시" +1
   try{ onPlayerLandedHit(); }catch(e){}
 
@@ -2967,6 +3036,8 @@ function enemyTakeHit(fromX){
     spawnBurst(enemy.x, enemy.y - (enemy.z||0), 2.2);
     triggerHitStop(2);
   }
+
+  // 10% red flash is now handled by 10% bucket flash above (kept knockback logic only)
 
   // 마지막(0): 피니시 크게
   if(enemyHP <= 0 && prevHP > 0){
@@ -3803,6 +3874,9 @@ function draw(){
 
   // burst explosions (50%)
   drawBursts();
+
+  // screen flash overlay
+  drawScreenFlash();
   ctx.restore();
 
   // HUD on top (고정) - 캔버스 HUD 대신 HTML UI 사용
@@ -3846,6 +3920,7 @@ if (window.__startLocked){
 
 
   updateCameraShake();
+  updateScreenFlash();
 
   // dt 계산 (requestAnimationFrame timestamp 기반)
   if(typeof ts !== 'number') ts = performance.now();
