@@ -2184,6 +2184,10 @@ function endGame(result){
   // ===== Step2: 승/패 처리 + 진행(단계/직급) + 급여 정산 =====
   let overlayText = (result === "win") ? "승리(VICTORY)" : "패(DEFEAT)";
 
+// ✅ 경기 종료 보너스: 승/패 상관없이 +5
+totalSalarySatoshi += 5;
+overlayText += "  + Bonus 5";
+
   if(result === "win"){
     // 급여 정산: 이번 판 급여를 누적에 합산 (패배 시엔 합산 없음)
     totalSalarySatoshi += tempSalarySatoshi;
@@ -2940,6 +2944,10 @@ function enemyTakeHit(fromX){
 
   // score/HP -1
   decHP("enemy", playerDamagePerHit);
+
+  // ✅ Step1 적용: 3히트마다 "이번 판 급여 사토시" +1
+  try{ onPlayerLandedHit(); }catch(e){}
+
 
   // ✅ Step1 적
   // ===== Knockback rules =====
