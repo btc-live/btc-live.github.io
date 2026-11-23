@@ -232,6 +232,9 @@
     body.arena-open { overflow: hidden; overscroll-behavior: none; position: fixed; inset: 0; }
 
     #arenaOverlay > .glass-panel { max-height: calc(100% - 16px); overflow-y: auto; }
+    /* The long status pill changes width with every possession; only show it on wide screens */
+    #hudStatusBanner { width: 19rem; flex: 0 0 auto; }
+    @media (max-width: 1199px) { #hudStatusBanner { display: none !important; } }
     #touchControls { display: none; }
     .is-touch #touchControls { display: block; }
 
@@ -4548,6 +4551,15 @@
       });
 
       window.addEventListener('resize', resizeB4Viewport);
+      // Re-fit the 3D view whenever its box changes size for ANY reason
+      // (e.g. the scoreboard wrapping to two lines after a score on iPad), not only on window resize.
+      if ('ResizeObserver' in window) {
+        b4App.resizeObserver = new ResizeObserver(() => resizeB4Viewport());
+        b4App.resizeObserver.observe(container);
+      }
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => setTimeout(resizeB4Viewport, 50));
+      }
       b4App.initialized = true;
     }
 
@@ -4560,6 +4572,35 @@
       b4App.camera.aspect = w / h;
       b4App.camera.updateProjectionMatrix();
       b4App.renderer.setSize(w, h, false);
+      b4App.lastViewW = Math.round(b4App.cachedRect.width);
+      b4App.lastViewH = Math.round(b4App.cachedRect.height);
+    }
+
+    // Safety net (older browsers without ResizeObserver): every ~0.5 s compare the 3D box size,
+    // and undo any accidental Safari page zoom during a match.
+    let viewCheckCounter = 0;
+    function checkViewportHealth() {
+      if (++viewCheckCounter < 30) return;
+      viewCheckCounter = 0;
+      const c = document.getElementById('threeContainer');
+      if (c && (Math.round(c.clientWidth) !== b4App.lastViewW || Math.round(c.clientHeight) !== b4App.lastViewH)) {
+        resizeB4Viewport();
+      }
+      resetSafariZoomIfNeeded();
+    }
+
+    function resetSafariZoomIfNeeded() {
+      const vv = window.visualViewport;
+      if (!vv || vv.scale <= 1.01) return;
+      const meta = document.querySelector('meta[name="viewport"]');
+      if (!meta) return;
+      const original = meta.getAttribute('content');
+      // Briefly changing the viewport tag makes iOS Safari snap the zoom back to 100%
+      meta.setAttribute('content', original.replace('maximum-scale=1.0', 'maximum-scale=1.01'));
+      setTimeout(() => {
+        meta.setAttribute('content', original);
+        setTimeout(resizeB4Viewport, 60);
+      }, 30);
     }
 
     // =========================================================================
@@ -6355,6 +6396,7 @@
         updateVFX(dt);
       }
 
+      checkViewportHealth();
       const nowSec = now * 0.001;
       updateCrowdAnimation(rawDt, nowSec);
       updateShotClockBoards();
@@ -6613,6 +6655,23 @@
         document.querySelectorAll('.touch-action-btn.pressed').forEach(b => b.classList.remove('pressed'));
       }
     });
+
+    // iPad / iPhone Safari ignores "user-scalable=no": block pinch and double-tap zoom ourselves
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+      document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+    });
+    let lastTouchEndAt = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      const tag = (e.target && e.target.tagName) || '';
+      if (now - lastTouchEndAt < 320 && tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') {
+        e.preventDefault(); // second tap of a double-tap would zoom the page
+      }
+      lastTouchEndAt = now;
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches.length > 1) e.preventDefault(); // two-finger pinch
+    }, { passive: false });
 
     // Orientation changes: re-measure the 3D viewport once the browser has settled
     window.addEventListener('orientationchange', () => {
