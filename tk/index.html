@@ -2114,6 +2114,61 @@
         body.is-phone #diag-panel { font-size: 8.5px; max-height: 52vh; }
         body.is-phone #pause-overlay .overlay-card.diag-open .overlay-desc { display: none; }
         #diag-panel { display: none; text-align: left; margin: 10px 0 0; padding: 8px 10px; max-height: 46vh; max-width: min(560px, 86vw); overflow: auto; white-space: pre-wrap; word-break: break-word; font: 10.5px/1.45 ui-monospace, monospace; color: #e2e8f0; background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 6px; -webkit-user-select: text; user-select: text; }
+        /* TANK40: volume sliders in the pause menu */
+        .vol-panel { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 12px; font-size: 12px; font-weight: 800; color: #e2e8f0; letter-spacing: 0.04em; }
+        .vol-panel label { display: flex; align-items: center; gap: 6px; }
+        .vol-panel input[type=range] { width: 120px; accent-color: #facc15; }
+        /* TANK41: how-to-play guide */
+        #howto-modal { position: absolute; inset: 0; z-index: 130; display: none; align-items: center; justify-content: center; padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); background: rgba(10, 12, 7, 0.78); }
+        #howto-modal.open { display: flex; }
+        .howto-panel {
+            width: min(820px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden;
+            background: linear-gradient(180deg, #2f3620 0%, #1d2214 100%); border: 1px solid #b5a77a; border-radius: 6px;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(217, 204, 156, 0.2); color: #d9cc9c;
+            font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+        }
+        .howto-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid rgba(181, 167, 122, 0.3); background: repeating-linear-gradient(-45deg, rgba(184, 150, 46, 0.12) 0 10px, transparent 10px 20px); }
+        .howto-title { font-family: 'Black Ops One', 'Stencil', Impact, sans-serif; font-size: 20px; letter-spacing: 0.14em; color: #d9cc9c; border-left: 3px solid #d4a017; padding-left: 9px; }
+        .howto-x { background: none; border: 1px solid rgba(181, 167, 122, 0.5); color: #d9cc9c; border-radius: 3px; width: 30px; height: 28px; font-size: 14px; cursor: pointer; }
+        .howto-tabs { display: flex; gap: 5px; padding: 8px 12px 0; flex-wrap: wrap; }
+        .howto-tab { cursor: pointer; padding: 5px 11px; border-radius: 3px 3px 0 0; font-family: inherit; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: #b5a77a; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(181, 167, 122, 0.3); border-bottom: none; }
+        .howto-tab.active { color: #16190f; background: #d4a017; border-color: #d4a017; }
+        .howto-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px; border-top: 1px solid rgba(181, 167, 122, 0.3); font-size: 12px; line-height: 1.55; -webkit-user-select: text; user-select: text; }
+        .howto-body h4 { margin: 10px 0 5px; font-family: 'Black Ops One', 'Stencil', Impact, sans-serif; font-weight: 400; font-size: 13px; letter-spacing: 0.1em; color: #f3c64f; }
+        .howto-body h4:first-child { margin-top: 0; }
+        .howto-body p { margin: 0 0 6px; }
+        .howto-sub { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+        .howto-sub button { cursor: pointer; padding: 3px 9px; border-radius: 3px; font-family: inherit; font-size: 10.5px; font-weight: 800; color: #d9cc9c; background: rgba(59, 67, 37, 0.7); border: 1px solid rgba(181, 167, 122, 0.4); }
+        .howto-sub button.active { border-color: #d4a017; color: #f3c64f; }
+        .howto-grid { display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px; align-items: baseline; }
+        .howto-grid .k { white-space: nowrap; }
+        .howto-grid .k b, .howto-key { display: inline-block; min-width: 18px; text-align: center; padding: 0 5px; margin: 1px 2px 1px 0; border-radius: 3px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(217, 204, 156, 0.45); color: #fff; font-weight: 800; font-size: 11px; }
+        .howto-list { margin: 0 0 6px; padding-left: 18px; }
+        .howto-list li { margin-bottom: 3px; }
+        .howto-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 14px; border-top: 1px solid rgba(181, 167, 122, 0.3); background: rgba(0, 0, 0, 0.2); }
+        .howto-hide { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #b5a77a; cursor: pointer; }
+        .howto-go { cursor: pointer; padding: 7px 18px; border-radius: 3px; font-family: 'Black Ops One', 'Stencil', Impact, sans-serif; font-size: 13px; letter-spacing: 0.12em; color: #16190f; background: #d4a017; border: 1px solid #f3c64f; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); }
+        .hq-chip-help { cursor: pointer; font: inherit; color: inherit; border-color: #d4a017 !important; }
+        .howto-pause-btn { margin-top: 10px; margin-right: 6px; }
+        @media (max-width: 700px), (max-height: 520px) {
+            .howto-body { font-size: 11px; padding: 10px 12px; }
+            .howto-title { font-size: 16px; }
+            .howto-tab { padding: 4px 8px; font-size: 10px; }
+            .howto-grid { grid-template-columns: 1fr; gap: 0; }
+            .howto-grid .v { margin-bottom: 5px; color: #e8dfbd; }
+        }
+        /* TANK41: phone header chips in two rows; compact landscape tweaks */
+        @media (max-width: 700px) {
+            .hq-chips { flex-wrap: wrap !important; }
+            .hq-chips > .hq-chip { flex: 1 1 calc(25% - 6px) !important; }
+            .hq-chips > .hq-chip-help, .hq-chips > .hq-chip-full, .hq-chips > .hq-diff-wrap { flex: 1 1 calc(33% - 6px) !important; }
+            .hq-chips .hq-chip-v { white-space: nowrap; }
+        }
+        @media (max-height: 560px) and (min-width: 701px) {
+            .hq-stage-grid .next-mission-ribbon { font-size: 6.5px; white-space: nowrap; letter-spacing: 0.04em; }
+            .hq-sector > span { font-size: 7.5px; letter-spacing: 0; }
+            .hq-chips .hq-chip-v { white-space: nowrap; }
+        }
 </style>
 </head>
 <body>
@@ -2171,6 +2226,7 @@
                     <div class="hq-chip"><span class="hq-chip-k">STARS</span><span class="hq-chip-v" id="hqChipStars">★ 0/150</span></div>
                     <div class="hq-chip"><span class="hq-chip-k">SUPPLY</span><span class="hq-chip-v" id="hqChipSp">0 SP</span></div>
                     <div class="hq-chip hq-chip-armory"><span class="hq-chip-k">ARMORY</span><span class="hq-chip-v" id="hqChipArmory">1/300</span></div>
+                    <button type="button" class="hq-chip hq-chip-help" onclick="openHowTo()" title="How to play"><span class="hq-chip-k">GUIDE</span><span class="hq-chip-v">❓ HOW TO</span></button>
                     <button type="button" class="hq-chip hq-chip-full hq-hidden" id="hqChipFull" onclick="toggleFullscreen()" title="Full screen"><span class="hq-chip-k">SCREEN</span><span class="hq-chip-v">⛶ FULL</span></button>
                     <div class="hq-diff-wrap"><button type="button" class="hq-chip hq-chip-diff" id="hqChipDiff" onclick="toggleDifficultyMenu()" title="Change difficulty"><span class="hq-chip-k"><span class="diff-long">DIFFICULTY</span><span class="diff-short">LEVEL</span> ▾</span><span class="hq-chip-v" id="hqChipDiffV">NORMAL</span></button><div class="hq-diff-menu" id="hqDiffMenu"></div></div>
                 </div>
@@ -2275,6 +2331,10 @@
                     STAGE SELECT 🗺️
                 </button>
             </div>
+            <div class="vol-panel">
+                <label>🔊 SFX <input type="range" id="volSfx" min="0" max="100" step="5" oninput="setSfxVolume(this.value / 100); playSample('tick', { vol: 0.4 })"></label>
+            </div>
+            <button type="button" class="diag-btn howto-pause-btn" onclick="openHowTo()">HOW TO PLAY ❓</button>
             <button type="button" class="diag-btn" onclick="showDiagnostics()">DIAGNOSTICS 🔧</button>
             <pre id="diag-panel"></pre>
         </div>
@@ -2314,8 +2374,6 @@
         <span class="hud-sep">|</span>
         <span class="hud-hp" id="hud-energy">HP: 200</span>
         <span class="hud-cover" id="hud-cover" style="display:none"></span>
-        <span class="hud-sep">|</span>
-        <button class="music-btn-hud" id="bgm-status-btn" onclick="toggleBGM()">BGM on</button>
         <span class="hud-sep">|</span>
         <button class="music-btn-hud" id="pause-btn-hud" onclick="togglePauseGame()">Pause</button>
         <span class="hud-sep">|</span>
@@ -2460,6 +2518,21 @@
     </div>
 
     <div id="canvas-container"></div>
+    <!-- TANK41: How-to-play guide (opens on launch until dismissed; also from the HQ and pause menu) -->
+    <div id="howto-modal" role="dialog" aria-label="How to play">
+        <div class="howto-panel">
+            <div class="howto-head">
+                <span class="howto-title">HOW TO PLAY</span>
+                <button type="button" class="howto-x" onclick="closeHowTo()" aria-label="Close">✕</button>
+            </div>
+            <div class="howto-tabs" id="howtoTabs"></div>
+            <div class="howto-body" id="howtoBody"></div>
+            <div class="howto-foot">
+                <label class="howto-hide"><input type="checkbox" id="howtoHide"> Don't show this at start</label>
+                <button type="button" class="howto-go" onclick="closeHowTo()">GOT IT ▶</button>
+            </div>
+        </div>
+    </div>
     <!-- TANK36: floating-joystick zone, gamepad-style touch buttons, gamepad hints, toast, rotate hint -->
     <div id="joy-zone" aria-hidden="true"></div>
     <button id="mobile-swap-btn" class="mobile-action-btn" type="button" aria-label="Switch weapon">SHELL<span class="mab-sub">⇄ WEAPON</span></button>
@@ -3413,6 +3486,7 @@
 
     // SCOPE 2: Cycle scope zoom 1.5x -> 2.5x -> 4.0x -> 1.5x
     function cycleScopeZoom() {
+        playSample('zoom', { vol: 0.35 });
         scopeZoomIndex = (scopeZoomIndex + 1) % SCOPE_ZOOM_LEVELS.length;
         updateScopeZoomLabels();
         if (typeof onScopeProjectionDirty === 'function') {
@@ -3675,6 +3749,16 @@
         const rx = gpAxis(gp.axes[2] || 0), ry = gpAxis(gp.axes[3] || 0);
         gpNavCooldown = Math.max(0, gpNavCooldown - dt);
 
+        if (isHowToOpen()) {
+            if (pressed(GP.A) || pressed(GP.B) || pressed(GP.START)) closeHowTo();
+            if (pressed(GP.RB) || pressed(GP.RIGHT)) setHowtoTab(HOWTO_TABS[(HOWTO_TABS.indexOf(howtoTab) + 1) % HOWTO_TABS.length]);
+            if (pressed(GP.LB) || pressed(GP.LEFT)) setHowtoTab(HOWTO_TABS[(HOWTO_TABS.indexOf(howtoTab) + HOWTO_TABS.length - 1) % HOWTO_TABS.length]);
+            const body = document.getElementById('howtoBody');
+            if (body) body.scrollTop += gpAxis(gp.axes[1] || 0) * 600 * dt + gpAxis(gp.axes[3] || 0) * 600 * dt;
+            gpMoveOn = false; gpFireHeld = false;
+            gpPrev = gp.buttons.map(b => !!(b && (b.pressed || b.value > 0.5)));
+            return;
+        }
         const depotOpen = isDepotOpen();
         const menuOpen = isStageModalOpen();
         const msgOpen = isMessageOverlayOpen();
@@ -3778,6 +3862,164 @@
         const card = el.closest('.overlay-card');
         if (card) card.classList.add('diag-open');
     }
+    // =========================================================================
+    // TANK41: HOW TO PLAY guide (English). Opens at launch until "Don't show this at start" is ticked.
+    // =========================================================================
+    const HOWTO_TABS = ['controls', 'missions', 'armory', 'tips'];
+    const HOWTO_TAB_LABEL = { controls: 'CONTROLS', missions: 'MISSIONS', armory: 'ARMORY & SP', tips: 'COMBAT TIPS' };
+    let howtoTab = 'controls';
+    let howtoDevice = null; // 'pc' | 'touch' | 'pad'
+    const K = s => s.split(' ').map(x => `<b>${x}</b>`).join(' ');
+    const row = (k, v) => `<div class="k">${k}</div><div class="v">${v}</div>`;
+    function howtoControlsHtml(dev) {
+        const sub = `<div class="howto-sub">${[['pc', '🖥 KEYBOARD + MOUSE'], ['touch', '📱 TOUCH'], ['pad', '🎮 GAMEPAD']].map(([d, l]) => `<button type="button" class="${d === dev ? 'active' : ''}" onclick="setHowtoDevice('${d}')">${l}</button>`).join('')}</div>`;
+        if (dev === 'touch') return sub + `
+            <h4>DRIVE &amp; AIM</h4>
+            <div class="howto-grid">
+                ${row('Left thumb', 'Touch anywhere in the lower-left area and drag — the stick appears under your thumb. The tank drives in the direction you push, relative to where the camera looks.')}
+                ${row('Right thumb', 'Swipe on the right half of the screen: left / right turns the turret, up / down raises and lowers the gun. The aim stays where you leave it.')}
+            </div>
+            <h4>BUTTONS</h4>
+            <div class="howto-grid">
+                ${row(K('FIRE'), 'Hold to keep firing the selected weapon.')}
+                ${row(K('BOOST'), 'Short burst of speed. Recharges after use.')}
+                ${row(K('WEAPON'), 'Switch between the main gun (SHELL) and the machine gun (MG).')}
+                ${row(K('ZOOM'), 'Change the gunner-scope magnification: 1.5x → 2.5x → 4x.')}
+                ${row(K('AUTO'), 'Top bar. When on, the gun fires by itself whenever the crosshair locks onto an enemy.')}
+                ${row(K('Pause') + ' ' + K('EXIT'), 'Pause the game / go back to the mission map.')}
+            </div>
+            <h4>PHONE TIPS</h4>
+            <ul class="howto-list">
+                <li>Hold the phone sideways (landscape). The scope sits in the top-left corner.</li>
+                <li>Tap <span class="howto-key">⛶ FULL</span> on the mission map for full screen. On iPhone, use Share → "Add to Home Screen" instead.</li>
+                <li>A Bluetooth controller works too — the touch buttons hide automatically.</li>
+            </ul>`;
+        if (dev === 'pad') return sub + `
+            <h4>IN BATTLE</h4>
+            <div class="howto-grid">
+                ${row(K('Left stick'), 'Drive')}
+                ${row(K('Right stick'), 'Turn the turret / raise and lower the gun')}
+                ${row(K('RT') + ' or ' + K('A'), 'Fire (hold for continuous fire)')}
+                ${row(K('LB') + ' or ' + K('B'), 'Boost')}
+                ${row(K('RB') + ' or ' + K('X'), 'Switch weapon (main gun / machine gun)')}
+                ${row(K('LT') + ' or ' + K('D-pad ▲'), 'Scope zoom')}
+                ${row(K('Y'), 'Auto-fire on / off')}
+                ${row(K('START'), 'Pause')}
+            </div>
+            <h4>MISSION MAP</h4>
+            <div class="howto-grid">
+                ${row(K('D-pad ◀ ▶'), 'Previous / next operation')}
+                ${row(K('D-pad ▲ ▼'), 'Previous / next sector')}
+                ${row(K('LB') + ' ' + K('RB'), 'Previous / next tank model')}
+                ${row(K('X'), 'Next tank you own in this model')}
+                ${row(K('Y'), 'Open the depot (' + K('B') + ' closes it)')}
+                ${row(K('A') + ' or ' + K('START'), 'Deploy')}
+            </div>
+            <p style="margin-top:8px">PlayStation pads: A = ✕, B = ○, X = □, Y = △.</p>`;
+        return sub + `
+            <h4>DRIVE &amp; AIM</h4>
+            <div class="howto-grid">
+                ${row(K('W A S D') + ' / ' + K('Arrows'), 'Drive. The tank moves relative to where the camera looks.')}
+                ${row(K('Mouse'), 'Turn the turret and raise / lower the gun. Click the battlefield once to lock the mouse.')}
+                ${row(K('Click') + ' / ' + K('Space'), 'Fire (hold for continuous fire)')}
+            </div>
+            <h4>WEAPONS &amp; SYSTEMS</h4>
+            <div class="howto-grid">
+                ${row(K('Z'), 'Main gun (SHELL) — heavy damage, about 2.5 s reload')}
+                ${row(K('X'), 'Machine gun (MG) — rapid fire, light damage')}
+                ${row(K('C'), 'Scope zoom 1.5x → 2.5x → 4x')}
+                ${row(K('Shift'), 'Boost')}
+                ${row(K('V'), 'Auto-fire on / off (fires when the crosshair locks on)')}
+                ${row(K('ESC'), 'Pause (also closes the depot)')}
+                ${row(K('F'), 'Back to the mission map')}
+            </div>`;
+    }
+    function howtoHtml(tab) {
+        if (tab === 'controls') return howtoControlsHtml(howtoDevice);
+        if (tab === 'missions') return `
+            <h4>THE CAMPAIGN</h4>
+            <p>50 operations in 5 sectors. Clear an operation to unlock the next one. Pick an operation on the mission map (tap once to select, again to deploy) and read its briefing first.</p>
+            <h4>MISSION TYPES</h4>
+            <div class="howto-grid">
+                ${row(K('DESTROY'), 'Destroy the required number of enemy tanks before time runs out.')}
+                ${row(K('DEFEND'), 'Keep the outpost alive until the timer ends.')}
+                ${row(K('ESCORT'), 'Protect the supply truck. It only moves while you are within 150 m of it.')}
+                ${row(K('BOSS'), 'Every 5th op is a mini boss, every 10th a major boss with a triple-shot gun.')}
+            </div>
+            <h4>STARS</h4>
+            <ul class="howto-list">
+                <li>★ Clear the mission</li>
+                <li>★ Finish with at least 50% of your max HP</li>
+                <li>★ Finish with 35%+ time left (destroy / boss), or keep the outpost / truck above 60% HP</li>
+            </ul>
+            <p>Stars unlock new tanks to buy. Clearing boss operations (OP 05, 10, 15 … 40) opens new tank models.</p>
+            <h4>ENEMIES</h4>
+            <div class="howto-grid">
+                ${row(K('LIGHT'), 'Fast and fragile, circles around you')}
+                ${row(K('MEDIUM'), 'All-rounder')}
+                ${row(K('HEAVY'), 'Slow and tough, hits hard')}
+                ${row(K('SNIPER'), 'Accurate from 400 m+ — use the scope')}
+            </div>`;
+        if (tab === 'armory') return `
+            <h4>SUPPLY POINTS (SP)</h4>
+            <p>Earn SP for kills, for clearing an operation (half on replays) and +50 per new star. If a mission fails you keep half of your kill SP. Harder difficulties pay more (VERY EASY ×0.5 … VERY HARD ×1.5).</p>
+            <h4>DEPOT — UPGRADES</h4>
+            <p>Open <span class="howto-key">🔧 DEPOT</span> on the mission map. Six upgrades, 5 levels each: Armor (HP), Main gun (damage), Reload, Machine gun, Engine (speed &amp; boost), Repair kit. Upgrades stay with you on every tank. Reset any time for an 80% refund.</p>
+            <h4>THE ARMORY — 300 TANKS</h4>
+            <p>10 tank models × 30 designs. Every tank has the same performance — they differ only in looks: paint, weathering, antennas, flags, roof guns, stowage. Collect enough stars, then buy them with SP. Tap a tank to equip it, or buy it right in the hangar.</p>
+            <h4>DIFFICULTY</h4>
+            <p>Change it with the <span class="howto-key">DIFFICULTY</span> chip at the top of the mission map. NORMAL is the default; HARD and VERY HARD pay more SP.</p>`;
+        return `
+            <h4>USE COVER</h4>
+            <ul class="howto-list">
+                <li>Ruined buildings, wrecks and rock ridges block shells completely. Low walls and sandbags hide only your hull.</li>
+                <li><span class="howto-key">🛡 COVER</span> means no enemy can see you; <span class="howto-key">⚠ SEEN ×2</span> means two of them can.</li>
+                <li>Enemies hide too: they duck behind cover to reload, then peek out to shoot. Flank them or wait for the peek.</li>
+            </ul>
+            <h4>SHOOTING</h4>
+            <ul class="howto-list">
+                <li>Use the main gun on medium, heavy and boss tanks; the machine gun finishes light tanks.</li>
+                <li>Watch the scope: it shows range (RNG), magnification (MAG) and when the gun is ready.</li>
+                <li>Red arrows at the screen edge point to enemies you can't see. The radar (top-right) shows everything nearby.</li>
+            </ul>
+            <h4>STAYING ALIVE</h4>
+            <ul class="howto-list">
+                <li>Keep moving — moving targets are much harder to hit.</li>
+                <li>If you avoid damage for a few seconds, your tank repairs itself (up to the repair-kit limit).</li>
+                <li>Boost out of trouble, then turn and fight from cover.</li>
+                <li>A heartbeat sound means your HP is low — break contact.</li>
+            </ul>`;
+    }
+    function renderHowTo() {
+        const tabs = document.getElementById('howtoTabs');
+        const body = document.getElementById('howtoBody');
+        if (!tabs || !body) return;
+        tabs.innerHTML = HOWTO_TABS.map(t => `<button type="button" class="howto-tab${t === howtoTab ? ' active' : ''}" onclick="setHowtoTab('${t}')">${HOWTO_TAB_LABEL[t]}</button>`).join('');
+        body.innerHTML = howtoHtml(howtoTab);
+        body.scrollTop = 0;
+    }
+    function setHowtoTab(t) { howtoTab = t; renderHowTo(); }
+    function setHowtoDevice(d) { howtoDevice = d; renderHowTo(); }
+    function isHowToOpen() { const m = document.getElementById('howto-modal'); return !!m && m.classList.contains('open'); }
+    function openHowTo(tab) {
+        howtoDevice = howtoDevice || ((typeof gamepadActive !== 'undefined' && gamepadActive) ? 'pad' : (DEVICE.touch ? 'touch' : 'pc'));
+        howtoTab = tab || 'controls';
+        const cb = document.getElementById('howtoHide');
+        try { if (cb) cb.checked = localStorage.getItem('tankAceHideGuide') === '1'; } catch (e) {}
+        renderHowTo();
+        document.getElementById('howto-modal').classList.add('open');
+    }
+    function closeHowTo() {
+        const cb = document.getElementById('howtoHide');
+        try { localStorage.setItem('tankAceHideGuide', cb && cb.checked ? '1' : '0'); } catch (e) {}
+        document.getElementById('howto-modal').classList.remove('open');
+    }
+    // show at launch unless the player ticked "Don't show this at start"
+    setTimeout(() => {
+        let hide = false;
+        try { hide = localStorage.getItem('tankAceHideGuide') === '1'; } catch (e) {}
+        if (!hide && isStageModalOpen()) openHowTo('controls');
+    }, 400);
     function isScopeVisibleNow() {
         const sv = document.getElementById('scope-view');
         return !!sv && sv.style.display !== 'none' && sv.offsetParent !== null;
@@ -3858,7 +4100,14 @@
         requestCanvasPointerLock();
     }
 
+    function syncVolumeSliders() {
+        const a = document.getElementById('volSfx'), b = document.getElementById('volMusic');
+        if (a) a.value = Math.round(audioPrefs.sfx * 100);
+        if (b) b.value = Math.round(audioPrefs.music * 100);
+    }
+    setTimeout(syncVolumeSliders, 0);
     function togglePauseGame() {
+        syncVolumeSliders();
         if (isStageModalOpen() || isMessageOverlayOpen()) return;
         if (isGamePaused) {
             resumeGame();
@@ -3925,6 +4174,7 @@
     }
     function pickHqStage(n) {
         if (n > unlockedStage) return;
+        playUiClick();
         if (hqSelectedStage === n) { deploySelectedStage(); return; } // second tap deploys
         hqSelectedStage = n;
         hqSector = Math.floor((n - 1) / 10);
@@ -4081,6 +4331,7 @@
         });
     }
     function hangarCardClicked(v) {
+        playUiClick();
         hangarFocusId = v.id;
         if (getTankCardState(v) === 'owned' && v.id !== selectedTankVariantId) {
             selectedTankVariantId = v.id;
@@ -4170,6 +4421,7 @@
     // TANK32: which model family the card rows show
     let tankModelView = (getTankVariant(selectedTankVariantId).model) || 'A';
     function setTankModelView(m) {
+        playUiClick();
         tankModelView = TANK_MODEL_INFO[m] ? m : 'A';
         queueModelThumbnails(tankModelView);
         renderTankSelectRow();
@@ -4481,6 +4733,8 @@
     }
 
     function playUiConfirm() {
+        playSample('buy', { vol: 0.5 });
+        return;
         try {
             if (typeof playHitMarkerSound === 'function') playHitMarkerSound();
         } catch (e) {}
@@ -4706,6 +4960,7 @@
         initAudio();
         boostActiveRemaining = BOOST_DURATION_SEC * playerStats.boostMul;
         boostMultiplier = 1.6;
+        playSample('boost', { vol: 0.7 });
         updateBoostUI();
     }
 
@@ -4766,24 +5021,285 @@ ${Math.ceil(boostActiveRemaining)}s`;
         return s - Math.floor(s);
     }
 
+    // =========================================================================
+    // TANK40: SOUND ENGINE — procedurally baked samples, buses, outdoor reverb, distance + direction
+    // =========================================================================
     let audioCtx = null;
-    let engineOsc = null;
+    let engineOsc = null;   // kept for compatibility (engine is now a small synth graph, see engineNodes)
     let engineGain = null;
     let isBgmPlaying = false;
     let bgmTimer = null;
     let bgmStep = 0;
+    const AUD = { master: null, sfx: null, music: null, engine: null, amb: null, reverb: null, reverbSend: null, buf: {}, voices: 0 };
+    const audioPrefs = { sfx: 0.9, music: 0.55 };
+    try {
+        const ap = JSON.parse(localStorage.getItem('tankAceAudio') || 'null');
+        if (ap && typeof ap.sfx === 'number') { audioPrefs.sfx = ap.sfx; audioPrefs.music = ap.music; }
+    } catch (e) {}
+    function saveAudioPrefs() { try { localStorage.setItem('tankAceAudio', JSON.stringify(audioPrefs)); } catch (e) {} }
+    function setSfxVolume(v) { audioPrefs.sfx = Math.max(0, Math.min(1, v)); if (AUD.sfx) { AUD.sfx.gain.value = audioPrefs.sfx; AUD.engine.gain.value = audioPrefs.sfx; AUD.amb.gain.value = audioPrefs.sfx; } saveAudioPrefs(); }
+    function setMusicVolume(v) { audioPrefs.music = Math.max(0, Math.min(1, v)); if (AUD.music) AUD.music.gain.value = audioPrefs.music; saveAudioPrefs(); }
 
     function initAudio() {
         if (!audioCtx) {
             const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
             if (!AudioContextCtor) return;
             audioCtx = new AudioContextCtor();
+            buildAudioGraph();
+            bakeAllSamples();
             startEngineSound();
             startHappyBGM();
         }
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume().catch(() => {});
         }
+    }
+
+    function buildAudioGraph() {
+        const ctx = audioCtx;
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 5; comp.attack.value = 0.004; comp.release.value = 0.22;
+        AUD.master = ctx.createGain(); AUD.master.gain.value = 0.95;
+        AUD.master.connect(comp); comp.connect(ctx.destination);
+        AUD.sfx = ctx.createGain(); AUD.sfx.gain.value = audioPrefs.sfx; AUD.sfx.connect(AUD.master);
+        AUD.music = ctx.createGain(); AUD.music.gain.value = audioPrefs.music; AUD.music.connect(AUD.master);
+        AUD.engine = ctx.createGain(); AUD.engine.gain.value = audioPrefs.sfx; AUD.engine.connect(AUD.master);
+        AUD.amb = ctx.createGain(); AUD.amb.gain.value = audioPrefs.sfx; AUD.amb.connect(AUD.master);
+        // outdoor reverb: 2.2s stereo decaying noise with early slap echoes off terrain
+        const len = Math.floor(ctx.sampleRate * 2.2);
+        const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (let c = 0; c < 2; c++) {
+            const d = ir.getChannelData(c);
+            for (let i = 0; i < len; i++) {
+                const t = i / ctx.sampleRate;
+                d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6) * 0.55;
+            }
+            [0.09, 0.21, 0.37].forEach((tt, k) => { const p = Math.floor((tt + c * 0.013) * ctx.sampleRate); if (p < len) d[p] += 0.5 / (k + 1); });
+        }
+        AUD.reverb = ctx.createConvolver(); AUD.reverb.buffer = ir;
+        const revLp = ctx.createBiquadFilter(); revLp.type = 'lowpass'; revLp.frequency.value = 2600;
+        AUD.reverbSend = ctx.createGain(); AUD.reverbSend.gain.value = 0.42;
+        AUD.reverbSend.connect(revLp); revLp.connect(AUD.reverb); AUD.reverb.connect(AUD.sfx);
+    }
+
+    // ---------- sample baking (pure JS math, runs once; 2-3 random variants per sound) ----------
+    function bake(seconds, fn, stereo) {
+        const sr = audioCtx.sampleRate, n = Math.floor(sr * seconds);
+        const b = audioCtx.createBuffer(stereo ? 2 : 1, n, sr);
+        for (let c = 0; c < b.numberOfChannels; c++) {
+            const d = b.getChannelData(c);
+            const st = { lp: 0, lp2: 0, hp: 0, phase: 0, c };
+            for (let i = 0; i < n; i++) d[i] = fn(i / sr, st, i, sr);
+            // normalise peak to 0.9
+            let pk = 0; for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(d[i]));
+            if (pk > 0) { const k = 0.9 / pk; for (let i = 0; i < n; i++) d[i] *= k; }
+        }
+        return b;
+    }
+    const rnd = () => Math.random() * 2 - 1;
+    function onePole(st, key, x, a) { st[key] += a * (x - st[key]); return st[key]; }
+    function buildBakeTasks() {
+        const B = AUD.buf;
+        const tasks = [];
+        // MAIN GUN: supersonic crack + blast body + low boom + barrel ring
+        tasks.push(['cannon', () => {
+        B.cannon = [0, 1].map(v => bake(1.35, (t, st) => {
+            const crack = rnd() * Math.exp(-t * 160) * 1.0;
+            const bodyN = onePole(st, 'lp', rnd(), 0.08 + v * 0.01) * Math.exp(-t * 7) * 2.2;
+            const boom = Math.sin(2 * Math.PI * (48 - 18 * Math.min(1, t * 2.5)) * t) * Math.exp(-t * 4.2) * 0.95;
+            const rumble = onePole(st, 'lp2', rnd(), 0.012) * Math.exp(-t * 2.2) * 5.5;
+            const ring = Math.sin(2 * Math.PI * (612 + v * 23) * t) * Math.exp(-t * 18) * 0.08;
+            return crack + bodyN + boom + rumble + ring;
+        }));
+        }]);
+        // breech reload: clack + latch
+        tasks.push(['reload', () => {
+        B.reload = [bake(0.5, t => {
+            const hit = (t0, f, dec, a) => t >= t0 ? Math.sin(2 * Math.PI * f * (t - t0)) * Math.exp(-(t - t0) * dec) * a + rnd() * Math.exp(-(t - t0) * 120) * a * 0.6 : 0;
+            return hit(0, 820, 55, 0.7) + hit(0, 1930, 80, 0.3) + hit(0.17, 520, 40, 1.0) + hit(0.17, 1460, 70, 0.4) + hit(0.17, 140, 30, 0.6);
+        })];
+        }]);
+        // machine gun: punchy pop + mechanical tick
+        tasks.push(['mg', () => {
+        B.mg = [0, 1, 2].map(v => bake(0.16, (t, st) => {
+            const pop = onePole(st, 'lp', rnd(), 0.35) * Math.exp(-t * 55) * 1.4;
+            const thump = Math.sin(2 * Math.PI * (150 + v * 12) * t) * Math.exp(-t * 60) * 0.8;
+            const tick = Math.sin(2 * Math.PI * 3100 * t) * Math.exp(-t * 160) * 0.18;
+            return pop + thump + tick;
+        }));
+        }]);
+        tasks.push(['casing', () => {
+        B.casing = [bake(0.25, t => (Math.sin(2 * Math.PI * 4200 * t) + 0.6 * Math.sin(2 * Math.PI * 6900 * t)) * Math.exp(-t * 26) * 0.4)];
+        }]);
+        // explosion (shell impact): blast + debris crackle + low tail
+        tasks.push(['explosion', () => {
+        B.explosion = [0, 1].map(v => bake(1.5, (t, st, i, sr) => {
+            const blast = onePole(st, 'lp', rnd(), 0.18) * Math.exp(-t * 9) * 1.6;
+            const low = onePole(st, 'lp2', rnd(), 0.01 + v * 0.002) * Math.exp(-t * 1.8) * 6.5;
+            const deb = (Math.random() < 0.004 * Math.exp(-t * 2.5)) ? rnd() * 0.9 : 0;
+            const thud = Math.sin(2 * Math.PI * (42 - 10 * t) * t) * Math.exp(-t * 5) * 0.8;
+            return blast + low + deb + thud;
+        }));
+        }]);
+        // big kill explosion: double blast, metal debris ring-out, fire whoosh
+        tasks.push(['bigExplosion', () => {
+        B.bigExplosion = [0, 1].map(v => bake(2.4, (t, st) => {
+            const b1 = onePole(st, 'lp', rnd(), 0.2) * Math.exp(-t * 6) * 1.8;
+            const t2 = t - (0.32 + v * 0.07);
+            const b2 = t2 > 0 ? onePole(st, 'hp', rnd(), 0.12) * Math.exp(-t2 * 5) * 1.3 : 0;
+            const low = onePole(st, 'lp2', rnd(), 0.008) * Math.exp(-t * 1.2) * 8;
+            const metal = (Math.sin(2 * Math.PI * 347 * t) + 0.7 * Math.sin(2 * Math.PI * 911 * t) + 0.5 * Math.sin(2 * Math.PI * 1723 * t)) * Math.exp(-t * 3.2) * 0.12;
+            const deb = (Math.random() < 0.006 * Math.exp(-t * 1.4)) ? rnd() * 1.0 : 0;
+            return b1 + b2 + low + metal + deb;
+        }));
+        }]);
+        // shell hitting armour: inharmonic metal clang + crack
+        tasks.push(['armorHit', () => {
+        B.armorHit = [0, 1].map(v => bake(0.9, (t, st) => {
+            const f = [430, 1170, 2260, 3510].map(x => x * (1 + v * 0.045));
+            const clang = Math.sin(2 * Math.PI * f[0] * t) * Math.exp(-t * 5) * 0.55 + Math.sin(2 * Math.PI * f[1] * t) * Math.exp(-t * 7) * 0.4 + Math.sin(2 * Math.PI * f[2] * t) * Math.exp(-t * 11) * 0.28 + Math.sin(2 * Math.PI * f[3] * t) * Math.exp(-t * 16) * 0.2;
+            const crack = rnd() * Math.exp(-t * 90) * 1.2;
+            const thud = Math.sin(2 * Math.PI * 70 * t) * Math.exp(-t * 14) * 0.9;
+            return clang + crack + thud;
+        }));
+        }]);
+        // MG rounds pinging off armour (ricochet "p-tchew")
+        tasks.push(['ricochet', () => {
+        B.ricochet = [0, 1, 2].map(v => bake(0.45, t => {
+            const f = (2600 + v * 500) * Math.exp(-t * 2.2) + 700;
+            return (Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 9) * 0.6 + rnd() * Math.exp(-t * 140) * 0.7);
+        }));
+        }]);
+        // near miss: shell tearing through air, doppler drop
+        tasks.push(['whiz', () => {
+        B.whiz = [0, 1].map(v => bake(0.75, (t, st) => {
+            const env = Math.exp(-Math.pow((t - 0.22) / 0.13, 2));
+            const n = onePole(st, 'lp', rnd(), 0.25 - t * 0.22);
+            const tone = Math.sin(2 * Math.PI * (900 - 600 * t) * t) * 0.12;
+            return (n * 2.4 + tone) * env;
+        }));
+        }]);
+        // hit-marker: crisp two-tone tick
+        tasks.push(['tick', () => {
+        B.tick = [bake(0.09, t => (Math.sin(2 * Math.PI * 1850 * t) * (t < 0.03 ? 1 : 0) + Math.sin(2 * Math.PI * 2650 * t) * (t >= 0.03 ? 1 : 0)) * Math.exp(-t * 45))];
+        }]);
+        // lock-on: short double beep
+        tasks.push(['lock', () => {
+        B.lock = [bake(0.22, t => Math.sin(2 * Math.PI * 1320 * t) * ((t < 0.06 || (t > 0.11 && t < 0.17)) ? 0.5 : 0))];
+        }]);
+        // weapon switch: heavy selector clack
+        tasks.push(['switch', () => {
+        B.switch = [bake(0.3, t => Math.sin(2 * Math.PI * 610 * t) * Math.exp(-t * 60) * 0.7 + rnd() * Math.exp(-t * 110) * 0.5 + (t > 0.08 ? Math.sin(2 * Math.PI * 1240 * (t - 0.08)) * Math.exp(-(t - 0.08) * 70) * 0.5 : 0))];
+        }]);
+        // optic zoom: soft motorised click
+        tasks.push(['zoom', () => {
+        B.zoom = [bake(0.18, (t, st) => onePole(st, 'lp', rnd(), 0.3) * Math.exp(-t * 40) * 0.5 + Math.sin(2 * Math.PI * 2100 * t) * Math.exp(-t * 90) * 0.3)];
+        }]);
+        // boost: turbo spool + exhaust whoosh
+        tasks.push(['boost', () => {
+        B.boost = [bake(1.4, (t, st) => {
+            const spool = Math.sin(2 * Math.PI * (380 + 900 * Math.min(1, t * 1.6)) * t) * Math.min(1, t * 6) * Math.exp(-t * 1.4) * 0.22;
+            const whoosh = onePole(st, 'lp', rnd(), 0.05 + 0.15 * Math.min(1, t * 2)) * Math.min(1, t * 8) * Math.exp(-t * 2.2) * 2.2;
+            return spool + whoosh;
+        })];
+        }]);
+        // UI: click, purchase, victory / defeat stingers, low-HP heartbeat
+        tasks.push(['click', () => {
+        B.click = [bake(0.06, t => Math.sin(2 * Math.PI * 1400 * t) * Math.exp(-t * 90))];
+        }]);
+        tasks.push(['buy', () => {
+        B.buy = [bake(0.7, t => {
+            const n = (t0, f) => t >= t0 ? (Math.sin(2 * Math.PI * f * (t - t0)) + 0.4 * Math.sin(2 * Math.PI * f * 2 * (t - t0))) * Math.exp(-(t - t0) * 7) : 0;
+            return n(0, 784) * 0.5 + n(0.09, 1175) * 0.55 + (t < 0.05 ? rnd() * 0.4 : 0);
+        })];
+        }]);
+        const brass = (t, f) => { let s = 0; for (let h = 1; h <= 6; h++) s += Math.sin(2 * Math.PI * f * h * t) / h; return s * Math.min(1, t * 25); };
+        tasks.push(['victory', () => {
+        B.victory = [bake(2.0, t => {
+            const n = (t0, f, d) => t >= t0 ? brass(t - t0, f) * Math.exp(-(t - t0) * d) : 0;
+            return (n(0, 392, 3) + n(0.16, 494, 3) + n(0.32, 587, 3) + n(0.52, 784, 1.4) + n(0.52, 587, 1.6) * 0.6) * 0.3;
+        })];
+        }]);
+        tasks.push(['defeat', () => {
+        B.defeat = [bake(2.2, t => {
+            const n = (t0, f, d) => t >= t0 ? brass(t - t0, f) * Math.exp(-(t - t0) * d) : 0;
+            return (n(0, 330, 2.5) + n(0.3, 294, 2.5) + n(0.6, 247, 1.2) + n(0.6, 196, 1.2) * 0.7) * 0.3;
+        })];
+        }]);
+        tasks.push(['heartbeat', () => {
+        B.heartbeat = [bake(0.5, t => Math.sin(2 * Math.PI * 55 * t) * (Math.exp(-t * 22) + (t > 0.18 ? Math.exp(-(t - 0.18) * 26) * 0.7 : 0)))];
+        }]);
+        // track clatter loop (rate follows speed) and wind loop
+        tasks.push(['tracks', () => {
+        B.tracks = [bake(1.0, (t, st, i, sr) => {
+            const link = (t * 12) % 1;
+            const clank = Math.sin(2 * Math.PI * 1150 * link / 12) * Math.exp(-link * 30) * 0.5 + rnd() * Math.exp(-link * 45) * 0.35;
+            const squeal = Math.sin(2 * Math.PI * 2300 * t + Math.sin(2 * Math.PI * 3 * t) * 2) * 0.03;
+            return clank + squeal + onePole(st, 'lp', rnd(), 0.05) * 0.4;
+        })];
+        }]);
+        tasks.push(['wind', () => {
+        B.wind = [bake(2.5, (t, st) => onePole(st, 'lp', rnd(), 0.012 + 0.008 * Math.sin(2 * Math.PI * 0.25 * t)) * (0.7 + 0.3 * Math.sin(2 * Math.PI * 0.5 * t)) * 3, true)];
+        }]);
+        return tasks;
+    }
+    // TANK40: bake the sounds needed right away first, then the rest a little at a time (no long freeze on phones)
+    function bakeAllSamples(sync) {
+        const tasks = buildBakeTasks();
+        const first = ['cannon', 'mg', 'tick', 'tracks', 'explosion', 'armorHit'];
+        tasks.filter(t => sync || first.indexOf(t[0]) !== -1).forEach(t => t[1]());
+        if (sync) return;
+        const rest = tasks.filter(t => first.indexOf(t[0]) === -1);
+        (function step() {
+            const t = rest.shift();
+            if (!t) { startAmbience(); return; }
+            try { t[1](); } catch (e) {}
+            setTimeout(step, 24);
+        })();
+    }
+
+    // ---------- playback ----------
+    function pickBuf(name) { const l = AUD.buf[name]; return l ? l[Math.floor(Math.random() * l.length)] : null; }
+    // opts: { vol, rate, pos (THREE.Vector3), reverb (0..1), bus }
+    function playSample(name, opts) {
+        if (!audioCtx || audioCtx.state !== 'running' || AUD.voices > 28) return null;
+        const buf = pickBuf(name);
+        if (!buf) return null;
+        opts = opts || {};
+        const ctx = audioCtx, now = ctx.currentTime;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.playbackRate.value = (opts.rate || 1) * (0.97 + Math.random() * 0.06);
+        const g = ctx.createGain();
+        let vol = opts.vol == null ? 1 : opts.vol;
+        let node = src, delay = 0;
+        if (opts.pos) {
+            const dx = opts.pos.x - tankPos.x, dz = opts.pos.z - tankPos.z;
+            const d = Math.hypot(dx, dz);
+            if (d > 2200) return null;
+            vol *= 1 / (1 + d / 55);
+            const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+            lp.frequency.value = Math.max(380, 16000 * Math.exp(-d / 320));
+            node.connect(lp); node = lp;
+            if (ctx.createStereoPanner) {
+                const right = Math.cos(aimYaw) * dx - Math.sin(aimYaw) * dz;
+                const pan = ctx.createStereoPanner();
+                pan.pan.value = d > 1 ? Math.max(-0.85, Math.min(0.85, right / d)) : 0;
+                node.connect(pan); node = pan;
+            }
+            delay = Math.min(2.0, d / 343); // sound travels — far explosions arrive late
+        }
+        g.gain.value = vol;
+        node.connect(g);
+        g.connect(opts.bus || AUD.sfx);
+        if (opts.reverb && AUD.reverbSend) {
+            const rs = ctx.createGain(); rs.gain.value = opts.reverb * Math.min(1, vol * 1.5 + 0.2);
+            g.connect(rs); rs.connect(AUD.reverbSend);
+        }
+        AUD.voices++;
+        src.onended = () => { AUD.voices = Math.max(0, AUD.voices - 1); };
+        src.start(now + delay);
+        return src;
     }
 
     function toggleBGM() {
@@ -4794,271 +5310,139 @@ ${Math.ceil(boostActiveRemaining)}s`;
         }
     }
 
-    function startHappyBGM() {
-        isBgmPlaying = true;
-        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00];
-        const melodySeq = [0, 2, 4, 7, 4, 2, 0, 4, 5, 7, 9, 7, 5, 4, 2, 4, 0, 2, 4, 7, 9, 7, 5, 4, 2, 4, 5, 7, 4, 2, 0, 0];
-        const bassSeq = [0, 0, 4, 4, 5, 5, 3, 3];
-        const tempoMs = 180;
-
-        if (bgmTimer) clearInterval(bgmTimer);
-
-        bgmTimer = setInterval(() => {
-            if (isGamePaused || !isBgmPlaying || !audioCtx || audioCtx.state !== 'running') return;
-
-            const now = audioCtx.currentTime;
-            const noteIndex = melodySeq[bgmStep % melodySeq.length];
-            const freq = notes[noteIndex % notes.length];
-
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now);
-            gain.gain.setValueAtTime(0.08, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 0.16);
-
-            if (bgmStep % 4 === 0) {
-                const bassIndex = bassSeq[(Math.floor(bgmStep / 4)) % bassSeq.length];
-                const bassFreq = notes[bassIndex] / 2;
-                const bassOsc = audioCtx.createOscillator();
-                const bassGain = audioCtx.createGain();
-                bassOsc.type = 'sine';
-                bassOsc.frequency.setValueAtTime(bassFreq, now);
-                bassGain.gain.setValueAtTime(0.12, now);
-                bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                bassOsc.connect(bassGain);
-                bassGain.connect(audioCtx.destination);
-                bassOsc.start(now);
-                bassOsc.stop(now + 0.26);
-            }
-            bgmStep++;
-        }, tempoMs);
-    }
-
+    // TANK43: background music removed by request (sound effects stay)
+    const MUSIC = { lastFire: 0 };
+    function startHappyBGM() {}
+    function musicDuck() {}
+    // ---------- diesel engine: 2 detuned pulse-ish oscillators + cylinder chug + filter that opens with load, track loop ----------
+    const engineNodes = {};
     function startEngineSound() {
         if (!audioCtx) return;
         try {
-            engineOsc = audioCtx.createOscillator();
-            engineOsc.type = 'sawtooth';
-            engineOsc.frequency.setValueAtTime(48, audioCtx.currentTime);
-            engineGain = audioCtx.createGain();
-            engineGain.gain.setValueAtTime(0.035, audioCtx.currentTime);
-            engineOsc.connect(engineGain);
-            engineGain.connect(audioCtx.destination);
-            engineOsc.start();
+            const ctx = audioCtx;
+            const out = ctx.createGain(); out.gain.value = 0;
+            const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260; lp.Q.value = 2.5;
+            const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 34;
+            const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = 34 * 1.503;
+            const o2g = ctx.createGain(); o2g.gain.value = 0.35;
+            const chug = ctx.createGain(); chug.gain.value = 0.6;
+            const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 8.5;
+            const lfoAmt = ctx.createGain(); lfoAmt.gain.value = 0.38;
+            lfo.connect(lfoAmt); lfoAmt.connect(chug.gain);
+            o1.connect(chug); o2.connect(o2g); o2g.connect(chug);
+            chug.connect(lp); lp.connect(out); out.connect(AUD.engine);
+            const turbo = ctx.createOscillator(); turbo.type = 'sine'; turbo.frequency.value = 1400;
+            const turboG = ctx.createGain(); turboG.gain.value = 0;
+            turbo.connect(turboG); turboG.connect(AUD.engine);
+            const tr = ctx.createBufferSource(); tr.buffer = AUD.buf.tracks[0]; tr.loop = true;
+            const trG = ctx.createGain(); trG.gain.value = 0;
+            const trBp = ctx.createBiquadFilter(); trBp.type = 'bandpass'; trBp.frequency.value = 900; trBp.Q.value = 0.7;
+            tr.connect(trBp); trBp.connect(trG); trG.connect(AUD.engine);
+            [o1, o2, lfo, turbo, tr].forEach(n => n.start());
+            Object.assign(engineNodes, { out, lp, o1, o2, lfo, turbo, turboG, tr, trG });
+            engineOsc = o1; engineGain = out;
+        } catch (e) {}
+    }
+    function startAmbience() {
+        try {
+            const src = audioCtx.createBufferSource(); src.buffer = AUD.buf.wind[0]; src.loop = true;
+            const g = audioCtx.createGain(); g.gain.value = 0.05;
+            src.connect(g); g.connect(AUD.amb); src.start();
+            AUD.windGain = g;
         } catch (e) {}
     }
 
-    /* CTRL 6: Engine pitch driven by actual tank movement speed (Math.abs(tankSpeedUnits)) */
+    /* CTRL 6: Engine sound driven by actual tank movement speed */
     function updateEngineSound() {
-        if (engineOsc && audioCtx) {
-            const maxRefSpeed = playerStats.speed * 1.6;
-            const normalizedSpeed = Math.max(0, Math.min(1, Math.abs(tankSpeedUnits) / maxRefSpeed));
-            const targetFreq = 36 + (normalizedSpeed * 56);
-            engineOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.08);
+        if (!engineNodes.out || !audioCtx) return;
+        const t = audioCtx.currentTime;
+        const maxRefSpeed = playerStats.speed * 1.6;
+        const sp = Math.max(0, Math.min(1, Math.abs(tankSpeedUnits) / maxRefSpeed));
+        const boosting = boostActiveRemaining > 0;
+        const rpm = 30 + sp * 44 + (boosting ? 10 : 0);
+        engineNodes.o1.frequency.setTargetAtTime(rpm, t, 0.12);
+        engineNodes.o2.frequency.setTargetAtTime(rpm * 1.503, t, 0.12);
+        engineNodes.lfo.frequency.setTargetAtTime(rpm / 4, t, 0.12);
+        engineNodes.lp.frequency.setTargetAtTime(220 + sp * 520 + (boosting ? 400 : 0), t, 0.15);
+        engineNodes.out.gain.setTargetAtTime(0.16 + sp * 0.1, t, 0.2);
+        engineNodes.turboG.gain.setTargetAtTime(boosting ? 0.018 : 0.002 + sp * 0.004, t, 0.25);
+        engineNodes.turbo.frequency.setTargetAtTime(1100 + sp * 900 + (boosting ? 900 : 0), t, 0.3);
+        engineNodes.tr.playbackRate.setTargetAtTime(0.3 + sp * 1.4, t, 0.1);
+        engineNodes.trG.gain.setTargetAtTime(sp > 0.03 ? 0.05 + sp * 0.17 : 0, t, 0.12);
+    }
+    // per-frame: mute engine in menus / pause, low-HP heartbeat, lock-on edge
+    let audioLowHpTimer = 0, audioPrevLock = false;
+    function audioTick(dt, inGame) {
+        if (!audioCtx || !engineNodes.out) return;
+        const t = audioCtx.currentTime;
+        if (!inGame) {
+            engineNodes.out.gain.setTargetAtTime(0, t, 0.15);
+            engineNodes.trG.gain.setTargetAtTime(0, t, 0.1);
+            engineNodes.turboG.gain.setTargetAtTime(0, t, 0.1);
+            if (AUD.windGain) AUD.windGain.gain.setTargetAtTime(0.0, t, 0.3);
+            return;
         }
+        if (AUD.windGain) AUD.windGain.gain.setTargetAtTime(0.05, t, 0.5);
+        if (playerHP > 0 && playerHP <= playerStats.maxHp * 0.3 && !isGameOver && !isStageCleared) {
+            audioLowHpTimer -= dt;
+            if (audioLowHpTimer <= 0) { audioLowHpTimer = 0.95; playSample('heartbeat', { vol: 0.55 }); }
+        } else audioLowHpTimer = 0;
+    }
+    function playLockOnEdge(locked) {
+        if (locked && !audioPrevLock) playSample('lock', { vol: 0.22 });
+        audioPrevLock = locked;
     }
 
-    // FX 8: Sound throttling (prevent duplicate same-type SFX within 40ms) & cached noise buffers
-    const lastSfxPlayTimes = { cannon: 0, hitMarker: 0, destroy: 0, playerHit: 0 };
-    let cachedNoiseBuffer1s = null;
-
-    function canPlaySfx(type) {
+    // ---------- game sound effects (names kept for existing call sites) ----------
+    const lastSfxPlayTimes = { cannon: 0, mg: 0, hitMarker: 0, destroy: 0, playerHit: 0 };
+    function canPlaySfx(type, ms) {
         const now = performance.now();
-        if (now - (lastSfxPlayTimes[type] || 0) < 40) return false;
+        if (now - (lastSfxPlayTimes[type] || 0) < (ms || 40)) return false;
         lastSfxPlayTimes[type] = now;
         return true;
     }
-
-    function getSharedNoiseBuffer() {
-        if (!audioCtx) return null;
-        if (!cachedNoiseBuffer1s || cachedNoiseBuffer1s.sampleRate !== audioCtx.sampleRate) {
-            const len = audioCtx.sampleRate;
-            cachedNoiseBuffer1s = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-            const data = cachedNoiseBuffer1s.getChannelData(0);
-            for (let i = 0; i < len; i++) {
-                data[i] = Math.random() * 2 - 1;
-            }
-        }
-        return cachedNoiseBuffer1s;
-    }
-
+    let mgShotCount = 0;
     function playCannonSound() {
         initAudio();
+        MUSIC.lastFire = performance.now();
         if (!audioCtx || !canPlaySfx('cannon')) return;
-        try {
-            const now = audioCtx.currentTime;
-            const bufferSize = Math.floor(audioCtx.sampleRate * 0.09);
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.035));
-            }
-            const noiseSource = audioCtx.createBufferSource();
-            noiseSource.buffer = buffer;
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(950, now);
-            const gainNode = audioCtx.createGain();
-            gainNode.gain.setValueAtTime(0.22, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
-            noiseSource.connect(filter);
-            filter.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            noiseSource.start(now);
-
-            // FX 8: Layer low sub-thump (sine 70Hz -> 40Hz over 0.2s) for cannon punch
-            const thumpOsc = audioCtx.createOscillator();
-            const thumpGain = audioCtx.createGain();
-            thumpOsc.type = 'sine';
-            thumpOsc.frequency.setValueAtTime(70, now);
-            thumpOsc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
-            thumpGain.gain.setValueAtTime(0.28, now);
-            thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-            thumpOsc.connect(thumpGain);
-            thumpGain.connect(audioCtx.destination);
-            thumpOsc.start(now);
-            thumpOsc.stop(now + 0.21);
-        } catch (e) {}
+        playSample('cannon', { vol: 1.0, reverb: 0.9 });
+        const cd = (WEAPON_CONFIGS.cannon && WEAPON_CONFIGS.cannon.cooldownMs) || 2500;
+        setTimeout(() => { if (!isGamePaused && !isGameOver && currentWeaponType === 'cannon') playSample('reload', { vol: 0.5 }); }, Math.max(300, cd - 280));
     }
-
     function playMachineGunSound() {
         initAudio();
-        if (!audioCtx || !canPlaySfx('cannon')) return;
-        try {
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(340 + Math.random() * 60, now);
-            osc.frequency.exponentialRampToValueAtTime(110, now + 0.045);
-            gain.gain.setValueAtTime(0.085, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 0.05);
-        } catch (e) {}
+        if (!audioCtx || !canPlaySfx('mg', 45)) return;
+        playSample('mg', { vol: 0.42, reverb: 0.25, rate: 0.95 + Math.random() * 0.1 });
+        if (++mgShotCount % 4 === 0) setTimeout(() => playSample('casing', { vol: 0.08, rate: 0.8 + Math.random() * 0.5 }), 120 + Math.random() * 120);
     }
-
-    // FX 8: High crisp hit-marker tick (square 1400Hz -> 900Hz, 0.05s, low volume)
     function playHitMarkerSound() {
         initAudio();
         if (!audioCtx || !canPlaySfx('hitMarker')) return;
-        try {
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(1400, now);
-            osc.frequency.exponentialRampToValueAtTime(900, now + 0.05);
-            gain.gain.setValueAtTime(0.065, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 0.055);
-        } catch (e) {}
+        playSample('tick', { vol: 0.32 });
     }
-
-    // FX 8: Heavy enemy destruction boom (noise + 400Hz lowpass, 0.6s decay + metallic ping)
-    function playDestroySound() {
+    function playDestroySound(pos, big) {
         initAudio();
         if (!audioCtx || !canPlaySfx('destroy')) return;
-        try {
-            const now = audioCtx.currentTime;
-            const noiseBuf = getSharedNoiseBuffer();
-            if (noiseBuf) {
-                const noiseSrc = audioCtx.createBufferSource();
-                noiseSrc.buffer = noiseBuf;
-                const lp = audioCtx.createBiquadFilter();
-                lp.type = 'lowpass';
-                lp.frequency.setValueAtTime(400, now);
-                lp.frequency.exponentialRampToValueAtTime(90, now + 0.6);
-                const nGain = audioCtx.createGain();
-                nGain.gain.setValueAtTime(0.36, now);
-                nGain.gain.exponentialRampToValueAtTime(0.002, now + 0.6);
-                noiseSrc.connect(lp);
-                lp.connect(nGain);
-                nGain.connect(audioCtx.destination);
-                noiseSrc.start(now);
-                noiseSrc.stop(now + 0.61);
-            }
-
-            // Short metallic clang component
-            const metalOsc = audioCtx.createOscillator();
-            const metalGain = audioCtx.createGain();
-            metalOsc.type = 'triangle';
-            metalOsc.frequency.setValueAtTime(620, now);
-            metalOsc.frequency.exponentialRampToValueAtTime(180, now + 0.14);
-            metalGain.gain.setValueAtTime(0.14, now);
-            metalGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-            metalOsc.connect(metalGain);
-            metalGain.connect(audioCtx.destination);
-            metalOsc.start(now);
-            metalOsc.stop(now + 0.15);
-        } catch (e) {}
+        playSample('bigExplosion', { vol: big ? 1.3 : 1.05, pos, reverb: 1.0, rate: big ? 0.8 : 1 });
     }
-
-    // FX 8: Metallic armor impact clang when player is hit (bandpass 1800Hz noise 0.18s + low rumble)
     function playPlayerHitSound() {
         initAudio();
         if (!audioCtx || !canPlaySfx('playerHit')) return;
-        try {
-            const now = audioCtx.currentTime;
-            const noiseBuf = getSharedNoiseBuffer();
-            if (noiseBuf) {
-                const noiseSrc = audioCtx.createBufferSource();
-                noiseSrc.buffer = noiseBuf;
-                const bp = audioCtx.createBiquadFilter();
-                bp.type = 'bandpass';
-                bp.frequency.setValueAtTime(1800, now);
-                bp.Q.setValueAtTime(3.2, now);
-                const nGain = audioCtx.createGain();
-                nGain.gain.setValueAtTime(0.34, now);
-                nGain.gain.exponentialRampToValueAtTime(0.002, now + 0.18);
-                noiseSrc.connect(bp);
-                bp.connect(nGain);
-                nGain.connect(audioCtx.destination);
-                noiseSrc.start(now);
-                noiseSrc.stop(now + 0.19);
-            }
-
-            const rumbleOsc = audioCtx.createOscillator();
-            const rumbleGain = audioCtx.createGain();
-            rumbleOsc.type = 'sawtooth';
-            rumbleOsc.frequency.setValueAtTime(135, now);
-            rumbleOsc.frequency.exponentialRampToValueAtTime(36, now + 0.22);
-            rumbleGain.gain.setValueAtTime(0.28, now);
-            rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-            rumbleOsc.connect(rumbleGain);
-            rumbleGain.connect(audioCtx.destination);
-            rumbleOsc.start(now);
-            rumbleOsc.stop(now + 0.23);
-        } catch (e) {}
+        playSample('armorHit', { vol: 1.0, reverb: 0.5 });
+        playSample('explosion', { vol: 0.45, rate: 1.2 });
     }
-
-    function playHitSound() {
+    // our shell hitting an enemy tank
+    function playHitSound(pos, mg) {
         initAudio();
         if (!audioCtx) return;
-        try {
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(170, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(38, audioCtx.currentTime + 0.16);
-            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.16);
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.16);
-        } catch (e) {}
+        if (mg) playSample('ricochet', { vol: 0.32, pos, rate: 0.9 + Math.random() * 0.3 });
+        else { playSample('armorHit', { vol: 0.85, pos, reverb: 0.6, rate: 0.85 }); playSample('explosion', { vol: 0.7, pos, reverb: 0.7 }); }
     }
+    function playEnemyCannonAt(pos, boss) { playSample('cannon', { vol: boss ? 1.1 : 0.85, pos, reverb: 1.0, rate: boss ? 0.82 : 0.95 + Math.random() * 0.1 }); }
+    function playImpactAt(pos, small) { playSample(small ? 'ricochet' : 'explosion', { vol: small ? 0.22 : 0.9, pos, reverb: small ? 0.2 : 0.8 }); }
+    function playWhizAt(pos) { playSample('whiz', { vol: 0.7, pos: pos }); }
+    function playUiClick() { initAudio(); playSample('click', { vol: 0.25 }); }
 
     // TANK SELECT: Procedural paint + weathering canvas per player variant (mottled, scorched, painted, battle-worn ...)
     function hexToRgbArr(hex) {
@@ -8636,6 +9020,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
     function selectWeapon(type) {
         setTimeout(() => { if (typeof updateMobileWeaponButtons === 'function') updateMobileWeaponButtons(); }, 0);
         if (!WEAPON_CONFIGS[type]) return;
+        if (currentWeaponType !== type) playSample('switch', { vol: 0.45 });
         currentWeaponType = type;
         const cannonBtn = document.getElementById('weapon-cannon-btn');
         const mgBtn = document.getElementById('weapon-mg-btn');
@@ -10484,6 +10869,8 @@ ${Math.ceil(boostActiveRemaining)}s`;
     function triggerStageFailure(title, desc) {
         if (isGameOver || isStageCleared || pendingVictoryOverlay) return;
         isGameOver = true;
+        musicDuck(3.2);
+        playSample('defeat', { vol: 0.6 }); // TANK40
         isFiringActive = false;
         exitCanvasPointerLock();
         // ECONOMY: keep half of the kill points even when the mission fails
@@ -10495,6 +10882,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
 
     function triggerStageVictory(reasonText) {
         if (isGameOver || isStageCleared || pendingVictoryOverlay) return;
+        setTimeout(() => { musicDuck(3.0); playSample('victory', { vol: 0.65 }); }, 600); // TANK40: after the last boom
         const cfg = stageObjective.config;
         const obj = stageObjective;
         const hpOk = playerHP >= playerStats.maxHp * 0.5;
@@ -12151,6 +12539,11 @@ ${Math.ceil(boostActiveRemaining)}s`;
         });
 
         window.addEventListener('keydown', e => {
+            // TANK41: ESC / Enter close the guide first
+            if (isHowToOpen() && (e.code === 'Escape' || e.code === 'Enter')) {
+                closeHowTo();
+                return;
+            }
             // ECONOMY: ESC closes the depot first
             if (e.code === 'Escape' && isDepotOpen()) {
                 closeDepot();
@@ -12684,6 +13077,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
             lastFrameTime = currentTime;
             pollGamepad(dtSeconds); // TANK36
             renderWatchdog(dtSeconds); // TANK39
+            audioTick(dtSeconds, !isGamePaused && !isStageModalOpen() && !isDepotOpen()); // TANK40
             if (renderer) renderer.info.reset();
 
             fpsSampleFrames++;
@@ -12802,6 +13196,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
 
                 /* CTRL 4: Check enemy lock-on and trigger auto-fire or manual fire */
                 const isEnemyLockedOn = !isGameOver && !isStageCleared && checkCrosshairEnemyLockOn();
+                playLockOnEdge(isEnemyLockedOn);
                 if (crosshairElement) {
                     crosshairElement.classList.toggle('locked', isEnemyLockedOn);
                 }
@@ -12966,9 +13361,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
 
                                 // FX 8: Crisp hit-marker tick sound
                                 playHitMarkerSound();
-                                if (b.weaponType !== 'mg') {
-                                    playHitSound();
-                                }
+                                playHitSound(closestPointVec, b.weaponType === 'mg'); // TANK40: armour clang / MG ricochet
                                 createExplosion(closestPointVec, b.weaponType === 'mg' ? 0.32 : 1.0);
                                 scene.remove(b.mesh);
                                 bullets.splice(i, 1);
@@ -12980,7 +13373,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                                     addTrauma(killTrauma);
 
                                     // FX 8: Heavy enemy destruction boom + metallic sound
-                                    playDestroySound();
+                                    playDestroySound(en.position, en.isBoss);
 
                                     // FX 5: Larger kill explosion (bigger for bigger tanks) & burning wreck
                                     createExplosion(en.position, en.isBoss ? 3.2 : 1.8 * (en.radius / 3.6));
@@ -12999,6 +13392,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                     // PHASE1: Shells are stopped by trees and rocks
                     if (findObstacleHitOnSegment(segPrevPos, b.mesh.position, losSampleScratch)) {
                         createExplosion(losSampleScratch, b.weaponType === 'mg' ? 0.25 : 0.9);
+                        playImpactAt(losSampleScratch, b.weaponType === 'mg');
                         scene.remove(b.mesh);
                         bullets.splice(i, 1);
                         continue;
@@ -13014,6 +13408,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                             b.mesh.position.copy(losSampleScratch);
                             b.mesh.position.y = segGround;
                             createExplosion(b.mesh.position, b.weaponType === 'mg' ? 0.25 : 1.0);
+                            if (b.weaponType !== 'mg' || Math.random() < 0.3) playImpactAt(b.mesh.position, b.weaponType === 'mg');
                             scene.remove(b.mesh);
                             bullets.splice(i, 1);
                             hitTerrain = true;
@@ -13040,7 +13435,9 @@ ${Math.ceil(boostActiveRemaining)}s`;
 
                     // Player tank
                     enemyAimCenterScratch.set(tankPos.x, tankPos.y + 1.8, tankPos.z);
-                    if (canHurt && distancePointToSegment3D(enemyAimCenterScratch, segPrevPos, eb.mesh.position, closestPointVec) < 5.0) {
+                    const ebMissDist = distancePointToSegment3D(enemyAimCenterScratch, segPrevPos, eb.mesh.position, closestPointVec);
+                    if (canHurt && ebMissDist >= 5.0 && ebMissDist < 18 && !eb.whizzed) { eb.whizzed = true; playWhizAt(closestPointVec); } // TANK40: near miss
+                    if (canHurt && ebMissDist < 5.0) {
                         playerHP -= (eb.damage || 10);
                         lastPlayerDamageTime = missionClock;
                         haptic(45, 0.8); // TANK36
@@ -13091,6 +13488,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                     // Trees & rocks give cover
                     if (findObstacleHitOnSegment(segPrevPos, eb.mesh.position, losSampleScratch)) {
                         createExplosion(losSampleScratch, 0.8);
+                        playImpactAt(losSampleScratch, false);
                         scene.remove(eb.mesh);
                         enemyBullets.splice(i, 1);
                         continue;
@@ -13099,6 +13497,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                     const ebGround = getTerrainHeight(eb.mesh.position.x, eb.mesh.position.z);
                     if (eb.mesh.position.y <= ebGround) {
                         createExplosion(eb.mesh.position, 1.0);
+                        playImpactAt(eb.mesh.position, false);
                         scene.remove(eb.mesh);
                         enemyBullets.splice(i, 1);
                         continue;
@@ -13483,6 +13882,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                                 scene.add(eBulletMesh);
                                 createMuzzleBlast(muzzleScratchVec, enemyBulletDirScratch.subVectors(targetPoint, muzzleScratchVec).normalize());
 
+                                playEnemyCannonAt(muzzleScratchVec, en.isBoss); // TANK40
                                 enemyBullets.push({
                                     mesh: eBulletMesh,
                                     dir: enemyBulletDirScratch.clone(),
@@ -13625,6 +14025,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
                             if (!isLineOfSightBlocked(aiCoverFrom, aiCoverTo)) exposed++;
                         }
                     }
+                    window.__musicThreat = { threats, exposed }; // TANK42: battle music intensity
                     const coverEl = document.getElementById('hud-cover');
                     if (coverEl) {
                         if (threats === 0) {
