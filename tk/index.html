@@ -2108,6 +2108,12 @@
         #scope-view.scope-compact { left: calc(12px + env(safe-area-inset-left)); transform: none; border-radius: 6px; }
         #scope-view.scope-compact .scope-readout { font-size: 7px; }
         #scope-view.scope-compact #scope-housing-label, #scope-view.scope-compact .scope-drop-num { display: none; }
+        /* TANK39: diagnostics panel */
+        .diag-btn { margin-top: 10px; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; cursor: pointer; color: #cbd5e1; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(148, 163, 184, 0.5); }
+        #pause-overlay .overlay-card { max-height: 100%; overflow-y: auto; }
+        body.is-phone #diag-panel { font-size: 8.5px; max-height: 52vh; }
+        body.is-phone #pause-overlay .overlay-card.diag-open .overlay-desc { display: none; }
+        #diag-panel { display: none; text-align: left; margin: 10px 0 0; padding: 8px 10px; max-height: 46vh; max-width: min(560px, 86vw); overflow: auto; white-space: pre-wrap; word-break: break-word; font: 10.5px/1.45 ui-monospace, monospace; color: #e2e8f0; background: rgba(2, 6, 23, 0.85); border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 6px; -webkit-user-select: text; user-select: text; }
 </style>
 </head>
 <body>
@@ -2269,6 +2275,8 @@
                     STAGE SELECT 🗺️
                 </button>
             </div>
+            <button type="button" class="diag-btn" onclick="showDiagnostics()">DIAGNOSTICS 🔧</button>
+            <pre id="diag-panel"></pre>
         </div>
     </div>
 
@@ -2632,6 +2640,24 @@
         maxParticles: 240,
         castTreeShadows: true
     };
+
+    // =========================================================================
+    // TANK39: DIAGNOSTICS — captures WebGL / shader errors and shows a report from the pause menu
+    // =========================================================================
+    const diag = { errors: [], repairs: 0, lastRepair: '', contextLost: 0 };
+    (function hookConsole() {
+        ['error', 'warn'].forEach(level => {
+            const orig = console[level];
+            console[level] = function () {
+                try {
+                    const msg = Array.prototype.map.call(arguments, a => (a && a.message) ? a.message : String(a)).join(' ');
+                    if (/THREE|WebGL|shader|GL_|program/i.test(msg) && diag.errors.length < 12) diag.errors.push(level.toUpperCase() + ': ' + msg.slice(0, 220));
+                } catch (e) {}
+                return orig.apply(console, arguments);
+            };
+        });
+        window.addEventListener('error', e => { if (diag.errors.length < 12) diag.errors.push('JS: ' + String(e.message).slice(0, 200)); });
+    })();
 
     // =========================================================================
     // TANK36: DEVICE DETECTION (iOS / Android, phone / tablet)
@@ -3696,6 +3722,61 @@
         }
         if (menuOpen || depotOpen || msgOpen || pauseOpen) { gpMoveOn = false; gpFireHeld = false; }
         gpPrev = gp.buttons.map(b => !!(b && (b.pressed || b.value > 0.5)));
+    }
+    let touchZoneCache = null, touchZoneTime = 0;
+    function getTouchButtonZones() {
+        const now = performance.now();
+        if (touchZoneCache && now - touchZoneTime < 500) return touchZoneCache;
+        touchZoneTime = now;
+        const host = document.getElementById('canvas-container');
+        const joy = document.getElementById('virtual-joystick');
+        if (!host || !joy) return (touchZoneCache = null);
+        const hr = host.getBoundingClientRect();
+        const jr = joy.getBoundingClientRect();
+        let rl = Infinity, rt = Infinity;
+        ['mobile-fire-btn', 'mobile-boost-btn', 'mobile-swap-btn', 'mobile-zoom-btn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el || !el.offsetParent) return;
+            const r = el.getBoundingClientRect();
+            rl = Math.min(rl, r.left); rt = Math.min(rt, r.top);
+        });
+        touchZoneCache = {
+            leftRight: jr.right - hr.left, leftTop: jr.top - hr.top - 20, // includes the MOVE label
+            rightLeft: (rl === Infinity ? hr.width : rl - hr.left), rightTop: (rt === Infinity ? hr.height : rt - hr.top)
+        };
+        return touchZoneCache;
+    }
+    function showDiagnostics() {
+        const el = document.getElementById('diag-panel');
+        if (!el) return;
+        let txt = '';
+        try {
+            const gl = renderer.getContext();
+            const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+            const caps = renderer.capabilities;
+            const attrs = gl.getContextAttributes ? gl.getContextAttributes() : {};
+            const info = renderer.info;
+            const host = document.getElementById('canvas-container');
+            const size = new THREE.Vector2(); renderer.getSize(size);
+            const f = v => (typeof v === 'number' ? (Math.round(v * 100) / 100) : v);
+            txt += `camera pos ${f(camera.position.x)},${f(camera.position.y)},${f(camera.position.z)} fov ${f(camera.fov)} aspect ${f(camera.aspect)} near ${camera.near} far ${camera.far}\n`;
+            txt += `tank ${f(tankPos.x)},${f(tankPos.y)},${f(tankPos.z)} hullYaw ${f(hullYaw)} aim ${f(aimYaw)}/${f(aimPitch)} rig ${playerTankRig ? (playerTankRig.variantId + ' visible ' + playerTankRig.root.visible) : 'none'}\n`;
+            txt += `draw calls ${info.render.calls} triangles ${info.render.triangles} programs ${info.programs ? info.programs.length : '?'} geometries ${info.memory.geometries} textures ${info.memory.textures}\n`;
+            txt += `scene children ${scene.children.length} · context lost ${diag.contextLost} · auto-repairs ${diag.repairs}${diag.lastRepair ? ' (' + diag.lastRepair + ')' : ''}\n`;
+            txt += `errors (${diag.errors.length}):\n` + (diag.errors.length ? diag.errors.map(e => ' - ' + e).join('\n') : ' none') + '\n';
+            txt += `container ${host.clientWidth}x${host.clientHeight} renderer ${size.x}x${size.y} canvas ${renderer.domElement.width}x${renderer.domElement.height} synced ${window.__getSyncedSize ? window.__getSyncedSize().join('x') : '?'}\n`;
+            txt += `quality ${QUALITY.tier} pr ${f(activePixelRatio)}/${f(basePixelRatio)} dpr ${window.devicePixelRatio}\n`;
+            txt += `GPU ${dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)} · WebGL${caps.isWebGL2 ? 2 : 1} · precision ${caps.precision} · depth ${attrs.depth} · bits ${caps.isWebGL2 ? '-' : gl.getParameter(gl.DEPTH_BITS)}\n`;
+            txt += `limits tex ${caps.maxTextures} vtxU ${caps.maxVertexUniforms} fragU ${caps.maxFragmentUniforms} varyings ${caps.maxVaryings}\n`;
+            txt += `DEVICE ${JSON.stringify(DEVICE)}\n`;
+            txt += `UA ${navigator.userAgent.slice(0, 140)}\n`;
+        } catch (e) {
+            txt += 'diagnostics failed: ' + e.message;
+        }
+        el.textContent = txt;
+        el.style.display = 'block';
+        const card = el.closest('.overlay-card');
+        if (card) card.classList.add('diag-open');
     }
     function isScopeVisibleNow() {
         const sv = document.getElementById('scope-view');
@@ -10877,6 +10958,9 @@ ${Math.ceil(boostActiveRemaining)}s`;
         camera = new THREE.PerspectiveCamera(65, container.clientWidth / container.clientHeight, 0.1, 9000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.info.autoReset = false; // TANK39: diagnostics count the whole frame (main + scope)
+        renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); diag.contextLost++; diag.errors.push('WebGL context lost @' + new Date().toLocaleTimeString()); });
+        renderer.domElement.addEventListener('webglcontextrestored', () => { diag.errors.push('WebGL context restored'); });
         renderer.setSize(container.clientWidth, container.clientHeight);
         // GFX E0: Cap pixelRatio using QUALITY.pixelRatioCap (LOW 1.5 / HIGH 2.0)
         basePixelRatio = Math.min(window.devicePixelRatio || 1, QUALITY.pixelRatioCap);
@@ -12498,17 +12582,25 @@ ${Math.ceil(boostActiveRemaining)}s`;
             } else {
                 const dx = screenX - halfW, dy = screenY - halfH;
                 const angle = Math.atan2(dy, dx);
-                const maxX = halfW - margin, maxY = halfH - margin;
                 const cos = Math.cos(angle), sin = Math.sin(angle);
-                let edgeX, edgeY;
-                if (Math.abs(cos * maxY) > Math.abs(sin * maxX)) {
-                    edgeX = cos > 0 ? maxX : -maxX;
-                    edgeY = edgeX * Math.tan(angle);
-                } else {
-                    edgeY = sin > 0 ? maxY : -maxY;
-                    edgeX = edgeY / Math.tan(angle);
+                // TANK38: keep the arrow + distance label fully on screen and clear of the touch buttons
+                const touchUi = document.body.classList.contains('touch-ui') && !document.body.classList.contains('gamepad-on');
+                let mL = margin, mR = margin, mT = margin, mB = margin;
+                if (touchUi) { mL = Math.max(margin, 90); mR = Math.max(margin, 90); mT = Math.max(margin, 64); mB = Math.max(margin, 40); }
+                const limR = halfW - mR, limL = halfW - mL, limB = halfH - mB, limT = halfH - mT;
+                const tx = cos > 1e-6 ? limR / cos : (cos < -1e-6 ? limL / -cos : Infinity);
+                const ty = sin > 1e-6 ? limB / sin : (sin < -1e-6 ? limT / -sin : Infinity);
+                const tHit = Math.min(tx, ty);
+                let finalX = halfW + cos * tHit, finalY = halfH + sin * tHit;
+                if (touchUi) {
+                    // push the arrow above the joystick (bottom-left) and the action buttons (bottom-right)
+                    const zones = getTouchButtonZones();
+                    if (zones) {
+                        if (finalX < zones.leftRight + 70 && finalY > zones.leftTop - 34) finalY = zones.leftTop - 34;
+                        if (finalX > zones.rightLeft - 70 && finalY > zones.rightTop - 34) finalY = zones.rightTop - 34;
+                        finalY = Math.max(mT, finalY);
+                    }
                 }
-                const finalX = halfW + edgeX, finalY = halfH + edgeY;
                 const deg = (angle * 180 / Math.PI) + 90;
                 enemyIndicator.style.left = `${finalX}px`;
                 enemyIndicator.style.top = `${finalY}px`;
@@ -12544,6 +12636,46 @@ ${Math.ceil(boostActiveRemaining)}s`;
             });
         }
 
+        // TANK39: self-repair — if any camera / player value turns into NaN or Infinity, put it back to a sane value
+        let watchdogTimer = 0;
+        const lastGood = { x: 0, y: 0, z: 250, hullYaw: 0 };
+        const finite = v => typeof v === 'number' && isFinite(v);
+        function renderWatchdog(dt) {
+            watchdogTimer += dt;
+            if (watchdogTimer < 0.25) return;
+            watchdogTimer = 0;
+            try { runWatchdogChecks(); } catch (e) { /* never let the watchdog break a frame */ }
+        }
+        function runWatchdogChecks() {
+            const w = container.clientWidth, h = container.clientHeight;
+            if (w >= 2 && h >= 2 && (Math.abs(w - (window.__getSyncedSize()[0])) > 1 || Math.abs(h - (window.__getSyncedSize()[1])) > 1)) {
+                window.__syncRendererSize(); // layout changed without a resize event (common on iOS)
+            }
+            let repaired = '';
+            if (!finite(aimYaw)) { aimYaw = finite(hullYaw) ? hullYaw : 0; repaired += 'aimYaw '; }
+            if (!finite(aimPitch)) { aimPitch = 0; repaired += 'aimPitch '; }
+            if (!finite(tankPos.x) || !finite(tankPos.y) || !finite(tankPos.z)) { tankPos.set(lastGood.x, lastGood.y, lastGood.z); repaired += 'tankPos '; }
+            else { lastGood.x = tankPos.x; lastGood.y = tankPos.y; lastGood.z = tankPos.z; }
+            if (!finite(hullYaw)) { hullYaw = lastGood.hullYaw; repaired += 'hullYaw '; } else lastGood.hullYaw = hullYaw;
+            if (!finite(tankSpeedUnits)) { tankSpeedUnits = 0; repaired += 'speed '; }
+            if (!finite(cameraTrauma)) { cameraTrauma = 0; repaired += 'trauma '; }
+            const pm = (camera.projectionMatrix && camera.projectionMatrix.elements) || [];
+            let badCam = !finite(camera.fov) || !finite(camera.aspect) || camera.aspect <= 0 || !finite(camera.position.x) || !finite(camera.position.y) || (camera.quaternion ? !finite(camera.quaternion.x) : false);
+            for (let i = 0; i < pm.length && !badCam; i++) if (!finite(pm[i])) badCam = true;
+            if (badCam) {
+                camera.fov = BASE_CAMERA_FOV;
+                camera.aspect = (w >= 2 && h >= 2) ? w / h : 16 / 9;
+                if (camera.rotation && camera.rotation.set) camera.rotation.set(0, 0, 0);
+                if (!finite(camera.position.x) || !finite(camera.position.y) || !finite(camera.position.z)) camera.position.set(tankPos.x, tankPos.y + 8, tankPos.z + 15);
+                camera.updateProjectionMatrix();
+                repaired += 'camera ';
+            }
+            if (repaired) {
+                diag.repairs++;
+                diag.lastRepair = repaired.trim() + ' @' + new Date().toLocaleTimeString();
+            }
+        }
+
         let flagPhase = 0;
         function animate(now) {
             requestAnimationFrame(animate);
@@ -12551,6 +12683,8 @@ ${Math.ceil(boostActiveRemaining)}s`;
             const dtSeconds = Math.min(0.05, Math.max(0.001, (currentTime - lastFrameTime) / 1000));
             lastFrameTime = currentTime;
             pollGamepad(dtSeconds); // TANK36
+            renderWatchdog(dtSeconds); // TANK39
+            if (renderer) renderer.info.reset();
 
             fpsSampleFrames++;
             fpsSampleElapsed += dtSeconds;
@@ -13660,11 +13794,21 @@ ${Math.ceil(boostActiveRemaining)}s`;
             }
         }
 
-        window.addEventListener('resize', () => {
+        // TANK39: robust resize — iOS Safari can report a 0-size layout for a moment while rotating or while the
+        // address bar animates; using that would break the camera (nothing gets drawn). Ignore bad sizes and re-check.
+        let syncedW = 0, syncedH = 0, resizeRetry = 0;
+        function syncRendererSize() {
             if (!container || !camera || !renderer) return;
-            camera.aspect = container.clientWidth / container.clientHeight;
+            const w = container.clientWidth, h = container.clientHeight;
+            if (!(w >= 2 && h >= 2)) {
+                if (resizeRetry++ < 30) requestAnimationFrame(syncRendererSize);
+                return;
+            }
+            resizeRetry = 0;
+            syncedW = w; syncedH = h;
+            camera.aspect = w / h;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(w, h);
             basePixelRatio = Math.min(window.devicePixelRatio || 1, QUALITY.pixelRatioCap);
             activePixelRatio = Math.min(activePixelRatio, basePixelRatio);
             renderer.setPixelRatio(activePixelRatio);
@@ -13674,7 +13818,14 @@ ${Math.ceil(boostActiveRemaining)}s`;
             } else {
                 scopeRectCache.valid = false;
             }
-        });
+            if (typeof touchZoneCache !== 'undefined') touchZoneCache = null;
+        }
+        window.addEventListener('resize', syncRendererSize);
+        window.addEventListener('orientationchange', () => { [80, 300, 700].forEach(ms => setTimeout(syncRendererSize, ms)); });
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(syncRendererSize, 60));
+        window.__syncRendererSize = syncRendererSize;
+        window.__getSyncedSize = () => [syncedW, syncedH];
+        syncRendererSize();
 
         animate();
     };
