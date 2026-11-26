@@ -1020,7 +1020,8 @@
         tip('🔵', 'Passing:', 'the blue ring and PASS tag show who will get the ball. Passes caught and shot within 4 seconds count as assists.'),
         tip('🧤', 'Defense:', 'stay close to the ball handler and steal (about 1.2 m range). Higher DEF and the Full-Court Press raise steal chances.'),
         tip('⏱️', 'Clocks:', '24-second shot clock (violation = turnover), four 75-second quarters, overtime if tied.'),
-        tip('🏀', 'Rebounds:', 'run into a loose ball to grab it.')
+        tip('🏀', 'Rebounds:', 'run into a loose ball to grab it.'),
+        tip('🚫', 'Out of bounds:', 'stepping over the white line with the ball, or the last team to touch a loose ball that goes out, loses possession.')
       ].join('');
     }
 
@@ -4063,13 +4064,23 @@
 
     function buildLimbWithJoints(skinMat, bandMat, sockMat, shoeMat, trimColor, hasWristband, hasKneeSock) {
       const shoulderOrHipPivot = new THREE.Group();
+      const isLeg = !!shoeMat;
 
-      const topJoint = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), skinMat);
+      // 어깨/고관절 (근육감 있는 둥근 관절)
+      const topJoint = new THREE.Mesh(
+        new THREE.SphereGeometry(isLeg ? 0.095 : 0.082, 8, 8),
+        skinMat
+      );
+      topJoint.scale.set(isLeg ? 1.05 : 1.0, 1.05, isLeg ? 1.05 : 0.95);
       topJoint.castShadow = true;
       shoulderOrHipPivot.add(topJoint);
 
-      const upperLen = 0.30;
-      const upperCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.064, upperLen, 8), skinMat);
+      // 상완/허벅지: 위가 두껍고 아래로 갈수록 좁아지는 근육 굴곡
+      const upperLen = isLeg ? 0.31 : 0.28;
+      const upperCyl = new THREE.Mesh(
+        new THREE.CylinderGeometry(isLeg ? 0.092 : 0.072, isLeg ? 0.070 : 0.056, upperLen, 8),
+        skinMat
+      );
       upperCyl.position.y = -upperLen * 0.5;
       upperCyl.castShadow = true;
       shoulderOrHipPivot.add(upperCyl);
@@ -4077,54 +4088,105 @@
       const midPivot = new THREE.Group();
       midPivot.position.y = -upperLen;
 
-      const midJoint = new THREE.Mesh(new THREE.SphereGeometry(0.072, 8, 8), skinMat);
+      // 팔꿈치/무릎 관절
+      const midJoint = new THREE.Mesh(
+        new THREE.SphereGeometry(isLeg ? 0.068 : 0.056, 8, 8),
+        skinMat
+      );
       midPivot.add(midJoint);
 
-      const lowerLen = 0.30;
-      const lowerCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.054, lowerLen, 8), skinMat);
-      lowerCyl.position.y = -lowerLen * 0.5;
-      midPivot.add(lowerCyl);
+      // 하완/종아리: 종아리·팔뚝 위쪽 근육 볼륨감 후 발목/손목으로 가늘어짐
+      const lowerLen = isLeg ? 0.30 : 0.26;
+      const calfBulge = new THREE.Mesh(
+        new THREE.CylinderGeometry(isLeg ? 0.066 : 0.056, isLeg ? 0.072 : 0.058, lowerLen * 0.45, 8),
+        skinMat
+      );
+      calfBulge.position.y = -lowerLen * 0.24;
+      if (isLeg) calfBulge.castShadow = true;
+
+      const lowerShin = new THREE.Mesh(
+        new THREE.CylinderGeometry(isLeg ? 0.070 : 0.056, isLeg ? 0.046 : 0.040, lowerLen * 0.58, 8),
+        skinMat
+      );
+      lowerShin.position.y = -lowerLen * 0.72;
+      if (isLeg) lowerShin.castShadow = true;
+      midPivot.add(calfBulge, lowerShin);
 
       if (hasKneeSock && sockMat) {
-        const sockCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.058, lowerLen * 0.65, 8), sockMat);
-        sockCyl.position.y = -lowerLen * 0.67;
-        midPivot.add(sockCyl);
+        const sockCyl = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.064, 0.048, lowerLen * 0.62, 8),
+          sockMat
+        );
+        sockCyl.position.y = -lowerLen * 0.70;
+        const sockTopBand = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.067, 0.067, 0.035, 8),
+          new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 })
+        );
+        sockTopBand.position.y = -lowerLen * 0.39;
+        midPivot.add(sockCyl, sockTopBand);
       }
 
       if (hasWristband && bandMat) {
-        const wristBand = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.066, 0.065, 8), bandMat);
-        wristBand.position.y = -lowerLen * 0.78;
+        const wristBand = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.050, 0.046, 0.065, 8),
+          bandMat
+        );
+        wristBand.position.y = -lowerLen * 0.82;
         midPivot.add(wristBand);
       }
 
-      const endJoint = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 8), skinMat);
-      endJoint.position.y = -lowerLen;
-      midPivot.add(endJoint);
+      if (isLeg) {
+        // 하이탑 농구화 (발목 칼라 + 밑창 + 앞코 + 포인트 스트라이프)
+        const trimAccentMat = new THREE.MeshStandardMaterial({ color: trimColor, roughness: 0.42 });
+        const soleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 });
 
-      if (shoeMat) {
         const shoeGroup = new THREE.Group();
-        shoeGroup.position.set(0, -lowerLen - 0.05, 0.045);
+        shoeGroup.position.set(0, -lowerLen - 0.045, 0.042);
 
-        const soleCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.072, 0.24, 8), shoeMat);
-        soleCyl.rotation.x = Math.PI / 2;
-        soleCyl.scale.set(0.95, 1, 0.55);
-
-        const toeCap = new THREE.Mesh(new THREE.SphereGeometry(0.066, 8, 8), shoeMat);
-        toeCap.position.set(0, -0.01, 0.11);
-        toeCap.scale.set(0.95, 0.62, 1.05);
-
-        const accentStripe = new THREE.Mesh(
-          new THREE.BoxGeometry(0.135, 0.028, 0.21),
-          new THREE.MeshStandardMaterial({ color: trimColor, roughness: 0.4 })
+        // 하이탑 발목 칼라
+        const highTopCollar = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.056, 0.062, 0.09, 8),
+          shoeMat
         );
-        accentStripe.position.set(0, 0.015, 0.01);
+        highTopCollar.position.set(0, 0.048, -0.035);
 
-        shoeGroup.add(soleCyl, toeCap, accentStripe);
+        const collarTrim = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.058, 0.058, 0.024, 8),
+          trimAccentMat
+        );
+        collarTrim.position.set(0, 0.082, -0.035);
+
+        // 신발 몸체 & 앞코
+        const shoeBody = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.072, 0.21), shoeMat);
+        shoeBody.position.set(0, 0.008, 0.01);
+
+        const toeCap = new THREE.Mesh(new THREE.SphereGeometry(0.064, 8, 8), shoeMat);
+        toeCap.position.set(0, -0.002, 0.11);
+        toeCap.scale.set(0.98, 0.56, 1.05);
+
+        // 고무 아웃솔
+        const outsole = new THREE.Mesh(new THREE.BoxGeometry(0.134, 0.024, 0.255), soleMat);
+        outsole.position.set(0, -0.032, 0.025);
+
+        // 측면 팀 컬러 스트라이프
+        const sideStripe = new THREE.Mesh(new THREE.BoxGeometry(0.132, 0.024, 0.15), trimAccentMat);
+        sideStripe.position.set(0, 0.010, 0.015);
+
+        shoeGroup.add(highTopCollar, collarTrim, shoeBody, toeCap, outsole, sideStripe);
         midPivot.add(shoeGroup);
       } else {
-        const handSphere = new THREE.Mesh(new THREE.SphereGeometry(0.068, 8, 8), skinMat);
-        handSphere.position.set(0, -lowerLen - 0.04, 0.01);
-        midPivot.add(handSphere);
+        // 주먹 덩어리 손 (엄지 돌출 포함 스타일화)
+        const handGroup = new THREE.Group();
+        handGroup.position.set(0, -lowerLen - 0.038, 0.012);
+
+        const fist = new THREE.Mesh(new THREE.SphereGeometry(0.060, 8, 8), skinMat);
+        fist.scale.set(0.88, 1.08, 1.05);
+
+        const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), skinMat);
+        thumb.position.set(0, 0.012, 0.048);
+
+        handGroup.add(fist, thumb);
+        midPivot.add(handGroup);
       }
 
       shoulderOrHipPivot.add(midPivot);
@@ -4136,122 +4198,254 @@
       const s = bp.heightScale;
       root.scale.set(s, s, s);
 
-      const skinMat = new THREE.MeshStandardMaterial({ color: bp.skin, roughness: 0.58 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: bp.skin, roughness: 0.56 });
       const jerseyMat = new THREE.MeshStandardMaterial({ color: bp.jersey, roughness: 0.48 });
-      const trimMat = new THREE.MeshStandardMaterial({ color: bp.trim, roughness: 0.45 });
-      const hairMat = new THREE.MeshStandardMaterial({ color: bp.hair, roughness: 0.82 });
+      const trimMat = new THREE.MeshStandardMaterial({ color: bp.trim, roughness: 0.44 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: bp.hair, roughness: 0.80 });
       const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.36 });
-      const sockMat = new THREE.MeshStandardMaterial({ color: bp.trim, roughness: 0.6 });
+      const sockMat = new THREE.MeshStandardMaterial({ color: bp.trim, roughness: 0.60 });
       const bandMat = new THREE.MeshStandardMaterial({ color: bp.trim, roughness: 0.55 });
+      const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const pupilMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+      const mouthMat = new THREE.MeshBasicMaterial({ color: 0x7f1d1d });
 
+      // 1. 다리 (골반 높이 y=0.71, 총 길이 0.31+0.30+0.10 = 0.71 -> 발바닥 정확히 y=0)
       const leftLeg = buildLimbWithJoints(skinMat, bandMat, sockMat, shoeMat, bp.trim, false, bp.kneeSocks);
-      leftLeg.root.position.set(-0.125, 0.72, 0);
+      leftLeg.root.position.set(-0.122, 0.71, 0);
 
       const rightLeg = buildLimbWithJoints(skinMat, bandMat, sockMat, shoeMat, bp.trim, false, bp.kneeSocks);
-      rightLeg.root.position.set(0.125, 0.72, 0);
+      rightLeg.root.position.set(0.122, 0.71, 0);
 
+      // 2. 무릎 위까지 오는 헐렁한 농구 반바지 (골반부 + 좌우 헐렁한 바짓단)
       const shortsGroup = new THREE.Group();
       shortsGroup.position.y = 0.83;
 
-      const shortsBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.30, 12), jerseyMat);
-      shortsBody.scale.set(1.08, 1, 0.76);
-      shortsBody.castShadow = true;
+      const shortsHip = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.245, 0.22, 12), jerseyMat);
+      shortsHip.scale.set(1.08, 1, 0.78);
+      shortsHip.position.y = 0.05;
+      shortsHip.castShadow = true;
 
-      const waistBand = new THREE.Mesh(new THREE.CylinderGeometry(0.224, 0.224, 0.055, 12), trimMat);
-      waistBand.scale.set(1.08, 1, 0.77);
-      waistBand.position.y = 0.13;
+      const waistBand = new THREE.Mesh(new THREE.CylinderGeometry(0.210, 0.210, 0.052, 12), trimMat);
+      waistBand.scale.set(1.08, 1, 0.79);
+      waistBand.position.y = 0.145;
 
-      const leftSideTrim = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.28, 0.16), trimMat);
-      leftSideTrim.position.set(-0.24, -0.01, 0);
-      const rightSideTrim = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.28, 0.16), trimMat);
-      rightSideTrim.position.set(0.24, -0.01, 0);
+      // 좌우 허벅지를 헐렁하게 덮는 반바지 통
+      const leftShortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.135, 0.24, 10), jerseyMat);
+      leftShortLeg.position.set(-0.122, -0.09, 0);
+      leftShortLeg.castShadow = true;
 
-      shortsGroup.add(shortsBody, waistBand, leftSideTrim, rightSideTrim);
+      const rightShortLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.135, 0.24, 10), jerseyMat);
+      rightShortLeg.position.set(0.122, -0.09, 0);
+      rightShortLeg.castShadow = true;
 
-      const torsoGroup = new THREE.Group();
-      torsoGroup.position.y = 1.28;
+      // 반바지 밑단 테두리 & 측면 라인
+      const leftHem = new THREE.Mesh(new THREE.TorusGeometry(0.133, 0.013, 6, 12), trimMat);
+      leftHem.rotation.x = Math.PI / 2;
+      leftHem.position.set(-0.122, -0.205, 0);
 
-      const torsoCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.21, 0.62, 12), jerseyMat);
-      torsoCyl.scale.set(1.06, 1, 0.72);
-      torsoCyl.castShadow = true;
+      const rightHem = new THREE.Mesh(new THREE.TorusGeometry(0.133, 0.013, 6, 12), trimMat);
+      rightHem.rotation.x = Math.PI / 2;
+      rightHem.position.set(0.122, -0.205, 0);
 
-      const collarTrim = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 16), trimMat);
-      collarTrim.rotation.x = Math.PI / 2;
-      collarTrim.position.set(0, 0.30, 0.02);
+      const leftSideTrim = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.30, 0.09), trimMat);
+      leftSideTrim.position.set(-0.248, -0.03, 0);
+      const rightSideTrim = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.30, 0.09), trimMat);
+      rightSideTrim.position.set(0.248, -0.03, 0);
 
+      shortsGroup.add(
+        shortsHip, waistBand,
+        leftShortLeg, rightShortLeg,
+        leftHem, rightHem,
+        leftSideTrim, rightSideTrim
+      );
+
+      // 3. 상체 피벗 (허리 y=0.96 기준 회전 -> 상체 숙이기 동작 지원)
+      const torsoPivot = new THREE.Group();
+      torsoPivot.position.y = 0.96;
+
+      // 역삼각형 V-테이퍼 상체 (넓은 어깨 0.265 -> 좁은 허리 0.195)
+      const chestCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.265, 0.195, 0.58, 12), jerseyMat);
+      chestCyl.scale.set(1.10, 1, 0.72);
+      chestCyl.position.y = 0.29;
+      chestCyl.castShadow = true;
+
+      // 민소매 암홀(어깨 파임) 표현: 좌우 어깨에 피부색 삼각근 캡 + 저지 암홀 테두리 링
+      const leftDelt = new THREE.Mesh(new THREE.SphereGeometry(0.095, 8, 8), skinMat);
+      leftDelt.position.set(-0.295, 0.51, 0);
+      leftDelt.scale.set(0.95, 1.12, 0.95);
+
+      const rightDelt = new THREE.Mesh(new THREE.SphereGeometry(0.095, 8, 8), skinMat);
+      rightDelt.position.set(0.295, 0.51, 0);
+      rightDelt.scale.set(0.95, 1.12, 0.95);
+
+      const leftArmholeTrim = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.015, 6, 12), trimMat);
+      leftArmholeTrim.rotation.y = Math.PI / 2;
+      leftArmholeTrim.position.set(-0.268, 0.50, 0);
+
+      const rightArmholeTrim = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.015, 6, 12), trimMat);
+      rightArmholeTrim.rotation.y = Math.PI / 2;
+      rightArmholeTrim.position.set(0.268, 0.50, 0);
+
+      // V넥 칼라 테두리
+      const collarTrim = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.020, 6, 14), trimMat);
+      collarTrim.rotation.x = Math.PI / 2 + 0.18;
+      collarTrim.position.set(0, 0.57, 0.025);
+
+      // 등번호 텍스처 (앞/뒤)
       const numTex = createJerseyNumberTexture(bp.number, bp.jersey, bp.trim);
       const numMat = new THREE.MeshBasicMaterial({ map: numTex });
 
-      const frontBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.26), numMat);
-      frontBadge.position.set(0, 0.04, 0.185);
-      const backBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.32), numMat);
+      const frontBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.25), numMat);
+      frontBadge.position.set(0, 0.32, 0.193);
+      const backBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.31), numMat);
       backBadge.rotation.y = Math.PI;
-      backBadge.position.set(0, 0.04, -0.185);
+      backBadge.position.set(0, 0.33, -0.193);
 
-      torsoGroup.add(torsoCyl, collarTrim, frontBadge, backBadge);
+      torsoPivot.add(
+        chestCyl,
+        leftDelt, rightDelt,
+        leftArmholeTrim, rightArmholeTrim,
+        collarTrim, frontBadge, backBadge
+      );
 
+      // 양팔 (torsoPivot 자식으로 붙어 상체 숙일 때 함께 움직임)
       const leftArm = buildLimbWithJoints(skinMat, bandMat, null, null, bp.trim, bp.wristband, false);
-      leftArm.root.position.set(-0.31, 1.50, 0);
+      leftArm.root.position.set(-0.315, 0.51, 0);
 
       const rightArm = buildLimbWithJoints(skinMat, bandMat, null, null, bp.trim, bp.wristband, false);
-      rightArm.root.position.set(0.31, 1.50, 0);
+      rightArm.root.position.set(0.315, 0.51, 0);
 
+      torsoPivot.add(leftArm.root, rightArm.root);
+
+      // 4. 목 & 스타일화된 닌텐도 Mii풍 둥근 얼굴 (머리 꼭대기 약 y=1.96)
       const headGroup = new THREE.Group();
-      headGroup.position.y = 1.78;
+      headGroup.position.y = 0.81; // torsoPivot(0.96) + 0.81 = 1.77 (반지름 0.185 -> 꼭대기 1.955)
 
-      const neckCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.14, 8), skinMat);
-      neckCyl.position.y = -0.14;
+      const neckCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.082, 0.14, 8), skinMat);
+      neckCyl.position.y = -0.17;
 
-      const headSphere = new THREE.Mesh(new THREE.SphereGeometry(0.175, 12, 12), skinMat);
+      // 살짝 턱선이 갸름한 둥근 머리
+      const headSphere = new THREE.Mesh(new THREE.SphereGeometry(0.182, 12, 12), skinMat);
+      headSphere.scale.set(0.96, 1.04, 0.98);
       headSphere.castShadow = true;
 
-      headGroup.add(neckCyl, headSphere);
+      // 귀 (좌/우)
+      const leftEar = new THREE.Mesh(new THREE.SphereGeometry(0.036, 6, 6), skinMat);
+      leftEar.position.set(-0.175, -0.01, -0.01);
+      leftEar.scale.set(0.55, 1.15, 0.85);
 
+      const rightEar = new THREE.Mesh(new THREE.SphereGeometry(0.036, 6, 6), skinMat);
+      rightEar.position.set(0.175, -0.01, -0.01);
+      rightEar.scale.set(0.55, 1.15, 0.85);
+
+      // 눈 (흰자 + 검은 눈동자)
+      const leftEyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), eyeWhiteMat);
+      leftEyeWhite.position.set(-0.062, 0.018, 0.162);
+      leftEyeWhite.scale.set(1.0, 1.15, 0.55);
+      const leftPupil = new THREE.Mesh(new THREE.SphereGeometry(0.017, 6, 6), pupilMat);
+      leftPupil.position.set(-0.060, 0.018, 0.174);
+
+      const rightEyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), eyeWhiteMat);
+      rightEyeWhite.position.set(0.062, 0.018, 0.162);
+      rightEyeWhite.scale.set(1.0, 1.15, 0.55);
+      const rightPupil = new THREE.Mesh(new THREE.SphereGeometry(0.017, 6, 6), pupilMat);
+      rightPupil.position.set(0.060, 0.018, 0.174);
+
+      // 눈썹 (좌/우)
+      const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.014, 0.018), hairMat);
+      leftBrow.position.set(-0.064, 0.054, 0.168);
+      leftBrow.rotation.z = -0.08;
+
+      const rightBrow = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.014, 0.018), hairMat);
+      rightBrow.position.set(0.064, 0.054, 0.168);
+      rightBrow.rotation.z = 0.08;
+
+      // 둥근 코
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), skinMat);
+      nose.position.set(0, -0.015, 0.184);
+      nose.scale.set(0.95, 0.88, 1.15);
+
+      // 단순한 미소 입
+      const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.008, 6, 10, Math.PI), mouthMat);
+      mouth.rotation.z = Math.PI;
+      mouth.rotation.x = -0.25;
+      mouth.position.set(0, -0.064, 0.168);
+
+      headGroup.add(
+        neckCyl, headSphere,
+        leftEar, rightEar,
+        leftEyeWhite, leftPupil, rightEyeWhite, rightPupil,
+        leftBrow, rightBrow, nose, mouth
+      );
+
+      // 헤어스타일 ('afro_small', 'flat_top', 'mullet', 'classic_part', 'short_fade', 'bald')
       if (bp.hairStyle === 'afro_small' || bp.hairStyle === 'afro') {
-        const afroMain = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), hairMat);
-        afroMain.position.set(0, 0.07, -0.02);
-        afroMain.scale.set(1.08, 1.02, 1.05);
+        const afroMain = new THREE.Mesh(new THREE.SphereGeometry(0.245, 12, 10), hairMat);
+        afroMain.position.set(0, 0.075, -0.025);
+        afroMain.scale.set(1.08, 1.02, 1.06);
         headGroup.add(afroMain);
       } else if (bp.hairStyle === 'flat_top' || bp.hairStyle === 'flattop') {
-        const flatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.17, 0.14, 10), hairMat);
-        flatTop.position.set(0, 0.15, -0.01);
+        const flatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.182, 0.172, 0.135, 10), hairMat);
+        flatTop.position.set(0, 0.155, -0.01);
         headGroup.add(flatTop);
-      } else if (bp.hairStyle !== 'bald') {
-        const cap = new THREE.Mesh(
-          new THREE.SphereGeometry(0.183, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.58),
+      } else if (bp.hairStyle === 'mullet') {
+        const topCap = new THREE.Mesh(
+          new THREE.SphereGeometry(0.188, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.56),
           hairMat
         );
-        cap.position.set(0, 0.02, -0.005);
+        topCap.position.set(0, 0.022, -0.006);
+        const backMullet = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.22, 0.11), hairMat);
+        backMullet.position.set(0, -0.05, -0.155);
+        headGroup.add(topCap, backMullet);
+      } else if (bp.hairStyle === 'classic_part') {
+        const cap = new THREE.Mesh(
+          new THREE.SphereGeometry(0.188, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.56),
+          hairMat
+        );
+        cap.position.set(0, 0.022, -0.005);
+        const sideWave = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), hairMat);
+        sideWave.position.set(0.06, 0.155, 0.075);
+        sideWave.scale.set(1.4, 0.65, 1.1);
+        headGroup.add(cap, sideWave);
+      } else if (bp.hairStyle !== 'bald') {
+        // 'short_fade' 및 기타 기본 짧은 스포츠 헤어
+        const cap = new THREE.Mesh(
+          new THREE.SphereGeometry(0.186, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.54),
+          hairMat
+        );
+        cap.position.set(0, 0.028, -0.008);
         headGroup.add(cap);
       }
 
       if (bp.headband) {
         const hb = new THREE.Mesh(
-          new THREE.TorusGeometry(0.18, 0.026, 6, 14),
+          new THREE.TorusGeometry(0.184, 0.024, 6, 14),
           new THREE.MeshStandardMaterial({ color: bp.trim, roughness: 0.5 })
         );
         hb.rotation.x = Math.PI / 2;
-        hb.position.set(0, 0.065, 0);
+        hb.position.set(0, 0.072, 0);
         headGroup.add(hb);
       }
 
       if (bp.goggles) {
         const goggleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.55, roughness: 0.2 });
         const lensMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.7, roughness: 0.15 });
-        const strap = new THREE.Mesh(new THREE.TorusGeometry(0.182, 0.02, 6, 14), goggleMat);
+        const strap = new THREE.Mesh(new THREE.TorusGeometry(0.186, 0.018, 6, 14), goggleMat);
         strap.rotation.x = Math.PI / 2;
-        strap.position.set(0, 0.025, 0);
+        strap.position.set(0, 0.022, 0);
 
-        const leftLens = new THREE.Mesh(new THREE.SphereGeometry(0.052, 8, 8), lensMat);
-        leftLens.position.set(-0.065, 0.025, 0.165);
+        const leftLens = new THREE.Mesh(new THREE.SphereGeometry(0.048, 8, 8), lensMat);
+        leftLens.position.set(-0.062, 0.022, 0.175);
         leftLens.scale.set(1.25, 0.85, 0.45);
 
-        const rightLens = new THREE.Mesh(new THREE.SphereGeometry(0.052, 8, 8), lensMat);
-        rightLens.position.set(0.065, 0.025, 0.165);
+        const rightLens = new THREE.Mesh(new THREE.SphereGeometry(0.048, 8, 8), lensMat);
+        rightLens.position.set(0.062, 0.022, 0.175);
         rightLens.scale.set(1.25, 0.85, 0.45);
 
         headGroup.add(strap, leftLens, rightLens);
       }
+
+      torsoPivot.add(headGroup);
 
       const cacheEntry = {
         normal: createNameTagTexture(bp, false),
@@ -4265,14 +4459,15 @@
 
       root.add(
         leftLeg.root, rightLeg.root,
-        shortsGroup, torsoGroup,
-        leftArm.root, rightArm.root,
-        headGroup, nameTagSprite
+        shortsGroup, torsoPivot,
+        nameTagSprite
       );
 
       b4App.scene.add(root);
       return {
         root,
+        torsoPivot,
+        headGroup,
         leftLegPivot: leftLeg.root,
         leftKneePivot: leftLeg.midPivot,
         rightLegPivot: rightLeg.root,
@@ -5506,8 +5701,8 @@
           }
         }
 
-        p.x = Math.max(-COURT_3D.halfW + 0.5, Math.min(COURT_3D.halfW - 0.5, p.x));
-        p.z = Math.max(-COURT_3D.halfD + 0.5, Math.min(COURT_3D.halfD - 0.5, p.z));
+        p.x = Math.max(-COURT_3D.halfW - 0.3, Math.min(COURT_3D.halfW + 0.3, p.x));
+        p.z = Math.max(-COURT_3D.halfD - 0.3, Math.min(COURT_3D.halfD + 0.3, p.z));
 
         if (dt > 0.001) {
           const curVx = (p.x - p.prevX) / dt;
@@ -5679,63 +5874,245 @@
       updateBlobShadow(rig.blobShadow, p.x, p.y, p.z, 1.25 * p.heightScale);
       rig.root.rotation.y = p.yaw;
 
-      const isMoving = Math.sin(p.animFrame) !== 0 && p.y <= 0.02;
-      const stride = p.y <= 0.02 ? Math.sin(p.animFrame) * 0.58 : 0.28;
-      const kneeBend = p.y <= 0.02
-        ? Math.max(0.08, Math.sin(p.animFrame + Math.PI * 0.35) * 0.65)
-        : 0.45;
+      const isAirborne = p.y > 0.02;
+      const moveSpeed = Math.hypot(p.x - p.prevX, p.z - p.prevZ);
+      const isMoving = !isAirborne && moveSpeed > 0.008;
+      const hasBall = b.owner === p;
+      const oppHasBall = !!b.owner && b.owner.team !== p.team;
 
-      rig.leftLegPivot.rotation.x = stride;
-      rig.rightLegPivot.rotation.x = -stride;
-      rig.leftKneePivot.rotation.x = -kneeBend;
-      rig.rightKneePivot.rotation.x = -kneeBend * 0.85;
+      // 기본 자세 변수 초기화 (매 프레임 new 객체 생성 금지)
+      let torsoLeanX = 0;
+      let torsoTwistY = 0;
+      let torsoTiltZ = 0;
+      let hipDropY = 0;
 
-      if (p.isSkyHooking) {
-        rig.rightArmPivot.rotation.x = -Math.PI * 0.92;
-        rig.rightArmPivot.rotation.z = -0.25;
-        rig.rightElbowPivot.rotation.x = -0.22;
-        rig.leftArmPivot.rotation.x = -0.35;
-        rig.leftElbowPivot.rotation.x = -0.45;
+      let lLegX = 0, rLegX = 0, lLegZ = 0, rLegZ = 0;
+      let lKneeX = -0.08, rKneeX = -0.08;
+
+      let lArmX = 0, rArmX = 0, lArmZ = 0.14, rArmZ = -0.14;
+      let lElbowX = -0.22, rElbowX = -0.22;
+
+      // 1. 하체 & 상체 기본 자세 (점프 / 슛 / 덩크 / 드리블 / 수비 / 러닝)
+      if (isAirborne) {
+        if (p.isDunking) {
+          // 덩크 체공: 역동적인 공중 무릎 굽힘과 상체 젖힘
+          lLegX = -0.55;
+          rLegX = 0.42;
+          lKneeX = -0.95;
+          rKneeX = -0.75;
+          torsoLeanX = -0.14;
+        } else if (p.isChargingShot || p.isSkyHooking) {
+          // 점프슛 / 스카이훅: 무릎을 굽혔다가 펴는 도약 전환
+          const ext = Math.min(1, p.shotCharge * 1.6);
+          lLegX = -0.22 * (1 - ext);
+          rLegX = -0.14 * (1 - ext);
+          lKneeX = -0.58 * (1 - ext * 0.72);
+          rKneeX = -0.50 * (1 - ext * 0.72);
+          torsoLeanX = -0.06;
+        } else {
+          // 일반 점프/리바운드/블록 점프: 공중에서 무릎을 굽힌 자세
+          lLegX = -0.34;
+          rLegX = -0.22;
+          lKneeX = -0.78;
+          rKneeX = -0.68;
+          torsoLeanX = 0.08;
+        }
       } else if (p.isChargingShot || p.isDunking) {
-        rig.rightArmPivot.rotation.x = -Math.PI * 0.85;
-        rig.leftArmPivot.rotation.x = -Math.PI * 0.85;
-        rig.rightElbowPivot.rotation.x = -0.35;
-        rig.leftElbowPivot.rotation.x = -0.35;
-        rig.rightArmPivot.rotation.z = 0;
-      } else if (p.catchAnim > 0 || (b.state === 'PASS' && b.passTarget === p)) {
-        rig.rightArmPivot.rotation.x = -Math.PI * 0.45;
-        rig.leftArmPivot.rotation.x = -Math.PI * 0.45;
-        rig.rightElbowPivot.rotation.x = -0.45;
-        rig.leftElbowPivot.rotation.x = -0.45;
-        rig.rightArmPivot.rotation.z = 0;
-      } else if (p.stealAnim > 0) {
-        rig.rightArmPivot.rotation.x = -Math.PI * 0.52;
-        rig.rightElbowPivot.rotation.x = -0.25;
-        rig.leftArmPivot.rotation.x = 0.2;
-        rig.leftElbowPivot.rotation.x = -0.4;
-        rig.rightArmPivot.rotation.z = 0;
-      } else if (b.owner === p) {
-        const dribblePump = Math.abs(Math.sin(b.dribbleTimer)) * 0.55;
-        rig.rightArmPivot.rotation.x = -0.45 - dribblePump;
-        rig.rightElbowPivot.rotation.x = -0.65 - dribblePump * 0.4;
-        rig.leftArmPivot.rotation.x = -stride * 0.45;
-        rig.leftElbowPivot.rotation.x = -0.35;
-        rig.rightArmPivot.rotation.z = 0;
+        // 지상에서 슛 충전 / 덩크 도약 직전: 무릎을 깊게 굽혀 힘을 모으는 자세
+        const crouch = Math.sin(Math.min(1, p.shotCharge * 2.5) * Math.PI * 0.5);
+        hipDropY = -0.07 * crouch;
+        lLegX = -0.38 * crouch;
+        rLegX = -0.32 * crouch;
+        lKneeX = -0.72 * crouch;
+        rKneeX = -0.66 * crouch;
+        torsoLeanX = 0.14 * crouch;
+      } else if (hasBall) {
+        // 공을 가졌을 때: 약간 웅크린 드리블 자세 + 달리기 보폭
+        const stride = isMoving ? Math.sin(p.animFrame) * 0.54 : 0;
+        const kneeCycle = isMoving ? Math.max(0.12, Math.sin(p.animFrame + Math.PI * 0.35) * 0.62) : 0.28;
+        hipDropY = -0.04;
+        torsoLeanX = isMoving ? 0.22 : 0.16;
+        torsoTwistY = isMoving ? Math.sin(p.animFrame) * 0.10 : 0.08;
+        lLegX = stride - 0.14;
+        rLegX = -stride - 0.14;
+        lKneeX = -kneeCycle - 0.14;
+        rKneeX = -kneeCycle * 0.88 - 0.14;
+      } else if (oppHasBall) {
+        // 수비 중(상대 팀이 공을 가졌을 때): 자세를 낮추고 다리를 넓게 벌린 수비 스탠스
+        const shuffle = isMoving ? Math.sin(p.animFrame) * 0.42 : 0;
+        const shuffleKnee = isMoving ? Math.max(0.15, Math.abs(Math.cos(p.animFrame)) * 0.45) : 0.36;
+        hipDropY = -0.065;
+        torsoLeanX = 0.20;
+        lLegZ = 0.16;
+        rLegZ = -0.16;
+        lLegX = shuffle - 0.22;
+        rLegX = -shuffle - 0.22;
+        lKneeX = -shuffleKnee - 0.24;
+        rKneeX = -shuffleKnee - 0.24;
+      } else if (isMoving) {
+        // 공 없이 달릴 때: 상체를 살짝 앞으로 숙이고 역동적인 스트라이드
+        const stride = Math.sin(p.animFrame) * 0.64;
+        const kneeBend = Math.max(0.10, Math.sin(p.animFrame + Math.PI * 0.35) * 0.72);
+        torsoLeanX = 0.18;
+        torsoTwistY = Math.sin(p.animFrame) * 0.12;
+        lLegX = stride;
+        rLegX = -stride;
+        lKneeX = -kneeBend;
+        rKneeX = -kneeBend * 0.88;
       } else {
-        rig.rightArmPivot.rotation.x = -stride * 0.52;
-        rig.leftArmPivot.rotation.x = stride * 0.52;
-        rig.rightElbowPivot.rotation.x = isMoving ? -0.55 : -0.28;
-        rig.leftElbowPivot.rotation.x = isMoving ? -0.55 : -0.28;
-        rig.rightArmPivot.rotation.z = 0;
+        // 대기 자세: 자연스러운 운동 준비 자세
+        torsoLeanX = 0.04;
+        lLegZ = 0.05;
+        rLegZ = -0.05;
+        lKneeX = -0.10;
+        rKneeX = -0.10;
       }
+
+      // 2. 상체/팔 동작 분기
+      if (p.isSkyHooking) {
+        // 스카이훅: 오른팔을 머리 위로 크게 뻗고 상체를 살짝 기울여 훅 릴리스
+        rArmX = -Math.PI * 0.94;
+        rArmZ = -0.34;
+        rElbowX = -0.16;
+        lArmX = -0.45;
+        lArmZ = 0.38;
+        lElbowX = -0.58;
+        torsoTiltZ = 0.16;
+        torsoTwistY = -0.24;
+      } else if (p.isChargingShot || p.isDunking) {
+        // 슛 충전 / 덩크: 두 팔을 머리 위로 들어올림
+        rArmX = -Math.PI * 0.88;
+        lArmX = -Math.PI * 0.88;
+        rArmZ = -0.12;
+        lArmZ = 0.12;
+        rElbowX = p.isDunking ? -0.22 : -0.38;
+        lElbowX = p.isDunking ? -0.22 : -0.38;
+      } else if (p.catchAnim > 0 || (b.state === 'PASS' && b.passTarget === p)) {
+        // 패스 캐치 준비: 두 팔을 앞으로 뻗어 공을 맞이함
+        rArmX = -Math.PI * 0.46;
+        lArmX = -Math.PI * 0.46;
+        rArmZ = -0.10;
+        lArmZ = 0.10;
+        rElbowX = -0.42;
+        lElbowX = -0.42;
+      } else if (p.stealAnim > 0) {
+        // 스틸 시도: 오른팔을 빠르게 뻗어 공을 쳐냄
+        rArmX = -Math.PI * 0.56;
+        rArmZ = -0.12;
+        rElbowX = -0.18;
+        lArmX = 0.25;
+        lArmZ = 0.28;
+        lElbowX = -0.45;
+        torsoTwistY = -0.28;
+        torsoLeanX = 0.26;
+      } else if (hasBall) {
+        // 드리블 동작: 오른손으로 바닥을 향해 펌핑하고 왼팔은 수비를 견제(가드 암)
+        const dribblePump = Math.abs(Math.sin(b.dribbleTimer));
+        rArmX = -0.42 - dribblePump * 0.58;
+        rArmZ = -0.18;
+        rElbowX = -0.52 - dribblePump * 0.55;
+        lArmX = -0.58 - (isMoving ? Math.sin(p.animFrame) * 0.18 : 0);
+        lArmZ = 0.36;
+        lElbowX = -0.82;
+      } else if (oppHasBall && !isAirborne) {
+        // 수비 중: 팔을 양옆으로 크게 벌려 패스/돌파 경로 차단
+        const wave = Math.sin(p.animFrame * 0.7) * 0.08;
+        rArmX = -0.48 + wave;
+        lArmX = -0.48 - wave;
+        rArmZ = -0.78;
+        lArmZ = 0.78;
+        rElbowX = -0.42;
+        lElbowX = -0.42;
+      } else if (isAirborne) {
+        // 블록/리바운드 점프: 두 팔을 위로 뻗어 견제
+        rArmX = -Math.PI * 0.82;
+        lArmX = -Math.PI * 0.82;
+        rArmZ = -0.16;
+        lArmZ = 0.16;
+        rElbowX = -0.20;
+        lElbowX = -0.20;
+      } else if (isMoving) {
+        // 달릴 때: 팔을 앞뒤로 크게 흔들기
+        const armSwing = Math.sin(p.animFrame) * 0.78;
+        rArmX = -armSwing;
+        lArmX = armSwing;
+        rArmZ = -0.12;
+        lArmZ = 0.12;
+        rElbowX = -0.68;
+        lElbowX = -0.68;
+      } else {
+        // 정지 대기
+        rArmX = -0.08;
+        lArmX = -0.08;
+        rArmZ = -0.14;
+        lArmZ = 0.14;
+        rElbowX = -0.26;
+        lElbowX = -0.26;
+      }
+
+      // 관절 회전 및 위치 적용
+      rig.root.position.y = p.y + hipDropY * p.heightScale;
+
+      if (rig.torsoPivot) {
+        rig.torsoPivot.rotation.x = torsoLeanX;
+        rig.torsoPivot.rotation.y = torsoTwistY;
+        rig.torsoPivot.rotation.z = torsoTiltZ;
+      }
+      if (rig.headGroup) {
+        // 상체가 앞으로 숙여져도 시선은 전방/코트를 자연스럽게 향하도록 보정
+        rig.headGroup.rotation.x = -torsoLeanX * 0.65;
+        rig.headGroup.rotation.y = -torsoTwistY * 0.5;
+      }
+
+      rig.leftLegPivot.rotation.x = lLegX;
+      rig.leftLegPivot.rotation.z = lLegZ;
+      rig.rightLegPivot.rotation.x = rLegX;
+      rig.rightLegPivot.rotation.z = rLegZ;
+      rig.leftKneePivot.rotation.x = lKneeX;
+      rig.rightKneePivot.rotation.x = rKneeX;
+
+      rig.leftArmPivot.rotation.x = lArmX;
+      rig.leftArmPivot.rotation.z = lArmZ;
+      rig.leftElbowPivot.rotation.x = lElbowX;
+
+      rig.rightArmPivot.rotation.x = rArmX;
+      rig.rightArmPivot.rotation.z = rArmZ;
+      rig.rightElbowPivot.rotation.x = rElbowX;
 
       if (rig.nameTagSprite) {
         rig.nameTagSprite.quaternion.copy(b4App.camera.quaternion);
       }
     }
 
+    function triggerOutOfBounds(losingTeam) {
+      if (matchEngine.gameState !== B4_STATE.PLAYING) return;
+      const b = matchEngine.ball;
+      if (b.owner) {
+        b.owner.isChargingShot = false;
+      }
+      b.owner = null;
+      b.passTarget = null;
+      b.vx *= 0.2;
+      b.vz *= 0.2;
+      b.state = 'FREE';
+      clearAssistChance();
+      b.shooterRef = null;
+
+      const gainingTeam = getOtherSide(losingTeam);
+      const gainingCode = gainingTeam === 'HOME' ? matchEngine.homeTeam.id : matchEngine.awayTeam.id;
+      matchEngine.nextInboundsTeam = gainingTeam;
+      matchEngine.gameState = B4_STATE.SCORE_PAUSE;
+      matchEngine.statePauseTimer = 1.2;
+
+      showB4Banner('OUT OF BOUNDS!', 1.2, `${gainingCode} BALL`);
+      sfx.beep(1800, 0.25, 'square', 0.05, 1500);
+    }
+
     function updateBall(dt) {
       const b = matchEngine.ball;
+      const OUT_LINE_X = COURT_3D.halfW - 0.45;
+      const OUT_LINE_Z = COURT_3D.halfD - 0.45;
+
       if (b.owner) {
         const p = b.owner;
         b.passTarget = null;
@@ -5750,6 +6127,10 @@
 
         b4App.ballMesh.rotation.x += dt * 7;
         b4App.ballMesh.rotation.z += dt * 4;
+
+        if (matchEngine.gameState === B4_STATE.PLAYING && (Math.abs(p.x) > OUT_LINE_X || Math.abs(p.z) > OUT_LINE_Z)) {
+          triggerOutOfBounds(p.team);
+        }
       } else if (b.state === 'PASS' && b.passTarget) {
         const target = b.passTarget;
         b.passTimer += dt;
@@ -5813,12 +6194,16 @@
           if (b.state !== 'JUMPBALL') b.state = 'FREE';
         }
 
-        if (Math.abs(b.x) > COURT_3D.halfW - 0.2) {
-          b.x = Math.sign(b.x) * (COURT_3D.halfW - 0.2);
+        if (matchEngine.gameState === B4_STATE.PLAYING && b.state === 'FREE' && (Math.abs(b.x) > OUT_LINE_X || Math.abs(b.z) > OUT_LINE_Z)) {
+          triggerOutOfBounds(b.lastTouchTeam || 'HOME');
+        }
+
+        if (Math.abs(b.x) > COURT_3D.halfW + 0.8) {
+          b.x = Math.sign(b.x) * (COURT_3D.halfW + 0.8);
           b.vx = -b.vx * 0.6;
         }
-        if (Math.abs(b.z) > COURT_3D.halfD - 0.2) {
-          b.z = Math.sign(b.z) * (COURT_3D.halfD - 0.2);
+        if (Math.abs(b.z) > COURT_3D.halfD + 0.8) {
+          b.z = Math.sign(b.z) * (COURT_3D.halfD + 0.8);
           b.vz = -b.vz * 0.6;
         }
 
