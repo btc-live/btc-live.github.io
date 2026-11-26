@@ -867,8 +867,8 @@
         #message-overlay, #pause-overlay {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.78) 0%, rgba(2, 6, 23, 0.92) 100%);
-            backdrop-filter: blur(10px);
+            background: radial-gradient(circle at center, rgba(38, 42, 24, 0.72) 0%, rgba(14, 15, 9, 0.9) 100%);
+            backdrop-filter: blur(6px);
             z-index: 90;
             display: none;
             flex-direction: column;
@@ -878,54 +878,77 @@
             padding: 24px;
         }
         .overlay-card {
-            max-width: 440px;
+            position: relative;
+            max-width: 470px;
             width: 100%;
-            background: rgba(15, 23, 42, 0.88);
-            border: 1px solid rgba(250, 204, 21, 0.42);
-            border-radius: 24px;
-            padding: 28px 24px;
-            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.75);
+            background: linear-gradient(180deg, #ece0bd 0%, #d9c99a 100%);
+            border: 1px solid #8f7d50;
+            outline: 3px double rgba(79, 95, 42, 0.75);
+            outline-offset: -9px;
+            border-radius: 3px;
+            padding: 30px 26px 24px;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.7), inset 0 0 60px rgba(120, 90, 40, 0.25);
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .overlay-card::before {
+            content: 'AIR OPERATIONS COMMAND · SIGNAL';
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            color: #6b5a33;
+            margin-bottom: 8px;
         }
         .overlay-title {
-            font-size: clamp(1.7rem, 4vw, 2.25rem);
+            font-family: 'Stencil Std', Stencil, Impact, 'Arial Black', sans-serif;
+            font-size: clamp(1.3rem, 3.2vw, 1.8rem);
             font-weight: 900;
-            color: #fcd34d;
-            margin: 0 0 10px 0;
+            letter-spacing: 0.06em;
+            line-height: 1.2;
+            white-space: pre-line;
+            color: #3f5222;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #8f7d50;
         }
         .overlay-desc {
-            font-size: 14px;
-            color: #e2e8f0;
-            margin: 0 0 24px 0;
+            font-size: 13px;
+            color: #2e2716;
+            margin: 0 0 22px 0;
             font-weight: 700;
             white-space: pre-line;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         .overlay-btn-green {
-            background: linear-gradient(180deg, #34d399 0%, #059669 100%);
-            color: #020617;
+            font-family: 'Stencil Std', Stencil, Impact, 'Arial Black', sans-serif;
+            background: linear-gradient(180deg, #5e6a3a 0%, #46512a 100%);
+            color: #f1e8c9;
             font-weight: 900;
             font-size: 13px;
-            padding: 12px 28px;
-            border: none;
-            border-radius: 12px;
+            letter-spacing: 0.14em;
+            padding: 11px 26px;
+            border: 1px solid #c9a13b;
+            border-radius: 2px;
             cursor: pointer;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 3px 0 #2c3318;
             transition: transform 0.15s ease;
         }
-        .overlay-btn-green:hover { transform: scale(1.05); }
+        .overlay-btn-green:hover { transform: translateY(-1px); }
         .overlay-btn-amber {
-            background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
-            color: #020617;
-            font-weight: 900;
-            font-size: 13px;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            background: linear-gradient(180deg, #e6d9b4 0%, #d3c49a 100%);
+            color: #3a3220;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            padding: 11px 18px;
+            border: 1px solid #8f7d50;
+            border-radius: 2px;
             cursor: pointer;
-            box-shadow: 0 8px 20px rgba(250, 204, 21, 0.35);
+            box-shadow: 0 3px 0 #9c8a5e;
             transition: transform 0.15s ease;
         }
-        .overlay-btn-amber:hover { transform: scale(1.05); }
+        .overlay-btn-amber:hover { transform: translateY(-1px); }
         .overlay-actions {
             display: flex;
             flex-wrap: wrap;
@@ -1273,7 +1296,7 @@
             <p id="overlay-desc" class="overlay-desc">Great job pilot! Ready for the next sortie?</p>
             <div class="overlay-actions">
                 <button onclick="dismissMessageOverlay()" class="overlay-btn-green">
-                    CONTINUE ➡️
+                    CONTINUE ▸
                 </button>
                 <button id="overlayAltBtn" onclick="lowerDifficultyFromOverlay()" class="overlay-btn-amber" style="display:none">
                     SWITCH DIFFICULTY
@@ -2980,7 +3003,7 @@
                 if (stageTimerRemaining <= 0) {
                     clearInterval(stageTimerInterval);
                     isGameOver = true;
-                    showOverlay("TIME'S UP!", `Stage ${currentSelectedStage} Failed. Target kills not reached in time.`, "#ef4444");
+                    showOverlay("SORTIE ABORTED", `Sortie ${String(currentSelectedStage).padStart(2, '0')}: time expired before the target was met.`, "#ef4444");
                 }
             }
         }, 1000);
@@ -3005,7 +3028,7 @@
             if (offerEasier) altBtn.textContent = `SWITCH TO ${DIFFICULTY_PRESETS[DIFFICULTY_ORDER[DIFFICULTY_ORDER.indexOf(difficultyKey) - 1]].label}`;
         }
         overlayTitle.textContent = title;
-        overlayTitle.style.color = color;
+        overlayTitle.style.color = color === '#ef4444' ? '#9b2320' : '#3f5222';
         if (color === '#ef4444') extra = `\nSP earned this sortie: +${formatSP(sessionSP)}` + extra;
         overlayDesc.textContent = desc + extra;
         messageOverlay.style.display = 'flex';
@@ -7122,7 +7145,7 @@
                     if (stageTimerInterval) clearInterval(stageTimerInterval);
                     createExplosion(flightPos);
                     playHitSound();
-                    showOverlay("CRASHED!", "Your aircraft crashed into the ground or sea! Press Space to restart.", "#ef4444");
+                    showOverlay("AIRCRAFT LOST", "Your aircraft went down into the ground or sea.\nPress Space to return to HQ.", "#ef4444");
                 }
 
                 camOffsetScratch.set(0, 1.8, 6.5).applyEuler(flightEuler);
@@ -7177,11 +7200,11 @@
                                         }
                                         const result = recordStageResult();
                                         showOverlay(
-                                            stageConfig.boss ? `ACE SHOT DOWN! STAGE ${currentSelectedStage} CLEARED` : `STAGE ${currentSelectedStage} CLEARED!`,
+                                            stageConfig.boss ? `ENEMY ACE DOWN\nSORTIE ${String(currentSelectedStage).padStart(2, '0')} COMPLETE` : `MISSION ACCOMPLISHED\nSORTIE ${String(currentSelectedStage).padStart(2, '0')}`,
                                             `${starString(result.stars)}${result.newStars ? '  NEW BEST' : ''}\n` +
                                             `Score ${result.score.toLocaleString()} (${result.label} x${result.mult})${result.newBest ? '  · new record' : ''}\n` +
                                             `2★ keep HP above 50%  ·  3★ also no damage or under half time` +
-                                            (currentSelectedStage < 50 ? `\nNext stage is now unlocked!` : `\nCampaign complete!`) +
+                                            (currentSelectedStage < 50 ? `\nNext sortie orders received.` : `\nCampaign complete. Well flown, pilot.`) +
                                             `\nSP +${formatSP(sessionSP)} (clear bonus ${formatSP(result.clearSP)}${result.firstClear ? '' : ', replay rate'})  ·  balance ${formatSP(playerSP)}` +
                                             (result.newLiveries ? `\n${result.newLiveries} more aircraft can now be bought in the hangar!` : '') +
                                             PLAYER_AIRFRAME_ORDER.filter(k => PLAYER_AIRFRAMES[k].unlock === currentSelectedStage + 1 && unlockedStage === currentSelectedStage + 1).map(k => `\nNew series in the hangar: ${PLAYER_AIRFRAMES[k].name}!`).join(''),
@@ -7224,7 +7247,7 @@
                         if (playerHP <= 0) {
                             isGameOver = true;
                             if (stageTimerInterval) clearInterval(stageTimerInterval);
-                            showOverlay("MISSION FAILED", "Your jet was destroyed in combat! Press Space to menu.", "#ef4444");
+                            showOverlay("SHOT DOWN", "Your aircraft was destroyed in combat.\nPress Space to return to HQ.", "#ef4444");
                         }
                         continue;
                     }
