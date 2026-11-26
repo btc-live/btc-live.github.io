@@ -1727,6 +1727,16 @@
         }
         .model-tab.active { color: #1a1a10; background: var(--amber); border-color: var(--amber); }
         .depot-model-tabs { grid-column: 1 / -1; margin: 0; }
+        /* TANK48: depot shows all 10 models at once (2 rows of 5) — no sideways scrolling */
+        #depotModelTabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; overflow: visible; }
+        #depotModelTabs .model-tab { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; padding: 6px 4px; font-size: 10.5px; min-width: 0; }
+        @media (max-width: 960px) { #depotModelTabs .model-tab { font-size: 9.5px; letter-spacing: 0.02em; padding: 6px 2px; } }
+        @media (max-width: 760px) { #depotModelTabs .model-tab { padding: 7px 2px; font-size: 10px; letter-spacing: 0.03em; } }
+        @media (max-width: 560px) {
+            #depotModelTabs .model-tab { white-space: normal; line-height: 1.15; padding: 5px 2px; }
+            #depotModelTabs .mt-key { display: block; font-size: 12px; font-weight: 800; }
+            #depotModelTabs .mt-sub { display: block; font-size: 9px; opacity: 0.9; }
+        }
         @media (max-width: 760px) {
             .model-tabs .mt-name { display: none; }
             .tank-select-head .tank-select-current { display: none; }
@@ -1816,6 +1826,90 @@
             transition: transform 0.15s ease;
         }
         .overlay-btn-amber:hover { transform: scale(1.05); }
+        /* TANK45: stage result = olive-drab after-action report (matches the HQ screen) */
+        #message-overlay, #pause-overlay {
+            background: radial-gradient(ellipse at 50% 45%, rgba(59, 67, 37, 0.62) 0%, rgba(18, 21, 12, 0.93) 80%);
+            backdrop-filter: blur(6px);
+        }
+        #message-overlay .rep-card, #pause-overlay .rep-card {
+            position: relative; max-width: 470px; max-height: 100%; overflow-y: auto; text-align: left;
+            padding: 0; border-radius: 6px; color: var(--khaki);
+            background:
+                repeating-linear-gradient(0deg, rgba(217, 204, 156, 0.025) 0 1px, transparent 1px 4px),
+                linear-gradient(170deg, #3b4325 0%, #262c18 100%);
+            border: 2px solid #8a7f58; box-shadow: 0 0 0 1px #12150c, 0 24px 50px rgba(0, 0, 0, 0.75), inset 0 0 40px rgba(0, 0, 0, 0.35);
+        }
+        #message-overlay .rep-card::before, #pause-overlay .rep-card::before {
+            content: ''; display: block; height: 7px;
+            background: repeating-linear-gradient(-45deg, #12150c 0 10px, #b8962e 10px 20px);
+        }
+        #message-overlay .rep-card.rep-fail::before { background: repeating-linear-gradient(-45deg, #12150c 0 10px, #8f2f26 10px 20px); }
+        .rep-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px 8px; border-bottom: 1px dashed rgba(181, 167, 122, 0.4); }
+        .rep-kicker { font-family: var(--font-stencil); font-size: 11px; letter-spacing: 0.22em; color: var(--khaki); }
+        .rep-op { font-family: var(--font-mono); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; color: var(--sand); padding: 2px 8px; border: 1px solid rgba(181, 167, 122, 0.5); border-radius: 2px; background: rgba(18, 21, 12, 0.45); }
+        .rep-stamp-wrap { text-align: center; padding: 16px 18px 6px; }
+        #message-overlay .rep-title, #pause-overlay .rep-title {
+            display: inline-block; margin: 0; padding: 6px 16px 4px; transform: rotate(-2deg);
+            font-family: var(--font-stencil); font-weight: 400; font-size: clamp(1.15rem, 3.4vw, 1.6rem); letter-spacing: 0.07em; line-height: 1.15; white-space: nowrap;
+            color: #e3b53a; border: 3px double #c99a2e; border-radius: 3px; background: rgba(18, 21, 12, 0.35);
+            text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
+        }
+        #message-overlay .rep-fail .rep-title { color: #d0563f; border-color: #a3322a; }
+        #message-overlay .rep-body { margin: 10px 18px 16px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; line-height: 1.5; color: var(--sand); white-space: normal; }
+        .rep-line { margin: 0; }
+        .rep-reason { text-align: center; font-size: 13px; color: var(--sand); margin-bottom: 4px; }
+        .rep-gap { height: 8px; }
+        #message-overlay .rep-stars { text-align: center; font-family: system-ui, sans-serif; font-size: 34px; letter-spacing: 0.15em; color: #e3b53a; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); line-height: 1.2; }
+        #message-overlay .rep-stars small { display: block; font-size: 11px; letter-spacing: 0.08em; color: var(--khaki); text-shadow: none; }
+        .rep-check { display: flex; gap: 8px; align-items: baseline; padding: 4px 10px; border-bottom: 1px solid rgba(181, 167, 122, 0.16); background: rgba(18, 21, 12, 0.28); }
+        .rep-check b { flex: 0 0 auto; font-family: var(--font-stencil); font-weight: 400; font-size: 13px; }
+        .rep-check.ok b { color: #9fbf5a; }
+        .rep-check.bad b { color: #c0533a; }
+        .rep-check.bad span { color: #a99f7c; }
+        .rep-sp { margin-top: 2px; padding: 7px 10px; border: 1px solid rgba(212, 160, 23, 0.55); border-radius: 2px; background: rgba(212, 160, 23, 0.1); color: #f0cf6a; }
+        .rep-total { padding: 4px 10px 0; font-size: 11.5px; color: var(--khaki); }
+        .rep-new { margin-top: 5px; padding: 5px 10px; border-left: 3px solid var(--amber); background: rgba(18, 21, 12, 0.4); color: #f0cf6a; font-size: 12px; }
+        .rep-next { margin-top: 8px; text-align: center; font-family: var(--font-stencil); font-weight: 400; font-size: 13px; letter-spacing: 0.14em; color: #9fbf5a; }
+        .rep-btn {
+            display: block; margin: 0 auto; cursor: pointer; padding: 11px 30px; border-radius: 3px;
+            font-family: var(--font-stencil); font-size: 15px; letter-spacing: 0.14em; color: #16190f;
+            background: linear-gradient(180deg, #e0b23a 0%, #b8862a 100%); border: 1px solid #f3c64f; box-shadow: 0 0 0 2px #12150c, 0 6px 14px rgba(0, 0, 0, 0.55);
+            transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        /* TANK46: pause card in the same after-action style */
+        #pause-overlay .pz-card { padding-bottom: 16px; text-align: center; }
+        #pause-overlay .pz-title { color: var(--sand); border-color: #8a7f58; transform: rotate(-1.5deg); }
+        #pause-overlay .pz-desc { margin: 10px 18px 14px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: var(--khaki); }
+        #pause-overlay .pz-actions { gap: 10px; padding: 0 18px; }
+        #pause-overlay .pz-actions .rep-btn { margin: 0; min-width: 170px; }
+        #pause-overlay .pz-hq { background: linear-gradient(180deg, #b5a77a 0%, #8a7f58 100%); border-color: #d9cc9c; }
+        #pause-overlay .vol-panel { margin: 14px 18px 0; padding: 8px 12px; border: 1px solid rgba(181, 167, 122, 0.35); border-radius: 2px; background: rgba(18, 21, 12, 0.35); color: var(--sand); font-family: var(--font-mono); }
+        #pause-overlay .vol-panel input[type=range] { width: 150px; accent-color: #d4a017; }
+        .pz-lbl { font-family: var(--font-stencil); font-weight: 400; font-size: 11px; letter-spacing: 0.16em; color: var(--khaki); }
+        .pz-tools { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 0 18px; }
+        #pause-overlay .diag-btn { margin: 10px 0 0; border-radius: 2px; font-family: var(--font-stencil); font-weight: 400; font-size: 11px; letter-spacing: 0.12em; color: var(--sand); background: rgba(59, 67, 37, 0.85); border: 1px solid var(--khaki); padding: 6px 12px; }
+        #pause-overlay .diag-btn:hover { border-color: var(--sand); }
+        #pause-overlay .howto-pause-btn { border-color: #d4a017; }
+        #pause-overlay #diag-panel { margin: 10px auto 0; color: var(--sand); background: rgba(18, 21, 12, 0.85); border: 1px solid rgba(181, 167, 122, 0.45); border-radius: 2px; }
+        @media (max-height: 520px) {
+            #pause-overlay { padding: 10px; }
+            #pause-overlay .pz-desc { margin: 6px 14px 10px; font-size: 11.5px; }
+            #pause-overlay .pz-actions .rep-btn { min-width: 140px; padding: 8px 18px; font-size: 13px; }
+            #pause-overlay .vol-panel { margin-top: 10px; padding: 5px 10px; }
+        }
+        .rep-foot { position: sticky; bottom: 0; padding: 10px 18px 16px; background: linear-gradient(180deg, rgba(38, 44, 24, 0) 0%, #262c18 35%); }
+        .rep-btn:hover, .rep-btn:focus-visible { transform: translateY(-1px); filter: brightness(1.08); }
+        .rep-fail .rep-btn { background: linear-gradient(180deg, #b5a77a 0%, #8a7f58 100%); border-color: #d9cc9c; }
+        @media (max-height: 520px) {
+            #message-overlay { padding: 10px; }
+            .rep-stamp-wrap { padding: 8px 14px 2px; }
+            #message-overlay .rep-body { margin: 6px 14px 10px; font-size: 11.5px; line-height: 1.4; }
+            #message-overlay .rep-stars { font-size: 24px; }
+            .rep-gap { height: 4px; }
+            .rep-foot { padding: 6px 14px 10px; }
+            .rep-btn { padding: 8px 24px; font-size: 13px; }
+        }
+
         .overlay-actions {
             display: flex;
             flex-wrap: wrap;
@@ -1848,6 +1942,23 @@
         .hq-chip-diff { cursor: pointer; font: inherit; color: inherit; }
         .hq-chip-diff:hover { border-color: var(--sand); }
         .hq-diff-wrap { position: relative; display: flex; }
+        /* TANK44: ambience volume / off control (start page + depot) */
+        .amb-ctl { position: relative; display: flex; }
+        .amb-chip { cursor: pointer; font: inherit; color: inherit; }
+        .amb-chip:hover { border-color: var(--sand); }
+        .amb-ctl.is-off .amb-v { color: #8a8470; }
+        .amb-menu { display: none; position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; flex-direction: column; gap: 7px; width: 200px; padding: 9px 10px;
+            background: rgba(24, 28, 16, 0.98); border: 1px solid var(--khaki); border-radius: 4px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7); }
+        .amb-row { display: flex; justify-content: space-between; align-items: center; }
+        .amb-lbl { font-family: var(--font-stencil); font-size: 11px; letter-spacing: 0.1em; color: var(--khaki); }
+        .amb-pct { font-family: var(--font-mono); font-size: 12px; font-weight: 800; color: var(--sand); }
+        .amb-range { width: 100%; accent-color: #d4a017; height: 22px; }
+        .amb-toggle { cursor: pointer; padding: 7px 8px; border-radius: 3px; font-family: var(--font-stencil); font-size: 12px; letter-spacing: 0.1em; color: var(--sand); background: rgba(59, 67, 37, 0.8); border: 1px solid var(--khaki); }
+        .amb-ctl.is-off .amb-toggle { color: #16190f; background: #d4a017; border-color: #f3c64f; }
+        .amb-ctl-depot { margin-left: auto; }
+        .amb-ctl-depot .amb-chip { padding: 3px 10px; }
+        .amb-ctl-depot + .depot-btn { margin-left: 0; }
+        @media (max-width: 520px) { .depot-head { flex-wrap: wrap; row-gap: 6px; } .amb-ctl-depot { margin-left: auto; } }
         .diff-short { display: none; }
         .hq-diff-menu {
             display: none; position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; flex-direction: column; gap: 3px; min-width: 196px; padding: 5px;
@@ -2161,7 +2272,8 @@
         @media (max-width: 700px) {
             .hq-chips { flex-wrap: wrap !important; }
             .hq-chips > .hq-chip { flex: 1 1 calc(25% - 6px) !important; }
-            .hq-chips > .hq-chip-help, .hq-chips > .hq-chip-full, .hq-chips > .hq-diff-wrap { flex: 1 1 calc(33% - 6px) !important; }
+            .hq-chips > .hq-chip-help, .hq-chips > .hq-chip-full, .hq-chips > .hq-diff-wrap, .hq-chips > .amb-ctl { flex: 1 1 calc(33% - 6px) !important; }
+            .hq-chips > .amb-ctl > .amb-chip { flex: 1; }
             .hq-chips .hq-chip-v { white-space: nowrap; }
         }
         @media (max-height: 560px) and (min-width: 701px) {
@@ -2228,6 +2340,7 @@
                     <div class="hq-chip hq-chip-armory"><span class="hq-chip-k">ARMORY</span><span class="hq-chip-v" id="hqChipArmory">1/300</span></div>
                     <button type="button" class="hq-chip hq-chip-help" onclick="openHowTo()" title="How to play"><span class="hq-chip-k">GUIDE</span><span class="hq-chip-v">❓ HOW TO</span></button>
                     <button type="button" class="hq-chip hq-chip-full hq-hidden" id="hqChipFull" onclick="toggleFullscreen()" title="Full screen"><span class="hq-chip-k">SCREEN</span><span class="hq-chip-v">⛶ FULL</span></button>
+                    <div class="amb-ctl"><button type="button" class="hq-chip amb-chip" onclick="toggleAmbMenu(this)" title="Base ambience volume"><span class="hq-chip-k">AMBIENCE ▾</span><span class="hq-chip-v amb-v">🔊 80%</span></button><div class="amb-menu"><div class="amb-row"><span class="amb-lbl">BASE AMBIENCE</span><span class="amb-pct">80%</span></div><input type="range" class="amb-range" min="0" max="100" step="5" oninput="setAmbVolume(this.value / 100)" aria-label="Ambience volume"><button type="button" class="amb-toggle" onclick="toggleAmbience()">🔇 TURN OFF</button></div></div>
                     <div class="hq-diff-wrap"><button type="button" class="hq-chip hq-chip-diff" id="hqChipDiff" onclick="toggleDifficultyMenu()" title="Change difficulty"><span class="hq-chip-k"><span class="diff-long">DIFFICULTY</span><span class="diff-short">LEVEL</span> ▾</span><span class="hq-chip-v" id="hqChipDiffV">NORMAL</span></button><div class="hq-diff-menu" id="hqDiffMenu"></div></div>
                 </div>
                 <span class="cmd-status-value hq-hidden" id="commanderStatusText"></span>
@@ -2280,6 +2393,7 @@
             <div class="depot-head">
                 <div class="depot-title">FIELD DEPOT</div>
                 <div class="depot-sp" id="depotSp">0 SP</div>
+                <div class="amb-ctl amb-ctl-depot"><button type="button" class="hq-chip amb-chip" onclick="toggleAmbMenu(this)" title="Base ambience volume"><span class="hq-chip-k">AMBIENCE ▾</span><span class="hq-chip-v amb-v">🔊 80%</span></button><div class="amb-menu"><div class="amb-row"><span class="amb-lbl">BASE AMBIENCE</span><span class="amb-pct">80%</span></div><input type="range" class="amb-range" min="0" max="100" step="5" oninput="setAmbVolume(this.value / 100)" aria-label="Ambience volume"><button type="button" class="amb-toggle" onclick="toggleAmbience()">🔇 TURN OFF</button></div></div>
                 <button class="depot-btn" onclick="closeDepot()">◀ MISSION MAP</button>
             </div>
             <div class="depot-tabs">
@@ -2308,34 +2422,32 @@
 
     <!-- Victory / Game Over Overlay -->
     <div id="message-overlay">
-        <div class="overlay-card">
-            <h2 id="overlay-title" class="overlay-title">STAGE CLEARED!</h2>
-            <p id="overlay-desc" class="overlay-desc">Great job commander! Ready for the next sortie?</p>
-            <button onclick="dismissMessageOverlay()" class="overlay-btn-green">
-                CONTINUE ➡️
-            </button>
+        <div class="overlay-card rep-card rep-win" id="overlay-card">
+            <div class="rep-head"><span class="rep-kicker">AFTER-ACTION REPORT</span><span class="rep-op" id="overlay-op">OP 01</span></div>
+            <div class="rep-stamp-wrap"><h2 id="overlay-title" class="overlay-title rep-title">MISSION ACCOMPLISHED</h2></div>
+            <div id="overlay-desc" class="overlay-desc rep-body"></div>
+            <div class="rep-foot"><button onclick="dismissMessageOverlay()" class="rep-btn" id="overlay-btn">RETURN TO HQ ▶</button></div>
         </div>
     </div>
 
     <!-- Pause Overlay -->
     <div id="pause-overlay">
-        <div class="overlay-card">
-            <h2 class="overlay-title">GAME PAUSED</h2>
-            <p class="overlay-desc">Take a breather, commander.</p>
-            <div class="overlay-actions">
+        <div class="overlay-card rep-card pz-card">
+            <div class="rep-head"><span class="rep-kicker">FIELD HALT</span><span class="rep-op" id="pause-op">OP 01 · ON HOLD</span></div>
+            <div class="rep-stamp-wrap"><h2 class="overlay-title rep-title pz-title">GAME PAUSED</h2></div>
+            <p class="overlay-desc pz-desc">Hold position, commander. Orders when ready.</p>
+            <div class="overlay-actions pz-actions">
                 <!-- CTRL 5: Resume button uses resumeGame() to re-request pointer lock -->
-                <button onclick="resumeGame()" class="overlay-btn-green">
-                    RESUME 🎮
-                </button>
-                <button onclick="openStageSelectModalFromPause()" class="overlay-btn-amber">
-                    STAGE SELECT 🗺️
-                </button>
+                <button onclick="resumeGame()" class="rep-btn pz-resume">RESUME ▶</button>
+                <button onclick="openStageSelectModalFromPause()" class="rep-btn pz-hq">MISSION MAP ◀</button>
             </div>
             <div class="vol-panel">
-                <label>🔊 SFX <input type="range" id="volSfx" min="0" max="100" step="5" oninput="setSfxVolume(this.value / 100); playSample('tick', { vol: 0.4 })"></label>
+                <label><span class="pz-lbl">SFX VOLUME</span> <input type="range" id="volSfx" min="0" max="100" step="5" oninput="setSfxVolume(this.value / 100); playSample('tick', { vol: 0.4 })"></label>
             </div>
-            <button type="button" class="diag-btn howto-pause-btn" onclick="openHowTo()">HOW TO PLAY ❓</button>
-            <button type="button" class="diag-btn" onclick="showDiagnostics()">DIAGNOSTICS 🔧</button>
+            <div class="pz-tools">
+                <button type="button" class="diag-btn howto-pause-btn" onclick="openHowTo()">❓ HOW TO PLAY</button>
+                <button type="button" class="diag-btn" onclick="showDiagnostics()">🔧 DIAGNOSTICS</button>
+            </div>
             <pre id="diag-panel"></pre>
         </div>
     </div>
@@ -4087,6 +4199,8 @@
         }
         exitCanvasPointerLock();
         if (pauseOverlay) {
+            const op = document.getElementById('pause-op'); // TANK46
+            if (op) op.textContent = `OP ${String(currentSelectedStage).padStart(2, '0')} · ON HOLD`;
             pauseOverlay.style.display = 'flex';
         }
     }
@@ -4101,9 +4215,8 @@
     }
 
     function syncVolumeSliders() {
-        const a = document.getElementById('volSfx'), b = document.getElementById('volMusic');
+        const a = document.getElementById('volSfx');
         if (a) a.value = Math.round(audioPrefs.sfx * 100);
-        if (b) b.value = Math.round(audioPrefs.music * 100);
     }
     setTimeout(syncVolumeSliders, 0);
     function togglePauseGame() {
@@ -4451,7 +4564,7 @@
                 const m = b.dataset.model;
                 const owned = TANK_VARIANTS.filter(v => v.model === m && isTankOwned(v)).length;
                 const open = isModelUnlocked(m);
-                b.innerHTML = `${open ? '' : '🔒'}${m}<span class="mt-name"> · ${TANK_MODEL_INFO[m].name}</span> ${open ? owned + '/30' : 'OP ' + String(TANK_MODEL_INFO[m].unlockStage).padStart(2, '0')}`;
+                b.innerHTML = `<span class="mt-key">${open ? '' : '🔒'}${m}</span><span class="mt-name"> · ${TANK_MODEL_INFO[m].name}</span> <span class="mt-sub">${open ? owned + '/30' : 'OP ' + String(TANK_MODEL_INFO[m].unlockStage).padStart(2, '0')}</span>`;
                 b.classList.toggle('active', tankModelView === m);
                 b.classList.toggle('locked', !open);
                 if (b.classList.contains('active') && box.scrollWidth > box.clientWidth) {
@@ -4897,13 +5010,17 @@
     // Called from the main loop while a menu is open (~30fps)
     function updateTankPreview(dt) {
         if (!tankPreview.renderer || document.hidden) return;
+        // TANK47: thumbnails are shot on the same canvas as the big preview, so redraw the preview
+        // in the same frame — otherwise the shown frame is the thumbnail tank (the flicker in the depot)
+        let mustRedraw = false;
         if (tankPreview.thumbQueue.length) {
             makeNextThumbnail();
+            mustRedraw = true;
         }
         const host = tankPreview.host;
         if (!host || host.offsetParent === null) return; // host hidden (small screens)
         tankPreview.accum += dt;
-        if (tankPreview.accum < 1 / 30) return;
+        if (tankPreview.accum < 1 / 30 && !mustRedraw) return;
         const step = tankPreview.accum;
         tankPreview.accum = 0;
         tankPreview.time += step;
@@ -5031,15 +5148,39 @@ ${Math.ceil(boostActiveRemaining)}s`;
     let bgmTimer = null;
     let bgmStep = 0;
     const AUD = { master: null, sfx: null, music: null, engine: null, amb: null, reverb: null, reverbSend: null, buf: {}, voices: 0 };
-    const audioPrefs = { sfx: 0.9, music: 0.55 };
+    const audioPrefs = { sfx: 0.9, music: 0.55, amb: 0.8, ambOn: true };
     try {
         const ap = JSON.parse(localStorage.getItem('tankAceAudio') || 'null');
-        if (ap && typeof ap.sfx === 'number') { audioPrefs.sfx = ap.sfx; audioPrefs.music = ap.music; }
+        if (ap && typeof ap.sfx === 'number') { audioPrefs.sfx = ap.sfx; audioPrefs.music = ap.music; if (typeof ap.amb === 'number') audioPrefs.amb = ap.amb; if (typeof ap.ambOn === 'boolean') audioPrefs.ambOn = ap.ambOn; }
     } catch (e) {}
     function saveAudioPrefs() { try { localStorage.setItem('tankAceAudio', JSON.stringify(audioPrefs)); } catch (e) {} }
     function setSfxVolume(v) { audioPrefs.sfx = Math.max(0, Math.min(1, v)); if (AUD.sfx) { AUD.sfx.gain.value = audioPrefs.sfx; AUD.engine.gain.value = audioPrefs.sfx; AUD.amb.gain.value = audioPrefs.sfx; } saveAudioPrefs(); }
+    // TANK44: start-screen / depot ambience — own volume + on/off (gameplay sound untouched)
+    function applyAmbLevel() { if (AUD.menuAmb && audioCtx) AUD.menuAmb.gain.setTargetAtTime(audioPrefs.ambOn ? audioPrefs.amb : 0, audioCtx.currentTime, 0.15); }
+    function setAmbVolume(v) { audioPrefs.amb = Math.max(0, Math.min(1, v)); if (audioPrefs.amb > 0) audioPrefs.ambOn = true; applyAmbLevel(); saveAudioPrefs(); syncAmbControls(); }
+    function toggleAmbience(force) { initAudio(); audioPrefs.ambOn = force !== undefined ? !!force : !audioPrefs.ambOn; if (audioPrefs.ambOn && audioPrefs.amb < 0.05) audioPrefs.amb = 0.6; applyAmbLevel(); saveAudioPrefs(); syncAmbControls(); }
+    function syncAmbControls() {
+        const pct = Math.round(audioPrefs.amb * 100);
+        document.querySelectorAll('.amb-ctl').forEach(w => {
+            w.classList.toggle('is-off', !audioPrefs.ambOn);
+            const v = w.querySelector('.amb-v'); if (v) v.textContent = audioPrefs.ambOn ? `🔊 ${pct}%` : '🔇 OFF';
+            const r = w.querySelector('.amb-range'); if (r && document.activeElement !== r) r.value = pct;
+            const pv = w.querySelector('.amb-pct'); if (pv) pv.textContent = pct + '%';
+            const t = w.querySelector('.amb-toggle'); if (t) t.textContent = audioPrefs.ambOn ? '🔇 TURN OFF' : '🔊 TURN ON';
+        });
+    }
+    function toggleAmbMenu(btn, force) {
+        const w = btn.closest('.amb-ctl'), m = w && w.querySelector('.amb-menu'); if (!m) return;
+        const open = force !== undefined ? force : m.style.display !== 'flex';
+        document.querySelectorAll('.amb-menu').forEach(x => { x.style.display = 'none'; });
+        m.style.display = open ? 'flex' : 'none';
+        syncAmbControls();
+    }
+    document.addEventListener('pointerdown', e => { if (!e.target.closest || !e.target.closest('.amb-ctl')) document.querySelectorAll('.amb-menu').forEach(x => { x.style.display = 'none'; }); });
+    setTimeout(syncAmbControls, 0);
     function setMusicVolume(v) { audioPrefs.music = Math.max(0, Math.min(1, v)); if (AUD.music) AUD.music.gain.value = audioPrefs.music; saveAudioPrefs(); }
 
+    ['pointerdown', 'touchend', 'keydown'].forEach(ev => window.addEventListener(ev, function firstGesture() { initAudio(); }, { once: true, capture: true })); // TANK44
     function initAudio() {
         if (!audioCtx) {
             const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
@@ -5064,7 +5205,8 @@ ${Math.ceil(boostActiveRemaining)}s`;
         AUD.sfx = ctx.createGain(); AUD.sfx.gain.value = audioPrefs.sfx; AUD.sfx.connect(AUD.master);
         AUD.music = ctx.createGain(); AUD.music.gain.value = audioPrefs.music; AUD.music.connect(AUD.master);
         AUD.engine = ctx.createGain(); AUD.engine.gain.value = audioPrefs.sfx; AUD.engine.connect(AUD.master);
-        AUD.amb = ctx.createGain(); AUD.amb.gain.value = audioPrefs.sfx; AUD.amb.connect(AUD.master);
+        AUD.amb = ctx.createGain(); AUD.amb.gain.value = audioPrefs.sfx;
+        AUD.menuAmb = ctx.createGain(); AUD.menuAmb.gain.value = audioPrefs.ambOn ? audioPrefs.amb : 0; AUD.menuAmb.connect(AUD.amb); AUD.amb.connect(AUD.master); // TANK44
         // outdoor reverb: 2.2s stereo decaying noise with early slap echoes off terrain
         const len = Math.floor(ctx.sampleRate * 2.2);
         const ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -5241,6 +5383,37 @@ ${Math.ceil(boostActiveRemaining)}s`;
         tasks.push(['wind', () => {
         B.wind = [bake(2.5, (t, st) => onePole(st, 'lp', rnd(), 0.012 + 0.008 * Math.sin(2 * Math.PI * 0.25 * t)) * (0.7 + 0.3 * Math.sin(2 * Math.PI * 0.5 * t)) * 3, true)];
         }]);
+        // TANK44 ambience: distant artillery, radio static, hangar clank, generator hum (all synthesized)
+        tasks.push(['ambience', () => {
+        B.rumble = [0, 1, 2].map(v => bake(3.6, (t, st) => {
+            const hits = v === 2 ? [0, 0.55, 1.25] : (v === 1 ? [0, 0.9] : [0]);
+            let e = 0;
+            hits.forEach((h, k) => { const u = t - h; if (u >= 0) e += Math.min(1, u / 0.04) * Math.exp(-u / (0.9 + k * 0.2)) / (1 + k * 0.6); });
+            const n = onePole(st, 'lp2', onePole(st, 'lp', rnd(), 0.018), 0.05);
+            return n * e * 8 + Math.sin(2 * Math.PI * (34 + v * 5) * t) * e * 0.25;
+        }, true));
+        B.radio = [0, 1, 2].map(v => bake(1.4, (t, st) => {
+            const len = 1.05 + v * 0.1;
+            if (t > len + 0.12) return 0;
+            if (t > len) return Math.sin(2 * Math.PI * 1150 * t) * 0.35 * (t < len + 0.09 ? 1 : 0); // squelch beep
+            const syl = 0.5 + 0.5 * Math.sin(2 * Math.PI * (5.5 + v) * t + Math.sin(2 * Math.PI * 1.7 * t) * 2);
+            const x = rnd();
+            const lo = onePole(st, 'lp', x, 0.35), hi = onePole(st, 'hp', lo, 0.06);
+            const band = lo - hi;
+            const tone = Math.sin(2 * Math.PI * (300 + 120 * Math.sin(2 * Math.PI * 3 * t)) * t) * 0.25;
+            return (band * 0.6 + tone * syl) * (0.35 + 0.65 * syl) * Math.min(1, t / 0.02);
+        }));
+        B.clank = [0, 1, 2].map(v => bake(1.1, (t) => {
+            const f = [[410, 1137, 2213, 3391], [520, 1390, 2710, 3980], [330, 870, 1840, 2950]][v];
+            let y = 0; f.forEach((fr, k) => { y += Math.sin(2 * Math.PI * fr * t) * Math.exp(-t * (5 + k * 4)) / (k + 1); });
+            return y + rnd() * Math.exp(-t * 90) * 0.8;
+        }));
+        B.hum = [bake(2, (t, st) => {
+            const w = 0.85 + 0.15 * Math.sin(2 * Math.PI * 1 * t);
+            return (Math.sin(2 * Math.PI * 50 * t) * 0.5 + Math.sin(2 * Math.PI * 100 * t) * 0.3 + Math.sin(2 * Math.PI * 150 * t) * 0.12) * w
+                + onePole(st, 'lp', rnd(), 0.03) * 0.6;
+        })];
+        }]);
         return tasks;
     }
     // TANK40: bake the sounds needed right away first, then the rest a little at a time (no long freeze on phones)
@@ -5350,6 +5523,58 @@ ${Math.ceil(boostActiveRemaining)}s`;
             src.connect(g); g.connect(AUD.amb); src.start();
             AUD.windGain = g;
         } catch (e) {}
+        try { // TANK44: forward-base bed (start page + depot only): generator hum + its own wind
+            const bed = audioCtx.createGain(); bed.gain.value = 0; bed.connect(AUD.menuAmb); AUD.menuBed = bed;
+            const src = audioCtx.createBufferSource(); src.buffer = AUD.buf.hum[0]; src.loop = true;
+            const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+            const g = audioCtx.createGain(); g.gain.value = 0.05;
+            src.connect(lp); lp.connect(g); g.connect(bed); src.start();
+            AUD.humGain = g;
+            const w = audioCtx.createBufferSource(); w.buffer = AUD.buf.wind[0]; w.loop = true; w.playbackRate.value = 0.85;
+            const wg = audioCtx.createGain(); wg.gain.value = 0.035; w.connect(wg); wg.connect(bed); w.start();
+        } catch (e) {}
+        AUD.ambReady = true;
+    }
+    // TANK44: one-shot ambience voice with its own pan + muffling (not tied to the tank position)
+    function playAmb(name, vol, pan, cutoff, rate) {
+        if (!audioCtx || audioCtx.state !== 'running' || AUD.voices > 22) return;
+        const buf = pickBuf(name); if (!buf) return;
+        const ctx = audioCtx, src = ctx.createBufferSource(); src.buffer = buf;
+        src.playbackRate.value = rate || (0.9 + Math.random() * 0.2);
+        let node = src;
+        if (cutoff) { const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = cutoff; node.connect(lp); node = lp; }
+        if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; node.connect(p); node = p; }
+        const g = ctx.createGain(); g.gain.value = vol; node.connect(g); g.connect(AUD.menuAmb);
+        AUD.voices++; src.onended = () => { AUD.voices = Math.max(0, AUD.voices - 1); };
+        src.start();
+    }
+    // mode: 'menu' (start page / depot) plays the forward-base ambience; anything else ('game') leaves it silent
+    const AMB = { mode: 'game', next: { rumble: 2.5, radio: 5, clank: 7, mg: 12 } };
+    function ambienceTick(dt, mode) {
+        if (!audioCtx || !AUD.ambReady) return;
+        const t = audioCtx.currentTime;
+        if (mode !== AMB.mode) {
+            AMB.mode = mode;
+            if (AUD.menuBed) AUD.menuBed.gain.setTargetAtTime(mode === 'menu' ? 1 : 0, t, mode === 'menu' ? 0.8 : 0.25);
+        }
+        if (mode !== 'menu' || !audioPrefs.ambOn || audioPrefs.amb <= 0) return;
+        const n = AMB.next, side = () => (Math.random() * 2 - 1) * 0.8;
+        for (const k in n) n[k] -= dt;
+        if (n.rumble <= 0) { // distant artillery on the front line
+            playAmb('rumble', 0.32 + Math.random() * 0.2, side(), 260 + Math.random() * 200);
+            n.rumble = 5 + Math.random() * 7;
+        }
+        if (n.mg <= 0) { // far-off machine-gun burst
+            const bursts = 3 + Math.floor(Math.random() * 4), p = side(), v = 0.09;
+            for (let i = 0; i < bursts; i++) setTimeout(() => { if (AMB.mode === 'menu') playAmb('mg', v, p, 700, 0.95); }, i * 95);
+            n.mg = 14 + Math.random() * 16;
+        }
+        if (n.radio <= 0) { playAmb('radio', 0.1, -0.35 + Math.random() * 0.7, 3200, 1); n.radio = 7 + Math.random() * 9; }
+        if (n.clank <= 0) { // mechanics working in the hangar
+            const c = 1 + Math.floor(Math.random() * 3), p = side();
+            for (let i = 0; i < c; i++) setTimeout(() => { if (AMB.mode === 'menu') playAmb('clank', 0.07 + Math.random() * 0.05, p, 6000); }, i * (160 + Math.random() * 140));
+            n.clank = 6 + Math.random() * 8;
+        }
     }
 
     /* CTRL 6: Engine sound driven by actual tank movement speed */
@@ -9823,11 +10048,38 @@ ${Math.ceil(boostActiveRemaining)}s`;
         setupStageObjective(stageConfig);
     }
 
+    // TANK45: result card styled as an after-action report; each text line gets a role from its leading symbol
     function showOverlay(title, desc, color) {
         if (!overlayTitle || !messageOverlay) return;
+        const win = color === '#22c55e';
+        const card = document.getElementById('overlay-card');
+        if (card) { card.classList.toggle('rep-win', win); card.classList.toggle('rep-fail', !win); card.scrollTop = 0; }
+        const op = document.getElementById('overlay-op');
+        if (op) op.textContent = `OP ${String(currentSelectedStage).padStart(2, '0')} · ${win ? 'SUCCESS' : 'FAILED'}`;
         overlayTitle.textContent = title;
-        overlayTitle.style.color = color;
-        overlayDesc.textContent = desc;
+        overlayTitle.style.color = '';
+        const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        let first = true;
+        overlayDesc.innerHTML = String(desc).split('\n').map(raw => {
+            const l = raw.trim();
+            if (!l) return '<div class="rep-gap"></div>';
+            let html;
+            if (/^[★☆]/.test(l)) {
+                const m = l.match(/^([★☆]+)\s*(.*)$/);
+                html = `<div class="rep-line rep-stars">${esc(m[1])}${m[2] ? `<small>${esc(m[2].replace(/[()]/g, '').trim())}</small>` : ''}</div>`;
+            } else if (/^[✔✘]/.test(l)) {
+                const ok = l[0] === '✔';
+                html = `<div class="rep-line rep-check ${ok ? 'ok' : 'bad'}"><b>${ok ? '✔' : '✘'}</b><span>${esc(l.slice(1).trim())}</span></div>`;
+            } else if (/^\+.*SP/.test(l)) html = `<div class="rep-line rep-sp">${esc(l)}</div>`;
+            else if (/^Total:/.test(l)) html = `<div class="rep-line rep-total">${esc(l)}</div>`;
+            else if (/^(🆕|🔓)/.test(l)) html = `<div class="rep-line rep-new">${esc(l)}</div>`;
+            else if (/unlocked!|Campaign complete/i.test(l)) html = `<div class="rep-line rep-next">${esc(l.toUpperCase())}</div>`;
+            else html = `<div class="rep-line ${first ? 'rep-reason' : ''}">${esc(l)}</div>`;
+            first = false;
+            return html;
+        }).join('');
+        const btn = document.getElementById('overlay-btn');
+        if (btn) btn.textContent = win ? 'RETURN TO HQ ▶' : 'BACK TO HQ ▶';
         messageOverlay.style.display = 'flex';
     }
 
@@ -10877,7 +11129,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
         const salvaged = awardSP(missionSP.kills * SP_FAIL_KEEP_RATE);
         missionSP.kills = 0;
         const spLine = salvaged > 0 ? `\n\n+${formatSP(salvaged)} SP salvaged (50% of kill points) · total ${formatSP(playerProfile.sp)} SP` : '';
-        showOverlay(title, desc + spLine, '#ef4444');
+        showOverlay(title, desc.replace(/^Stage \d+ failed\.\s*/, '').replace(/\s*Press Space to menu\.?/, '') + spLine, '#ef4444');
     }
 
     function triggerStageVictory(reasonText) {
@@ -10954,7 +11206,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
         slowMoTimer = 1.0;
         isFiringActive = false;
         pendingVictoryOverlay = {
-            title: `STAGE ${currentSelectedStage} CLEARED!`,
+            title: 'MISSION ACCOMPLISHED',
             desc: lines.join('\n'),
             color: '#22c55e'
         };
@@ -13078,6 +13330,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
             pollGamepad(dtSeconds); // TANK36
             renderWatchdog(dtSeconds); // TANK39
             audioTick(dtSeconds, !isGamePaused && !isStageModalOpen() && !isDepotOpen()); // TANK40
+            ambienceTick(dtSeconds, (isStageModalOpen() || isDepotOpen()) ? 'menu' : 'game'); // TANK44: start page + depot only
             if (renderer) renderer.info.reset();
 
             fpsSampleFrames++;
@@ -13457,7 +13710,7 @@ ${Math.ceil(boostActiveRemaining)}s`;
 
                         if (playerHP <= 0) {
                             playerHP = 0;
-                            triggerStageFailure("MISSION FAILED", "Your tank was destroyed in combat! Press Space to menu.");
+                            triggerStageFailure("TANK KNOCKED OUT", "Your tank was destroyed in combat. Press Space to menu.");
                         }
                         continue;
                     }
