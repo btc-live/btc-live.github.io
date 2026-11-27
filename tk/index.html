@@ -301,6 +301,13 @@
             white-space: nowrap;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
         }
+        /* TANK51: the lock-box distance tag moves to a free side (below → above → right → left) so it never covers HUD or buttons */
+        .enemy-arrow-wrap { position: relative; }
+        .enemy-arrow-wrap.tag-top .enemy-dist-tag { order: -1; margin-bottom: 18px; }
+        .enemy-arrow-wrap.tag-right .enemy-dist-tag, .enemy-arrow-wrap.tag-left .enemy-dist-tag { position: absolute; top: 50%; transform: translateY(-50%); }
+        .enemy-arrow-wrap.tag-right .enemy-dist-tag { left: calc(100% + 6px); }
+        .enemy-arrow-wrap.tag-left .enemy-dist-tag { right: calc(100% + 6px); }
+        .enemy-arrow-wrap.tag-hidden .enemy-dist-tag { visibility: hidden; }
         .enemy-lock-box {
             width: 56px;
             height: 56px;
@@ -2173,7 +2180,7 @@
         body.touch-ui .mobile-action-btn { display: flex; }
         body.touch-ui #mobile-fire-btn { width: var(--fire); height: var(--fire); right: var(--pr); bottom: var(--pb); font-size: clamp(13px, 2.4vmin, 17px); }
         body.touch-ui #mobile-boost-btn { width: var(--act); height: var(--act); right: calc(var(--pr) + var(--fire) + 12px); bottom: calc(var(--pb) + 2px); font-size: clamp(9px, 1.7vmin, 12px); }
-        body.touch-ui #mobile-swap-btn { width: var(--act); height: var(--act); right: calc(var(--pr) + var(--fire) * 0.78); bottom: calc(var(--pb) + var(--fire) * 0.78); font-size: clamp(9px, 1.7vmin, 12px); }
+        body.touch-ui #mobile-swap-btn { width: var(--act); height: var(--act); right: calc(var(--pr) + var(--fire) * 1.02); bottom: calc(var(--pb) + var(--fire) * 1.02); font-size: clamp(9px, 1.7vmin, 12px); }
         body.touch-ui #mobile-zoom-btn { width: calc(var(--act) * 0.86); height: calc(var(--act) * 0.86); right: calc(var(--pr) + 6px); bottom: calc(var(--pb) + var(--fire) + 16px); font-size: clamp(9px, 1.6vmin, 11px); }
         .mobile-action-btn .mab-sub { display: block; font-size: 0.78em; opacity: 0.8; font-weight: 800; letter-spacing: 0.02em; margin-top: 1px; }
         #mobile-swap-btn.mg { border-color: rgba(56, 189, 248, 0.8); color: #bae6fd; }
@@ -2191,6 +2198,43 @@
             background: rgba(15, 23, 42, 0.84); border: 1px solid rgba(250, 204, 21, 0.4); color: #fde047; font-size: 10px; font-weight: 800;
         }
         body.gamepad-on #gp-hint { display: block; }
+        /* TANK49: clear HUD on phones/tablets/small screens — no panels or button fills, only text (menus unchanged) */
+        body.hud-clear .game-hud, body.hud-clear .music-btn-hud, body.hud-clear .weapon-select-btn, body.hud-clear #mobile-exit-btn,
+        body.hud-clear .mobile-action-btn, body.hud-clear .controls-guide, body.hud-clear #gp-hint, body.hud-clear #virtual-joystick,
+        body.hud-clear .hud-cover, body.hud-clear .radar-box, body.hud-clear .joystick-label, body.hud-clear .enemy-dist-tag {
+            background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+            backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        }
+        body.hud-clear .game-hud, body.hud-clear .music-btn-hud, body.hud-clear .weapon-select-btn, body.hud-clear #mobile-exit-btn,
+        body.hud-clear .mobile-action-btn, body.hud-clear .controls-guide, body.hud-clear #gp-hint, body.hud-clear .joystick-label, body.hud-clear .enemy-dist-tag {
+            text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 0 6px rgba(0, 0, 0, 0.8);
+        }
+        body.hud-clear .hud-sep { color: rgba(255, 255, 255, 0.35); }
+        body.hud-clear .hud-cover.in-cover { color: #4ade80; }
+        body.hud-clear .hud-cover.exposed { color: #fb923c; }
+        body.hud-clear .gp-k { background: transparent; }
+        body.hud-clear .mobile-action-btn { color: #fde047; }
+        body.hud-clear .mobile-action-btn.active { transform: scale(0.88); color: #ffffff; text-shadow: 0 0 10px #facc15, 0 0 3px #000; }
+        body.hud-clear #mobile-boost-btn.boosting, body.hud-clear #mobile-swap-btn.mg, body.hud-clear #mobile-zoom-btn { color: #7dd3fc; }
+        body.hud-clear #mobile-boost-btn.cooldown { color: #94a3b8; }
+        body.hud-clear .weapon-select-btn { color: rgba(248, 250, 252, 0.8); }
+        body.hud-clear .weapon-select-btn.active { color: #fde047; }
+        body.hud-clear #mobile-exit-btn { color: #fca5a5; }
+        body.hud-clear .music-btn-hud.is-on { color: #fca5a5; }
+        /* TANK50: label face inside each action button; on the clear HUD it gets a thin outline that hugs the words
+           (the button itself stays full size as an invisible touch area) */
+        .mab-face { display: flex; flex-direction: column; align-items: center; justify-content: center; white-space: inherit; pointer-events: none; }
+        body.hud-clear .mab-face {
+            padding: 4px 9px 3px; border: 1.5px solid currentColor; border-radius: 7px;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.7), inset 0 0 3px rgba(0, 0, 0, 0.5);
+            transition: transform 0.08s ease, box-shadow 0.12s ease;
+        }
+        body.hud-clear .mobile-action-btn.active { transform: none; }
+        body.hud-clear .mobile-action-btn.active .mab-face { transform: scale(0.9); box-shadow: 0 0 10px #facc15, inset 0 0 6px rgba(250, 204, 21, 0.5); }
+        /* joystick: only a faint ring under the thumb so you can see where it is */
+        body.hud-clear #virtual-joystick::before { border-color: rgba(255, 255, 255, 0.12); }
+        body.hud-clear #joystick-knob { background: transparent; border: 2px solid rgba(255, 255, 255, 0.45); box-shadow: none; }
+        body.hud-clear .radar-box { border: 1px solid rgba(255, 255, 255, 0.18) !important; }
         .hq-gp-hint { display: none; text-align: center; font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; color: var(--khaki); margin-top: 4px; }
         body.gamepad-on .hq-gp-hint { display: block; }
         .gp-k { display: inline-block; min-width: 16px; padding: 0 4px; margin: 0 2px; border-radius: 3px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(250, 204, 21, 0.45); color: #fff; }
@@ -2203,6 +2247,7 @@
             opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
         }
         #m36-toast.show { opacity: 1; }
+        body.touch-ui #m36-toast { top: auto; bottom: calc(var(--pb, 22px) + 34px); max-width: 46vw; } /* TANK51 */
         #rotate-hint {
             display: none; position: absolute; inset: 0; z-index: 300; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
             background: rgba(14, 17, 10, 0.92); color: #d9cc9c; text-align: center; padding: 24px; font-family: ui-monospace, monospace;
@@ -2621,8 +2666,8 @@
     </div>
 
     <!-- CTRL 6 & CTRL 7: Removed #throttle-swipe-pad and added FIRE & BOOST buttons -->
-    <button id="mobile-boost-btn" class="mobile-action-btn" type="button" aria-label="Boost">BOOST</button>
-    <button id="mobile-fire-btn" class="mobile-action-btn" type="button" aria-label="Fire">FIRE</button>
+    <button id="mobile-boost-btn" class="mobile-action-btn" type="button" aria-label="Boost"><span class="mab-face">BOOST</span></button>
+    <button id="mobile-fire-btn" class="mobile-action-btn" type="button" aria-label="Fire"><span class="mab-face">FIRE</span></button>
 
     <!-- CTRL 8: Updated controls guide text -->
     <div class="controls-guide">
@@ -2647,8 +2692,8 @@
     </div>
     <!-- TANK36: floating-joystick zone, gamepad-style touch buttons, gamepad hints, toast, rotate hint -->
     <div id="joy-zone" aria-hidden="true"></div>
-    <button id="mobile-swap-btn" class="mobile-action-btn" type="button" aria-label="Switch weapon">SHELL<span class="mab-sub">⇄ WEAPON</span></button>
-    <button id="mobile-zoom-btn" class="mobile-action-btn" type="button" aria-label="Scope zoom">ZOOM<span class="mab-sub" id="mobile-zoom-sub">1.5x</span></button>
+    <button id="mobile-swap-btn" class="mobile-action-btn" type="button" aria-label="Switch weapon"><span class="mab-face">SHELL<span class="mab-sub">⇄ WEAPON</span></span></button>
+    <button id="mobile-zoom-btn" class="mobile-action-btn" type="button" aria-label="Scope zoom"><span class="mab-face">ZOOM<span class="mab-sub" id="mobile-zoom-sub">1.5x</span></span></button>
     <div id="gp-hint"><span class="gp-k">LS</span>Move <span class="gp-k">RS</span>Aim <span class="gp-k">RT</span>/<span class="gp-k">A</span>Fire <span class="gp-k">LB</span>/<span class="gp-k">B</span>Boost <span class="gp-k">RB</span>/<span class="gp-k">X</span>Weapon <span class="gp-k">LT</span>Zoom <span class="gp-k">Y</span>Auto <span class="gp-k">☰</span>Pause</div>
     <div id="m36-toast"></div>
     <div id="rotate-hint"><div class="rh-icon">📱</div><b>ROTATE TO LANDSCAPE</b><div>The battlefield is much easier to see sideways.</div><button type="button" onclick="document.body.classList.add('rotate-dismissed')">Play in portrait anyway</button></div>
@@ -3655,6 +3700,9 @@
     // TANK36: MOBILE SHELL — layout classes, fullscreen, pause on background, haptics, toast
     // =========================================================================
     if (DEVICE.touch) document.body.classList.add('touch-ui');
+    // TANK49: clear (text-only) HUD on touch devices and small screens
+    function updateHudClear() { document.body.classList.toggle('hud-clear', DEVICE.touch || window.innerWidth <= 900 || window.innerHeight <= 520); }
+    updateHudClear(); window.addEventListener('resize', updateHudClear);
     if (DEVICE.isPhone) document.body.classList.add('is-phone');
     if (DEVICE.isTablet) document.body.classList.add('is-tablet');
     if (DEVICE.isIOS) document.body.classList.add('is-ios');
@@ -3727,7 +3775,7 @@
     function updateMobileWeaponButtons() {
         const sw = document.getElementById('mobile-swap-btn');
         if (sw) {
-            sw.firstChild.nodeValue = currentWeaponType === 'mg' ? 'MG' : 'SHELL';
+            (sw.querySelector('.mab-face') || sw).firstChild.nodeValue = currentWeaponType === 'mg' ? 'MG' : 'SHELL';
             sw.classList.toggle('mg', currentWeaponType === 'mg');
         }
         const zs = document.getElementById('mobile-zoom-sub');
@@ -3942,6 +3990,24 @@
         };
         return touchZoneCache;
     }
+    // TANK51: rectangles the enemy arrow / distance tag must not cover (cached, refreshed twice a second)
+    let hudAvoidCache = null, hudAvoidTime = 0;
+    function getHudAvoidRects() {
+        const now = performance.now();
+        if (hudAvoidCache && now - hudAvoidTime < 500) return hudAvoidCache;
+        hudAvoidTime = now;
+        const list = [];
+        ['.game-hud', '.radar-box', '#scope-view', '#weapon-selector', '#mobile-fire-btn', '#mobile-boost-btn', '#mobile-swap-btn', '#mobile-zoom-btn', '#virtual-joystick', '#gp-hint', '#m36-toast.show'].forEach(q => {
+            document.querySelectorAll(q).forEach(el => {
+                const cs = getComputedStyle(el);
+                if (cs.display === 'none' || cs.visibility === 'hidden') return;
+                const r = el.getBoundingClientRect();
+                if (r.width > 0 && r.height > 0) list.push({ l: r.left - 4, t: r.top - (q === '#virtual-joystick' ? 22 : 4), r: r.right + 4, b: r.bottom + 4 });
+            });
+        });
+        return (hudAvoidCache = list);
+    }
+    function rectHit(a, b) { return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t; }
     function showDiagnostics() {
         const el = document.getElementById('diag-panel');
         if (!el) return;
@@ -5112,16 +5178,16 @@
             if (boostActiveRemaining > 0) {
                 mobileBoostBtn.classList.add('boosting');
                 mobileBoostBtn.classList.remove('cooldown');
-                mobileBoostBtn.textContent = `BOOST
+                (mobileBoostBtn.querySelector('.mab-face') || mobileBoostBtn).textContent = `BOOST
 ${Math.ceil(boostActiveRemaining)}s`;
             } else if (boostCooldownRemaining > 0) {
                 mobileBoostBtn.classList.remove('boosting');
                 mobileBoostBtn.classList.add('cooldown');
-                mobileBoostBtn.textContent = `${Math.ceil(boostCooldownRemaining)}s`;
+                (mobileBoostBtn.querySelector('.mab-face') || mobileBoostBtn).textContent = `${Math.ceil(boostCooldownRemaining)}s`;
             } else {
                 mobileBoostBtn.classList.remove('boosting');
                 mobileBoostBtn.classList.remove('cooldown');
-                mobileBoostBtn.textContent = `BOOST`;
+                (mobileBoostBtn.querySelector('.mab-face') || mobileBoostBtn).textContent = `BOOST`;
             }
         }
     }
@@ -13224,6 +13290,29 @@ ${Math.ceil(boostActiveRemaining)}s`;
                 enemyIndicator.style.left = `${screenX}px`;
                 enemyIndicator.style.top = `${screenY}px`;
                 enemyIndicator.innerHTML = `<div class="enemy-arrow-wrap"><div class="enemy-lock-box"></div><div class="enemy-dist-tag">${indLabel} ${distMeters}m (HP:${indHp})</div></div>`;
+                // TANK51: put the distance tag on the first free side of the lock box (below, above, right, left);
+                // keep it on screen; hide it only if every side would cover the crosshair / HUD / buttons
+                const tag = enemyIndicator.querySelector('.enemy-dist-tag');
+                if (tag) {
+                    const wrap = tag.parentNode, hr = container.getBoundingClientRect();
+                    const blockers = getHudAvoidRects().slice();
+                    if (crosshairElement && crosshairElement.offsetParent) { const cr = crosshairElement.getBoundingClientRect(); blockers.push({ l: cr.left, t: cr.top, r: cr.right, b: cr.bottom }); }
+                    let placed = false;
+                    for (const cls of ['', 'tag-top', 'tag-right', 'tag-left']) {
+                        wrap.classList.remove('tag-top', 'tag-right', 'tag-left');
+                        if (cls) wrap.classList.add(cls);
+                        tag.style.transform = cls === 'tag-right' || cls === 'tag-left' ? 'translateY(-50%)' : '';
+                        let tr = tag.getBoundingClientRect();
+                        if (!cls || cls === 'tag-top') { // slide sideways back onto the screen
+                            const dx = tr.left < hr.left + 4 ? hr.left + 4 - tr.left : (tr.right > hr.right - 4 ? hr.right - 4 - tr.right : 0);
+                            if (dx) { tag.style.transform = `translateX(${Math.round(dx)}px)`; tr = tag.getBoundingClientRect(); }
+                        }
+                        const tb = { l: tr.left, t: tr.top, r: tr.right, b: tr.bottom };
+                        const inside = tb.l >= hr.left + 2 && tb.r <= hr.right - 2 && tb.t >= hr.top + 2 && tb.b <= hr.bottom - 2;
+                        if (inside && !blockers.some(a => rectHit(tb, a))) { placed = true; break; }
+                    }
+                    if (!placed) { wrap.classList.remove('tag-top', 'tag-right', 'tag-left'); tag.style.transform = ''; wrap.classList.add('tag-hidden'); }
+                }
             } else {
                 const dx = screenX - halfW, dy = screenY - halfH;
                 const angle = Math.atan2(dy, dx);
@@ -13250,6 +13339,28 @@ ${Math.ceil(boostActiveRemaining)}s`;
                 enemyIndicator.style.left = `${finalX}px`;
                 enemyIndicator.style.top = `${finalY}px`;
                 enemyIndicator.innerHTML = `<div class="enemy-arrow-wrap"><div class="enemy-arrow-shape" style="transform: rotate(${deg}deg);"></div><div class="enemy-dist-tag">${indLabel} ${distMeters}m (HP:${indHp})</div></div>`;
+                // TANK51: if the arrow would cover a button / HUD / scope / radar, pull it in toward the centre
+                // along its own direction (it still points the right way) until it sits on free space
+                const avoid = getHudAvoidRects();
+                if (avoid.length) {
+                    const hr = container.getBoundingClientRect();
+                    const ir = enemyIndicator.getBoundingClientRect();
+                    const w2 = ir.width / 2, h2 = ir.height / 2;
+                    const free = (x, y) => {
+                        const box = { l: hr.left + x - w2, t: hr.top + y - h2, r: hr.left + x + w2, b: hr.top + y + h2 };
+                        return box.l >= hr.left + 2 && box.r <= hr.right - 2 && box.t >= hr.top + 2 && box.b <= hr.bottom - 2 && !avoid.some(a => rectHit(box, a));
+                    };
+                    let x = Math.min(width - w2 - 4, Math.max(w2 + 4, finalX)), y = Math.min(height - h2 - 4, Math.max(h2 + 4, finalY));
+                    if (!free(x, y)) {
+                        let found = false;
+                        for (let k = 1; k <= 30 && !found; k++) { // up to 75% of the way to the centre
+                            const f = k * 0.025, nx = x + (halfW - x) * f, ny = y + (halfH - y) * f;
+                            if (free(nx, ny)) { x = nx; y = ny; found = true; }
+                        }
+                    }
+                    enemyIndicator.style.left = `${x}px`;
+                    enemyIndicator.style.top = `${y}px`;
+                }
             }
         }
 
