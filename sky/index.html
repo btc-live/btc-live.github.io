@@ -5074,7 +5074,7 @@
         camera = new THREE.PerspectiveCamera(65, container.clientWidth / container.clientHeight, 0.1, 9000);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(container.clientWidth, container.clientHeight, false);
         basePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
         activePixelRatio = basePixelRatio;
         renderer.setPixelRatio(activePixelRatio);
@@ -7261,6 +7261,7 @@
 
         function animate(now) {
             requestAnimationFrame(animate);
+            syncViewSize(false);
             const currentTime = typeof now === 'number' ? now : performance.now();
             // Cap dt to 0.05s so tab switching never causes large simulation jumps
             const dtSeconds = Math.min(0.05, Math.max(0.001, (currentTime - lastFrameTime) / 1000));
@@ -7681,15 +7682,28 @@
             if (!menuCovers) renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => {
+        // Resize the 3D view to the container's real size. iOS (especially Home Screen web apps) can report the
+        // pre-rotation size in the resize event, so the size is also re-checked every frame and after short delays.
+        let viewW = 0, viewH = 0;
+        function syncViewSize(force) {
             if (!container || !camera || !renderer) return;
-            camera.aspect = container.clientWidth / container.clientHeight;
+            const w = container.clientWidth, h = container.clientHeight;
+            if (w < 2 || h < 2) return;
+            if (!force && w === viewW && h === viewH) return;
+            viewW = w; viewH = h;
+            camera.aspect = w / h;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
             basePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
             activePixelRatio = Math.min(activePixelRatio, basePixelRatio);
             renderer.setPixelRatio(activePixelRatio);
-        });
+            renderer.setSize(w, h, false);
+        }
+        window.syncViewSize = syncViewSize;
+        const resyncSoon = () => { syncViewSize(true); [60, 250, 600, 1200].forEach(ms => setTimeout(() => syncViewSize(true), ms)); };
+        window.addEventListener('resize', resyncSoon);
+        window.addEventListener('orientationchange', resyncSoon);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', resyncSoon);
+        syncViewSize(true);
 
         animate();
     };
