@@ -235,6 +235,114 @@
     /* The long status pill changes width with every possession; only show it on wide screens */
     #hudStatusBanner { width: 19rem; flex: 0 0 auto; }
     @media (max-width: 1199px) { #hudStatusBanner { display: none !important; } }
+
+    /* =========================================================
+       TOUCH MATCH HUD (phones and tablets): text-only on a transparent background,
+       outlined buttons, nothing overlapping and nothing off-screen
+       ========================================================= */
+    .is-touch #arenaView { background: #050508; }
+    .is-touch #arenaView > #threeContainer { position: absolute !important; inset: 0; z-index: 0; }
+    /* HUD bars sit ON TOP of the game, stacked (top bar, then info bar) so they never cover each other */
+    .is-touch #arenaView > div:first-child,
+    .is-touch #arenaView > div:last-child {
+      position: relative; z-index: 20;
+      background: transparent !important; border: 0 !important;
+      flex-wrap: wrap !important; row-gap: 6px; column-gap: 12px;
+      max-width: 100%; pointer-events: none;
+    }
+    .is-touch #arenaView > div:first-child > *,
+    .is-touch #arenaView > div:last-child > * { flex-wrap: wrap; row-gap: 6px; column-gap: 10px; max-width: 100%; min-width: 0; }
+    .is-touch #arenaView > div:first-child button { pointer-events: auto; }
+    .is-touch #arenaView > div:first-child,
+    .is-touch #arenaView > div:last-child,
+    .is-touch #threeContainer #centerBanner,
+    .is-touch #passTagOverlay,
+    .is-touch #rotateHint,
+    .is-touch #arenaOverlay,
+    .is-touch #helpOverlay {
+      color: #ffffff;
+      text-shadow: 0 1px 2px #000, 0 0 5px rgba(0, 0, 0, 0.9);
+    }
+    /* no backgrounds on score boxes, clocks and badges */
+    .is-touch #hudHomeBox, .is-touch #hudAwayBox, .is-touch #hudShotBox, .is-touch #possessionBadge {
+      background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+      padding-left: 2px !important; padding-right: 2px !important;
+    }
+    .is-touch #hudHomeCode, .is-touch #hudAwayCode { color: #ffffff !important; }
+    .is-touch #hudGameClock { margin-top: 3px; }
+    .is-touch #possessionBadge { color: #fde68a !important; }
+    .is-touch #hudStatusBanner, .is-touch #liveHintText { display: none !important; }
+    /* keyboard hints are useless on touch; keep only the FPS counter */
+    .is-touch #arenaView > div:last-child > div:last-child { display: block !important; font-size: 0; }
+    .is-touch #fpsBadge { font-size: 11px; margin: 0; }
+    /* outlined rectangular buttons */
+    .is-touch #arenaView > div:first-child button,
+    .is-touch #overlayActionBtn,
+    .is-touch #helpCloseBtn {
+      background: transparent !important; border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+      border-radius: 8px !important; color: #ffffff !important; box-shadow: none !important; filter: none !important;
+      padding: 5px 9px !important; font-size: 11px !important; line-height: 1.2; white-space: nowrap; animation: none !important;
+    }
+    .is-touch #overlayActionBtn { padding: 10px 14px !important; font-size: 14px !important; white-space: normal; }
+    .is-touch #arenaView > div:first-child button:active { transform: scale(0.94); }
+    /* floating texts: placed below the HUD (CSS vars are measured in JS) and kept inside the screen */
+    .is-touch #threeContainer #centerBanner {
+      background: transparent !important; border: 0 !important; box-shadow: none !important;
+      top: calc(var(--hud-h, 64px) + var(--hint-h, 0px) + 8px) !important;
+      max-width: calc(100% - 24px); width: max-content; padding: 2px 6px !important;
+    }
+    .is-touch #bannerMainText, .is-touch #bannerSubText { white-space: normal; line-height: 1.6; }
+    .is-touch #passTagOverlay { background: transparent !important; box-shadow: none !important; color: #7dd3fc !important; white-space: nowrap; }
+    .is-touch #shotMeterOverlay { background: transparent !important; border: 1.5px solid #ffffff !important; box-shadow: none !important; }
+    .is-touch #rotateHint {
+      background: transparent !important; border: 0 !important;
+      top: calc(var(--hud-h, 64px) + 6px) !important;
+      max-width: calc(100% - 24px); white-space: normal !important; text-align: center;
+    }
+    /* touch gamepad: outlines only, sizes scale with the screen so the two sides never meet */
+    .is-touch #touchControls {
+      --joy: clamp(92px, 27vmin, 128px);
+      --shoot: clamp(62px, 19vmin, 96px);
+      --pass: clamp(50px, 15vmin, 76px);
+    }
+    .is-touch #joyZone { top: calc(var(--hud-h, 64px) + 8px); height: auto !important; bottom: 0; }
+    .is-touch #joyBase {
+      width: var(--joy) !important; height: var(--joy) !important;
+      left: calc(14px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom));
+      background: transparent !important; border: 2px solid rgba(255, 255, 255, 0.75) !important; box-shadow: none !important;
+    }
+    .is-touch #joyKnob {
+      width: calc(var(--joy) * 0.45); height: calc(var(--joy) * 0.45);
+      margin: calc(var(--joy) * -0.225) 0 0 calc(var(--joy) * -0.225);
+      background: transparent !important; border: 2.5px solid #ffffff !important; box-shadow: none !important;
+    }
+    .is-touch #actionPad {
+      right: calc(14px + env(safe-area-inset-right)) !important; bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+      width: calc(var(--shoot) + var(--pass) + 12px) !important; height: calc(var(--shoot) + var(--pass) * 0.5) !important;
+    }
+    .is-touch .touch-action-btn {
+      background: transparent !important; box-shadow: none !important; color: #ffffff !important;
+      text-shadow: 0 1px 2px #000, 0 0 5px rgba(0, 0, 0, 0.9); filter: none !important;
+    }
+    .is-touch .touch-shoot { width: var(--shoot) !important; height: var(--shoot) !important; border: 3px solid #fdba74 !important; }
+    .is-touch .touch-pass { width: var(--pass) !important; height: var(--pass) !important; border: 3px solid #7dd3fc !important; }
+    .is-touch .touch-action-btn.pressed { transform: scale(0.9); border-width: 5px !important; }
+    .is-touch .touch-action-btn .tab-main { font-size: clamp(11px, 3.4vmin, 15px); }
+    .is-touch .touch-action-btn .tab-sub { font-size: clamp(8px, 2.2vmin, 9px); }
+    /* modals: transparent panels below the HUD (the game behind is only dimmed) */
+    .is-touch #arenaOverlay, .is-touch #helpOverlay {
+      padding-top: calc(var(--hud-h, 64px) + 8px) !important; backdrop-filter: none !important; align-items: flex-start !important;
+    }
+    .is-touch #arenaOverlay > .glass-panel, .is-touch #helpOverlay > .glass-panel {
+      background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important;
+      max-height: 100% !important; overflow-y: auto;
+    }
+    .is-touch #arenaOverlay .glass-panel div, .is-touch #helpOverlay .glass-panel div { background: transparent !important; }
+    .is-touch #arenaOverlay .glass-panel span[style*="background"], .is-touch #helpOverlay .glass-panel span[style*="background"],
+    .is-touch #arenaOverlay .glass-panel span.bg-slate-900, .is-touch #helpOverlay .glass-panel span.bg-slate-900 {
+      background: transparent !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    }
+
     #touchControls { display: none; }
     .is-touch #touchControls { display: block; }
 
@@ -508,7 +616,7 @@
           <span id="hudAwayCode" class="font-arcade font-black text-sm sm:text-base">EMG</span>
         </div>
         <!-- 24s Shot Clock -->
-        <div class="px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-500/40 text-center">
+        <div id="hudShotBox" class="px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-500/40 text-center">
           <div class="text-[9px] text-red-300 font-bold leading-none">SHOT</div>
           <div id="hudShotClock" class="font-arcade text-sm sm:text-base font-black text-red-400 leading-tight">24</div>
         </div>
@@ -4055,6 +4163,23 @@
       const mainTextColor = isActive ? '#09090b' : '#ffffff';
       const subTextColor = isActive ? '#3b0764' : (bp.team === 'HOME' ? '#fde047' : '#a7f3d0');
 
+      if (IS_TOUCH) {
+        // Touch devices: text only (dark outline for readability), no label background
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.lineJoin = 'round';
+        g.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+        g.lineWidth = 6;
+        g.font = 'bold 21px "Press Start 2P", monospace';
+        g.strokeText(`#${bp.number} ${bp.name}`, 160, 29);
+        g.fillStyle = isActive ? '#facc15' : '#ffffff';
+        g.fillText(`#${bp.number} ${bp.name}`, 160, 29);
+        g.font = 'bold 14px "Inter", sans-serif';
+        g.lineWidth = 4;
+        g.strokeText(`${bp.teamCode} · ${bp.pos}`, 160, 52);
+        g.fillStyle = isActive ? '#fde68a' : (bp.team === 'HOME' ? '#fde047' : '#a7f3d0');
+        g.fillText(`${bp.teamCode} · ${bp.pos}`, 160, 52);
+      } else {
       g.fillStyle = bgColor;
       g.strokeStyle = borderColor;
       g.lineWidth = 4;
@@ -4071,6 +4196,7 @@
       g.fillStyle = subTextColor;
       g.font = 'bold 14px "Inter", sans-serif';
       g.fillText(`${bp.teamCode} · ${bp.pos}`, 160, 52);
+      }
 
       const tex = new THREE.CanvasTexture(c);
       tex.minFilter = THREE.LinearFilter;
@@ -5045,6 +5171,7 @@
       document.getElementById('leagueHub').classList.add('hidden');
       document.getElementById('arenaView').classList.remove('hidden');
       document.body.classList.add('arena-open');
+      setTimeout(updateTouchHudMetrics, 50);
       music.setScene('game');
 
       initB4ThreeScene();
@@ -6617,6 +6744,41 @@
       }
     }
 
+    // Touch HUD: measure the HUD / hint / gamepad so floating texts can be kept clear of them
+    const touchSafe = { top: 64, bottom: 9999 };
+    function updateTouchHudMetrics() {
+      if (!IS_TOUCH) return;
+      const arena = document.getElementById('arenaView');
+      const three = document.getElementById('threeContainer');
+      if (!arena || arena.classList.contains('hidden')) return;
+      const topBar = arena.firstElementChild;
+      const infoBar = arena.lastElementChild;
+      const infoVisible = infoBar && infoBar.offsetParent !== null && infoBar.offsetHeight > 0;
+      const hudH = infoVisible ? infoBar.offsetTop + infoBar.offsetHeight : topBar.offsetTop + topBar.offsetHeight;
+      const hint = document.getElementById('rotateHint');
+      const hintH = hint && hint.offsetParent !== null && hint.offsetHeight > 0 ? hint.offsetHeight + 8 : 0;
+      arena.style.setProperty('--hud-h', `${hudH}px`);
+      arena.style.setProperty('--hint-h', `${hintH}px`);
+      const tr = three.getBoundingClientRect();
+      const pad = document.getElementById('actionPad').getBoundingClientRect();
+      const joy = document.getElementById('joyBase');
+      const joyTop = joy.classList.contains('active') ? tr.bottom : joy.getBoundingClientRect().top;
+      touchSafe.top = hudH + hintH + 6;
+      touchSafe.bottom = Math.min(pad.top, joyTop) - tr.top - 8;
+    }
+
+    function clampTouchFloat(el, x, y, rect) {
+      if (!IS_TOUCH) return { x, y };
+      const w = el.offsetWidth || 60;
+      const h = el.offsetHeight || 14;
+      let top = touchSafe.top;
+      const banner = document.getElementById('centerBanner');
+      if (banner && !banner.classList.contains('hidden')) top = Math.max(top, banner.offsetTop + banner.offsetHeight + 6);
+      const cx = Math.max(w / 2 + 6, Math.min(rect.width - w / 2 - 6, x));
+      const cy = Math.max(top + h, Math.min(Math.max(top + h, touchSafe.bottom), y)); // y is the bottom edge (translate -100%)
+      return { x: cx, y: cy };
+    }
+
     function updateShotMeterAndPassUI() {
       const cp = matchEngine.controlledPlayer;
       const b = matchEngine.ball;
@@ -6633,15 +6795,17 @@
         const sy = (-projVec.y * 0.5 + 0.5) * rect.height;
 
         meterEl.classList.remove('hidden');
-        meterEl.style.left = `${sx}px`;
-        meterEl.style.top = `${sy}px`;
+        const mPos = clampTouchFloat(meterEl, sx, sy, rect);
+        meterEl.style.left = `${mPos.x}px`;
+        meterEl.style.top = `${mPos.y}px`;
         fillEl.style.width = `${Math.min(100, Math.round(cp.shotCharge * 100))}%`;
         fillEl.style.backgroundColor = Math.abs(cp.shotCharge - 0.56) < 0.14 ? '#4ade80' : '#facc15';
       } else {
         meterEl.classList.add('hidden');
       }
 
-      const passCandidate = (!matchEngine.watchMode && cp && b.owner === cp && matchEngine.gameState === B4_STATE.PLAYING)
+      // (hidden while charging a shot so the PASS tag and the shot meter never overlap)
+      const passCandidate = (!matchEngine.watchMode && cp && b.owner === cp && !cp.isChargingShot && matchEngine.gameState === B4_STATE.PLAYING)
         ? selectBestPassTarget(cp)
         : null;
 
@@ -6655,9 +6819,11 @@
         const py = (-projVec.y * 0.5 + 0.5) * rect.height;
 
         passTagEl.classList.remove('hidden');
-        passTagEl.style.left = `${px}px`;
-        passTagEl.style.top = `${py}px`;
-        passTagEl.textContent = `PASS → #${passCandidate.number} ${passCandidate.name}`;
+        const tagText = `PASS → #${passCandidate.number} ${passCandidate.name}`;
+        if (passTagEl.textContent !== tagText) passTagEl.textContent = tagText;
+        const tPos = clampTouchFloat(passTagEl, px, py, rect);
+        passTagEl.style.left = `${tPos.x}px`;
+        passTagEl.style.top = `${tPos.y}px`;
       } else {
         b4App.passRingMesh.visible = false;
         passTagEl.classList.add('hidden');
@@ -7174,6 +7340,16 @@
     document.addEventListener('touchmove', (e) => {
       if (e.touches && e.touches.length > 1) e.preventDefault(); // two-finger pinch
     }, { passive: false });
+
+    if (IS_TOUCH && 'ResizeObserver' in window) {
+      const hudRO = new ResizeObserver(() => updateTouchHudMetrics());
+      const arenaEl = document.getElementById('arenaView');
+      hudRO.observe(arenaEl.firstElementChild);
+      hudRO.observe(arenaEl.lastElementChild);
+      hudRO.observe(document.getElementById('threeContainer'));
+      hudRO.observe(document.getElementById('rotateHint'));
+    }
+    window.addEventListener('resize', () => setTimeout(updateTouchHudMetrics, 60));
 
     // Orientation changes: re-measure the 3D viewport once the browser has settled
     window.addEventListener('orientationchange', () => {
